@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset your password — Wikigai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/brand.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="narrow auth-card">
+    <div class="auth-head">
+      <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
+      <h2>Reset your password</h2>
+      <p>We'll email you a 6-digit code to set a new one</p>
+    </div>
+
+    <div class="card card-pad">
+      <div class="alert" id="alert"></div>
+      <form id="forgotForm" novalidate>
+        <div class="field" id="fEmail">
+          <label for="email">Email address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+          <div class="err-msg" id="eEmail"></div>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Send reset code</button>
+      </form>
+      <div class="switch-line">Remembered it? <a href="/login">Back to sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+  const { api, showAlert, hideAlert } = window.CPS;
+  const alertEl = document.getElementById('alert');
+  const form = document.getElementById('forgotForm');
+  const btn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert(alertEl);
+    document.getElementById('eEmail').textContent = '';
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      document.getElementById('eEmail').textContent = 'Enter a valid email address.';
+      document.getElementById('fEmail').classList.add('field-err');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const res = await api('/api/auth/forgot', { method: 'POST', auth: false, body: { email } });
+      sessionStorage.setItem('cps_reset_email', email);
+      if (res.dev_pin) sessionStorage.setItem('cps_dev_pin', res.dev_pin);
+      showAlert(alertEl, res.message || 'Check your inbox for the reset code.', 'ok');
+      setTimeout(() => { window.location.href = '/reset'; }, 900);
+    } catch (err) {
+      showAlert(alertEl, err.message, 'err');
+      btn.disabled = false; btn.textContent = 'Send reset code';
+    }
+  });
+</script>
+</body>
+</html>

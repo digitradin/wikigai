@@ -1,0 +1,87 @@
+# CPS (Career Positioning System) — preprod deployment
+# Hosts: wikigai.digitradin.cloud (main), survey.digitradin.cloud (legacy) + api.survey.digitradin.cloud
+# Reuses the external traefik network + letsencrypt resolver already on the VPS.
+services:
+  cps-db:
+    image: postgres:16-alpine
+    container_name: cps-db
+    restart: unless-stopped
+    env_file:
+      - ../.env.production
+    environment:
+      POSTGRES_USER: survey_user
+      POSTGRES_DB: survey_db
+    volumes:
+      - cps-db-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U survey_user -d survey_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [traefik]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  cps-backend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.backend
+    container_name: cps-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MIGRATIONS_DIR: /app/deploy/migrations
+    depends_on:
+      cps-db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      # wikigai.digitradin.cloud (public) — own router so its cert is issued
+      # independently of any other hostname.
+      - "traefik.http.routers.cps-main-http.entrypoints=web"
+      - "traefik.http.routers.cps-main-http.rule=Host(`wikigai.digitradin.cloud`)"
+      - "traefik.http.routers.cps-main-http.middlewares=redirect-https"
+      - "traefik.http.routers.cps-main.entrypoints=websecure"
+      - "traefik.http.routers.cps-main.rule=Host(`wikigai.digitradin.cloud`)"
+      - "traefik.http.routers.cps-main.tls=true"
+      - "traefik.http.routers.cps-main.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cps-main.service=cps-svc"
+      # survey.digitradin.cloud (preprod alias) — separate router/cert.
+      - "traefik.http.routers.cps-preprod-http.entrypoints=web"
+      - "traefik.http.routers.cps-preprod-http.rule=Host(`survey.digitradin.cloud`)"
+      - "traefik.http.routers.cps-preprod-http.middlewares=redirect-https"
+      - "traefik.http.routers.cps-preprod.entrypoints=websecure"
+      - "traefik.http.routers.cps-preprod.rule=Host(`survey.digitradin.cloud`)"
+      - "traefik.http.routers.cps-preprod.tls=true"
+      - "traefik.http.routers.cps-preprod.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cps-preprod.service=cps-svc"
+      # api.survey.digitradin.cloud
+      - "traefik.http.routers.cps-api-http.entrypoints=web"
+      - "traefik.http.routers.cps-api-http.rule=Host(`api.survey.digitradin.cloud`)"
+      - "traefik.http.routers.cps-api-http.middlewares=redirect-https"
+      - "traefik.http.routers.cps-api.entrypoints=websecure"
+      - "traefik.http.routers.cps-api.rule=Host(`api.survey.digitradin.cloud`)"
+      - "traefik.http.routers.cps-api.tls=true"
+      - "traefik.http.routers.cps-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cps-api.service=cps-svc"
+      # shared service + redirect middleware
+      - "traefik.http.services.cps-svc.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.permanent=true"
+    networks: [traefik]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  cps-db-data:
+
+networks:
+  traefik:
+    external: true
+    name: traefik

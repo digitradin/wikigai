@@ -1,0 +1,163 @@
+/* ============================================================
+   Wikigai brand skin for the CPS — overrides/extends app.css
+   Palette from the Portal_login design: deep navy glass +
+   pink→purple→blue gradient, Wikigai logo, ikigai 4-circle mark.
+   ============================================================ */
+:root {
+  --brand: #c44dff;
+  --brand-2: #ff6b9d;
+  --accent: #4dc9f6;
+  --c1: #ff6b9d;
+  --c2: #c44dff;
+  --c3: #6b5bff;
+  --c4: #4dc9f6;
+  --grad: linear-gradient(135deg, #ff6b9d 0%, #c44dff 45%, #6b5bff 75%, #4dc9f6 100%);
+  --grad-soft: linear-gradient(135deg, var(--c2), var(--c1));
+}
+
+body {
+  background: #0a0a1a;
+}
+body::before {
+  background:
+    radial-gradient(1000px 620px at 8% -12%, rgba(196,77,255,0.22), transparent 60%),
+    radial-gradient(820px 620px at 104% 4%, rgba(77,201,246,0.16), transparent 58%),
+    radial-gradient(760px 760px at 50% 122%, rgba(255,107,157,0.12), transparent 62%),
+    linear-gradient(rgba(196,77,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196,77,255,0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 60px 60px, 60px 60px;
+}
+
+/* brand logo in nav */
+.brand-logo { height: 34px; width: auto; display: block; }
+.logo .wikigai { height: 32px; width: auto; display: block; }
+
+/* ikigai 4-circle mark */
+.ikigai-mark { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+.ikigai-mark .c { position: absolute; border-radius: 50%; width: 20px; height: 20px; opacity: .7; mix-blend-mode: screen; }
+.ikigai-mark .c1 { background: var(--c1); top: 2px; left: 2px; }
+.ikigai-mark .c2 { background: var(--c2); top: 2px; right: 2px; }
+.ikigai-mark .c3 { background: var(--c3); bottom: 2px; left: 2px; }
+.ikigai-mark .c4 { background: var(--c4); bottom: 2px; right: 2px; }
+.ikigai-mark .dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.7); }
+
+/* gradient text helper */
+.grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+/* buttons inherit app.css; retint the primary to the brand gradient */
+.btn-primary {
+  background: var(--grad-soft);
+  border: 0;
+}
+.btn-primary:hover { box-shadow: 0 10px 34px -8px rgba(196,77,255,.55); }
+
+/* language bar shared look (used on landing/auth pages too) */
+.lang-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  display: flex; justify-content: flex-end; padding: 6px 18px;
+  background: rgba(8,8,18,.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.lang-buttons { display: flex; gap: 6px; align-items: center; }
+.lang-label { color: rgba(255,255,255,.35); font-size: 12px; margin-right: 2px; }
+.lang-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.55);
+  padding: 3px 13px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 700;
+  letter-spacing: .5px; transition: all .2s; font-family: inherit;
+}
+.lang-btn.active { background: linear-gradient(135deg,#7c5cbf,#a855f7); border: none; color: #fff; }
+.lang-btn:hover:not(.active) { background: rgba(255,255,255,.1); color: #fff; }
+
+/* nav offset when the language bar is present */
+body.has-langbar nav.top { top: 34px; }
+
+/* ── Landing hero (Portal_login layout) ── */
+.hero2 {
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px;
+  align-items: center; padding: 64px 0 40px;
+}
+.hero2 .lead { color: var(--muted); font-size: 17px; line-height: 1.8; max-width: 520px; }
+.hero2 h1 { font-size: clamp(2.1rem, 4.6vw, 3.4rem); font-weight: 800; letter-spacing: -1.6px; line-height: 1.08; margin: 14px 0 18px; }
+.feature-list { display: flex; flex-direction: column; gap: 12px; margin: 26px 0 30px; }
+.feature-list .feat { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 15px; }
+.feature-list .feat i { color: var(--c1); font-size: 17px; width: 20px; text-align: center; }
+
+.demo-shot {
+  width: 100%; max-width: 420px; margin: 0 auto; border-radius: 16px;
+  border: 1px solid var(--border-strong); overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.demo-shot img { width: 100%; display: block; }
+
+.auth-card {
+  width: 100%; max-width: 420px; margin: 0 auto;
+  background: var(--panel); backdrop-filter: blur(18px);
+  border: 1px solid var(--border-strong); border-radius: 20px; padding: 26px;
+  box-shadow: var(--shadow);
+}
+.tabs { display: flex; gap: 6px; margin-bottom: 22px; border-bottom: 1px solid var(--border); }
+.tab {
+  background: none; border: none; color: var(--muted); font: 600 15px var(--font);
+  padding: 11px 16px; cursor: pointer; border-bottom: 2px solid transparent;
+  position: relative; bottom: -1px; font-family: inherit;
+}
+.tab.active { color: var(--text); border-bottom-color: var(--c2); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeIn .3s; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+@media (max-width: 940px) {
+  .hero2 { grid-template-columns: 1fr; gap: 34px; padding-top: 40px; }
+  .hero2 .right { order: -1; }
+}
+
+/* dashboard stage actions: review button + eye */
+.pill-review {
+  border: 1px solid rgba(34,197,94,.4); background: rgba(34,197,94,.14); color: #22c55e;
+  font: 600 13px var(--font); padding: 6px 14px; border-radius: 18px; cursor: pointer; transition: all .2s;
+}
+.pill-review:hover { background: rgba(34,197,94,.24); transform: translateY(-1px); }
+.eye-btn {
+  background: rgba(255,255,255,.05); border: 1px solid var(--border); color: var(--muted);
+  width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 15px;
+  display: inline-grid; place-items: center; transition: all .2s; line-height: 1;
+}
+.eye-btn:hover { border-color: rgba(196,77,255,.4); color: var(--text); background: rgba(196,77,255,.08); }
+
+/* ── Dashboard: Domain focus tuner ── */
+.domain-tuner { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.dt-legend { display: flex; gap: 20px; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+.dt-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; vertical-align: middle; margin-right: 6px; }
+.dt-dot.on { background: #22c55e; }
+.dt-dot.off { background: #94a3b8; }
+.dt-row {
+  display: grid;
+  grid-template-columns: 26px 34px 1fr 120px 44px auto;
+  align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  transition: opacity .2s, border-color .2s;
+}
+.dt-row.off { opacity: .55; border-color: rgba(148,163,184,.25); }
+.dt-rank { font: 700 13px var(--mono); color: var(--muted); text-align: center; }
+.dt-icon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 16px; }
+.dt-name { font-size: 14px; font-weight: 600; }
+.dt-bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,.07); overflow: hidden; }
+.dt-fill { height: 100%; border-radius: 4px; }
+.dt-pct { font: 700 12.5px var(--mono); color: var(--text); text-align: right; }
+@media (max-width: 620px) {
+  .dt-row { grid-template-columns: 22px 30px 1fr auto; grid-template-areas: "rank icon name toggle" ". . bar pct"; row-gap: 6px; }
+  .dt-rank { grid-area: rank; } .dt-icon { grid-area: icon; } .dt-name { grid-area: name; }
+  .dt-bar { grid-area: bar; } .dt-pct { grid-area: pct; } .dt-row .area-toggle { grid-area: toggle; }
+}
+
+/* area-toggle (also used by dashboard tuner) */
+.area-toggle {
+  font-size: 12px; font-family: var(--mono); padding: 5px 12px; border-radius: 12px;
+  border: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap;
+  background: rgba(255,255,255,.04); color: var(--muted); transition: all .2s;
+}
+.area-toggle.on { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); color: #22c55e; }
+.area-toggle.off { background: rgba(148,163,184,.1); border-color: rgba(148,163,184,.3); color: var(--muted); }
+.area-toggle:hover { transform: translateY(-1px); }

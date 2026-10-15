@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — Wikigai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/brand.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="narrow auth-card">
+    <div class="auth-head">
+      <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
+      <h2>Welcome back</h2>
+      <p>Sign in to continue your Wikigai</p>
+    </div>
+
+    <div class="card card-pad">
+      <div class="alert" id="alert"></div>
+      <form id="loginForm" novalidate>
+        <div class="field" id="fEmail">
+          <label for="email">Email address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+          <div class="err-msg" id="eEmail"></div>
+        </div>
+        <div class="field" id="fPassword">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input class="input" type="password" id="password" placeholder="Your password" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" data-target="password" aria-label="Show password">Show</button>
+          </div>
+          <div class="err-msg" id="ePassword"></div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin:-6px 0 12px">
+          <a href="/forgot" style="font-size:13px">Forgot password?</a>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Sign in</button>
+      </form>
+      <div class="switch-line">New here? <a href="/signup">Create an account</a></div>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:16px">Protected by a human check and secure session.</p>
+  </div>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+  const { api, showAlert, hideAlert, Store } = window.CPS;
+  const alertEl = document.getElementById('alert');
+  const form = document.getElementById('loginForm');
+  const btn = document.getElementById('submitBtn');
+
+  if (Store.token) window.location.href = '/dashboard';
+  const flash = sessionStorage.getItem('cps_flash');
+  if (flash) { sessionStorage.removeItem('cps_flash'); showAlert(alertEl, flash, 'ok'); }
+  document.querySelectorAll('.pw-toggle').forEach(b => b.addEventListener('click', () => {
+    const inp = document.getElementById(b.dataset.target);
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    b.textContent = show ? 'Hide' : 'Show';
+  }));
+
+  function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert(alertEl);
+    ['eEmail','ePassword'].forEach(id => document.getElementById(id).textContent = '');
+    document.querySelectorAll('.field').forEach(f => f.classList.remove('field-err'));
+
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    let bad = false;
+    if (!validEmail(email)) { document.getElementById('eEmail').textContent = 'Enter a valid email address.'; document.getElementById('fEmail').classList.add('field-err'); bad = true; }
+    if (!password) { document.getElementById('ePassword').textContent = 'Enter your password.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    if (bad) return;
+
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const res = await api('/api/auth/login', { method: 'POST', auth: false, body: { email, password } });
+      Store.token = res.token;
+      Store.user = res.user;
+      window.location.href = '/dashboard';
+    } catch (err) {
+      if (err.code === 'EMAIL_NOT_VERIFIED') {
+        sessionStorage.setItem('cps_pending_email', email);
+        if (err.data && err.data.dev_pin) sessionStorage.setItem('cps_dev_pin', err.data.dev_pin);
+        window.location.href = '/verify';
+        return;
+      }
+      showAlert(alertEl, err.message, 'err');
+      btn.disabled = false; btn.textContent = 'Sign in';
+    }
+  });
+</script>
+</body>
+</html>

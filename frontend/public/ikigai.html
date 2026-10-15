@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Wikigai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/survey.css">
+<link rel="stylesheet" href="/assets/ikigai.css">
+<link rel="stylesheet" href="/assets/wk.css">
+</head>
+<body class="survey-body ik-body">
+
+<div id="wkNav"></div>
+
+<div class="ik-menu" role="navigation" aria-label="Wikigai sections">
+  <div class="ik-menu-inner">
+    <a href="/ikigai" data-page="overview" class="ik-tab"><span class="ik-tab-ico">✨</span><span>My Wikigai</span></a>
+    <a href="/ikigai/love" data-page="love" class="ik-tab key"><span class="ik-tab-ico">❤️</span><span>What I love</span></a>
+    <a href="/ikigai/skills" data-page="skills" class="ik-tab key"><span class="ik-tab-ico">🎯</span><span>What I'm good at</span></a>
+    <a href="/ikigai/needs" data-page="needs" class="ik-tab info"><span class="ik-tab-ico">🌍</span><span>What the world needs</span></a>
+    <a href="/ikigai/pay" data-page="pay" class="ik-tab info"><span class="ik-tab-ico">💰</span><span>What pays</span></a>
+  </div>
+</div>
+
+<main class="ik-main">
+  <div class="results-wrap" id="ikApp">
+    <div class="ik-loading"><span class="spinner"></span> Loading your Wikigai…</div>
+  </div>
+</main>
+
+<div id="ikToast" class="ik-toast" role="status" aria-live="polite"></div>
+
+<script src="/assets/app.js"></script>
+<script src="/assets/site.js"></script>
+<script src="/assets/support.js"></script>
+<script src="/assets/survey-data.js"></script>
+<script src="/assets/survey-data-2b.js"></script>
+<script src="/assets/ikigai.js"></script>
+</body>
+</html>

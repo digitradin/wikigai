@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assessment — Digitradin CPS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<nav class="top"><div class="inner">
+  <div class="logo"><span class="mark">◈</span> Digitradin<span style="color:var(--muted);font-weight:500;font-size:13px;margin-left:6px">Stage <span id="stageNum">1</span></span></div>
+  <div class="nav-links"><a class="btn btn-ghost" href="/dashboard">Exit</a></div>
+</div></nav>
+
+<main class="narrow" style="padding-top:34px">
+  <div class="step-indicator" id="stepInd" style="text-align:center;color:var(--muted);font-size:13.5px;margin-bottom:8px"></div>
+  <div class="bar" style="margin-bottom:22px"><i id="progress" style="width:0%"></i></div>
+  <div id="app"></div>
+</main>
+
+<script src="/assets/app.js"></script>
+<script>
+  const { api, Store } = window.CPS;
+  if (!Store.token) window.location.href = '/login';
+
+  const params = new URLSearchParams(location.search);
+  const stage = Math.min(3, Math.max(1, parseInt(params.get('stage') || '1', 10)));
+  document.getElementById('stageNum').textContent = stage;
+
+  // Demo question bank per stage (to be replaced by the full adaptive bank).
+  const BANK = {
+    1: [
+      'Which kinds of problems do you lose track of time solving?',
+      'What topics do you read about for fun, with no one asking you to?',
+      'When you help someone, what do they usually come to you for?',
+      'Which environments make you feel most alive?',
+      'What would you still do even if it paid nothing?',
+    ],
+    2: [
+      'Rate your comfort building something from scratch.',
+      'Rate how well you explain complex ideas simply.',
+      'Rate your ability to organise and lead a small project.',
+      'Rate your analytical and data reasoning.',
+      'Rate your creative and design sense.',
+    ],
+    3: [
+      'How important is remote flexibility to you?',
+      'How important is visible impact in your work?',
+      'How much does salary drive your decision?',
+      'How much do you value working with people all day?',
+      'How important is job security versus upside?',
+    ],
+  };
+
+  const TOTAL = BANK[stage].length;
+  let idx = 0;
+  const answers = {};
+
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  function render() {
+    document.getElementById('stageNum').textContent = stage;
+    document.getElementById('stepInd').textContent = `Question ${idx + 1} of ${TOTAL}`;
+    document.getElementById('progress').style.width = Math.round(((idx) / TOTAL) * 100) + '%';
+    const q = BANK[stage][idx];
+    const sel = answers[idx];
+    document.getElementById('app').innerHTML = `
+      <div class="card card-pad">
+        <h3 style="font-size:19px;line-height:1.35;margin-bottom:18px">${esc(q)}</h3>
+        <div style="display:flex;flex-direction:column;gap:9px" id="opts">
+          ${[1,2,3,4,5].map(v => `
+            <button type="button" class="btn ${sel===v?'btn-primary':'btn-ghost'}" data-v="${v}" style="justify-content:flex-start">${v} — ${v===1?'Not at all':v===5?'Very much':'Somewhat'}</button>
+          `).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:22px">
+          <button class="btn btn-ghost" id="prev" ${idx===0?'disabled':''}>← Back</button>
+          <button class="btn btn-primary" id="next" ${sel?'':'disabled'}>${idx===TOTAL-1?'Finish':'Next →'}</button>
+        </div>
+      </div>`;
+    document.querySelectorAll('#opts .btn').forEach(b => b.addEventListener('click', () => {
+      answers[idx] = parseInt(b.dataset.v, 10);
+      render();
+    }));
+    document.getElementById('prev').addEventListener('click', () => { if (idx>0){idx--;render();} });
+    document.getElementById('next').addEventListener('click', () => {
+      if (idx < TOTAL-1) { idx++; render(); } else { finish(); }
+    });
+  }
+
+  async function finish() {
+    document.getElementById('app').innerHTML = `<div class="card card-pad" style="text-align:center"><span class="spinner"></span><p style="margin-top:12px;color:var(--muted)">Saving your results…</p></div>`;
+    const scores = Object.values(answers);
+    const avg = scores.reduce((a,b)=>a+b,0) / (scores.length || 1);
+    const payload = {
+      completedAt: new Date().toISOString(),
+      answers,
+      score: Math.round((avg / 5) * 100),
+      items: BANK[stage].map((q,i) => ({ label: q, value: answers[i] || 0 })),
+    };
+    try {
+      await api('/api/user/results', { method: 'POST', body: { stage, results: payload } });
+      document.getElementById('app').innerHTML = `
+        <div class="card card-pad" style="text-align:center">
+          <h2 style="margin-bottom:8px">Stage ${stage} complete 🎉</h2>
+          <p style="color:var(--muted);margin-bottom:20px">Your results are saved to your account.</p>
+          <a class="btn btn-primary" href="/dashboard">Back to dashboard</a>
+        </div>`;
+    } catch (err) {
+      document.getElementById('app').innerHTML = `<div class="card card-pad"><div class="alert show alert-err">${esc(err.message)}</div><a class="btn btn-ghost" href="/dashboard">Back to dashboard</a></div>`;
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

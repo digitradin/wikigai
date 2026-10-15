@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+
+# OS noise
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Local backups / snapshots
+_backup_*/
+*.tar.gz
+*.sql.gz
+
+# Logs
+*.log
+logs/
+
+# Editors
+.vscode/
+.idea/
+*.swp

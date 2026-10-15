@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="assets/preview.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survey — Wikigai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/brand/favicon.png">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/survey.css">
+<link rel="stylesheet" href="assets/ikigai.css">
+</head>
+<body class="survey-body">
+
+<!-- Language bar -->
+<div class="lang-bar">
+  <div class="lang-buttons">
+    <span class="lang-label">🌐</span>
+    <button class="lang-btn active" data-lang="EN">EN</button>
+    <button class="lang-btn" data-lang="FR">FR</button>
+    <button class="lang-btn" data-lang="ES">ES</button>
+  </div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a class="nav-brand" href="/dashboard"><img src="assets/brand/wikigai-logo.png" alt="Wikigai" class="nav-logo"></a>
+  <div class="nav-stage" id="navStage">Stage 1 of 3 — World Discovery</div>
+  <div class="nav-right">
+    <a class="ik-navlink" href="/ikigai">My Wikigai</a>
+    <span class="q-counter" id="navCounter" style="display:none"></span>
+  </div>
+</nav>
+
+<!-- Screen 1: Intro -->
+<div id="intro" class="screen active">
+  <div class="intro-wrap">
+    <div class="ikigai-logo">
+      <div class="circle c1"></div><div class="circle c2"></div>
+      <div class="circle c3"></div><div class="circle c4"></div>
+      <div class="center-dot"></div>
+    </div>
+    <div class="stage-badge">🧭 <span id="badgeText">Stage 1 · Domain Discovery</span></div>
+    <div id="filterNotice" class="filter-notice" style="display:none"></div>
+    <h1 class="intro-title"><span id="introTitle">Discover Your World of Interest</span></h1>
+    <p class="intro-sub" id="introSub">70 instinctive paired questions — no right or wrong answers. Follow your gut. We'll rank the 8 major areas of the working world that fit you best.</p>
+    <div class="how-grid">
+      <div class="how-card"><div class="how-icon">⚡</div><h4>Go with your gut</h4><p>Each question has a 25-second timer. Your first instinct is the most accurate signal.</p></div>
+      <div class="how-card"><div class="how-icon">⚖️</div><h4>Two real options</h4><p>Choose how strongly each statement describes you on a 1–5 scale.</p></div>
+      <div class="how-card"><div class="how-icon">🗺️</div><h4>Your world map</h4><p>Results rank 8 broad career areas — each with example professions you can explore.</p></div>
+      <div class="how-card"><div class="how-icon">🔬</div><h4>Built on science</h4><p>Modelled on CliftonStrengths methodology and RIASEC Holland codes.</p></div>
+    </div>
+    <div class="intro-cta">
+      <button class="btn-primary" id="beginBtn">▶ <span id="beginLabel">Begin Stage 1</span></button>
+      <button class="btn-ghost" id="backBtn">← Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 2: Survey -->
+<div id="survey" class="screen">
+  <div class="survey-header">
+    <div class="progress-row">
+      <div class="timer-ring" title="Time for this question">
+        <svg width="38" height="38" viewBox="0 0 38 38">
+          <circle class="timer-track" cx="19" cy="19" r="16"/>
+          <circle class="timer-arc" id="timerArc" cx="19" cy="19" r="16" stroke-dasharray="100.53" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-num" id="timerNum">25</div>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar" style="width:0%"></div>
+      </div>
+      <div class="prog-label" id="progLabel">1 / 70</div>
+    </div>
+  </div>
+
+  <div class="q-outer" id="qOuter">
+    <div class="q-card">
+      <div class="q-num">
+        <span class="q-num-badge" id="qBadge">Q001</span>
+        <span id="qAreaTag" style="color:var(--t3);font-size:0.72rem"></span>
+      </div>
+      <div class="q-text" id="qText">Loading…</div>
+      <div class="scale-row">
+        <div class="scale-option opt-a" id="optA">—</div>
+        <div class="scale-buttons">
+          <div class="scale-pips">
+            <div class="pip" id="pip1">1</div>
+            <div class="pip" id="pip2">2</div>
+            <div class="pip" id="pip3">3</div>
+            <div class="pip" id="pip4">4</div>
+            <div class="pip" id="pip5">5</div>
+          </div>
+          <div class="scale-labels">
+            <div class="scale-label">Strongly<br>A</div>
+            <div class="scale-label">Lean<br>A</div>
+            <div class="scale-label mid" style="color:var(--t3)">Both /<br>Neither</div>
+            <div class="scale-label">Lean<br>B</div>
+            <div class="scale-label">Strongly<br>B</div>
+          </div>
+        </div>
+        <div class="scale-option opt-b" id="optB">—</div>
+      </div>
+      <div class="q-actions">
+        <span class="skip-hint" id="skipHint">⏭ Skip this one</span>
+        <span class="next-hint" id="nextHint" style="display:none">Select an answer to continue</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 3: Results -->
+<div id="results" class="screen">
+  <div class="results-wrap">
+    <div class="results-hero">
+      <div class="badge">✅ <span id="resultsBadge">Stage 1 Complete</span></div>
+      <h1><span id="resultsTitleA">Your Career</span> <span class="grad" id="resultsTitleB">World Map</span></h1>
+      <p id="resultsSub">Based on your responses, here are your 8 ranked areas — in order of how strongly they resonate with you. Click any area to explore careers within it.</p>
+    </div>
+
+    <!-- Domain selection (stage 1 only): mark undesired <25%, override by clicking -->
+    <div id="domainTuner" class="domain-tuner" style="display:none">
+      <div class="dt-head">
+        <h3>Shape your next stages</h3>
+        <p>We keep up to <strong>4 domains</strong> for Stage 2. Areas under <strong>25%</strong> are treated as <em>not for you</em>. Click any area to include or exclude it.</p>
+      </div>
+      <div class="dt-legend">
+        <span class="dt-key"><i class="dt-dot dt-desired"></i> Included</span>
+        <span class="dt-key"><i class="dt-dot dt-undesired"></i> Excluded (&lt;25%)</span>
+      </div>
+      <div id="tunerMsg" class="filter-notice" style="display:none;margin:12px 0 0"></div>
+    </div>
+
+    <div class="area-cards" id="areaCards"></div>
+    <div class="stage2-cta">
+      <h3 id="ctaTitle">Stage 1 complete — you're hatching!</h3>
+      <p id="ctaText">Your results have been saved to your account. Continue to your dashboard to see your full map.</p>
+      <div class="cta-row">
+        <button class="btn-primary" id="nextBtn">→ Continue to Stage 2</button>
+        <button class="btn-ghost" id="goDashBtn">Go to my dashboard</button>
+        <button class="btn-ghost" id="retakeBtn">↺ Retake</button>
+      </div>
+      <div class="save-note" id="saveNote">Saving your results…</div>
+      <div id="supportSlot"></div>
+    </div>
+  </div>
+</div>
+
+
+<script src="assets/app.js"></script>
+<script src="assets/support.js"></script>
+<script src="assets/survey-data.js"></script>
+<script src="assets/survey-data-2b.js"></script>
+<script src="assets/survey.js"></script>
+</body>
+</html>

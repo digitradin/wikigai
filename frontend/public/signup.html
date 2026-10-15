@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your account — Wikigai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/brand.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="narrow auth-card">
+    <div class="auth-head">
+      <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
+      <div class="progress-steps"><span class="step-dot active"></span><span class="step-dot"></span></div>
+      <h2>Create your account</h2>
+      <p>Step 1 of 2 — confirm your email</p>
+    </div>
+
+    <div class="card card-pad">
+      <div class="alert" id="alert"></div>
+      <form id="signupForm" novalidate>
+        <div class="field" id="fEmail">
+          <label for="email">Email address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+          <div class="err-msg" id="eEmail"></div>
+        </div>
+        <div class="field" id="fEmail2">
+          <label for="email2">Confirm email address</label>
+          <input class="input" type="email" id="email2" placeholder="you@example.com again" autocomplete="email" required>
+          <div class="err-msg" id="eEmail2"></div>
+        </div>
+        <div class="field">
+          <label for="name">Name <span style="color:var(--muted-2);font-weight:500">(optional)</span></label>
+          <input class="input" type="text" id="name" placeholder="How should we call you?" autocomplete="name" maxlength="80">
+        </div>
+
+        <div class="field" id="fPassword">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input class="input" type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" data-target="password" aria-label="Show password">Show</button>
+          </div>
+          <div class="pw-meter" id="pwMeter"><span></span></div>
+          <div class="err-msg" id="ePassword"></div>
+        </div>
+        <div class="field" id="fPassword2">
+          <label for="password2">Confirm password</label>
+          <div class="pw-wrap">
+            <input class="input" type="password" id="password2" placeholder="Repeat your password" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" data-target="password2" aria-label="Show password">Show</button>
+          </div>
+          <div class="err-msg" id="ePassword2"></div>
+        </div>
+
+        <div class="field">
+          <label>Human check</label>
+          <div id="captcha"></div>
+          <div class="err-msg" id="eCaptcha"></div>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" id="submitBtn" style="margin-top:8px">Create account &amp; verify email</button>
+      </form>
+      <div class="switch-line">Already have an account? <a href="/login">Sign in</a></div>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:16px">We'll email you a 6-digit code to confirm it's you.</p>
+  </div>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+  const { api, Captcha, showAlert, hideAlert, Store } = window.CPS;
+  const alertEl = document.getElementById('alert');
+  const form = document.getElementById('signupForm');
+  const btn = document.getElementById('submitBtn');
+  const pw = document.getElementById('password');
+  const pw2 = document.getElementById('password2');
+  const meter = document.getElementById('pwMeter');
+
+  if (Store.token) window.location.href = '/dashboard';
+  Captcha.mount('captcha');
+  document.querySelectorAll('.pw-toggle').forEach(b => b.addEventListener('click', () => {
+    const inp = document.getElementById(b.dataset.target);
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    b.textContent = show ? 'Hide' : 'Show';
+  }));
+
+  function pwStrength(v) {
+    let s = 0;
+    if (v.length >= 8) s++;
+    if (v.length >= 12) s++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+    if (/[0-9]/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    return Math.min(s, 4);
+  }
+  pw.addEventListener('input', () => {
+    const s = pwStrength(pw.value);
+    meter.dataset.score = String(s);
+    meter.querySelector('span').style.width = ['8%','30%','55%','80%','100%'][s];
+  });
+
+  function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert(alertEl);
+    ['eEmail','eEmail2','ePassword','ePassword2','eCaptcha'].forEach(id => document.getElementById(id).textContent = '');
+    document.querySelectorAll('.field').forEach(f => f.classList.remove('field-err','field-ok'));
+
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const email2 = document.getElementById('email2').value.trim().toLowerCase();
+    const name = document.getElementById('name').value.trim();
+    const password = pw.value;
+    const password2 = pw2.value;
+    let bad = false;
+
+    if (!validEmail(email)) { document.getElementById('eEmail').textContent = 'Enter a valid email address.'; document.getElementById('fEmail').classList.add('field-err'); bad = true; }
+    if (email !== email2) { document.getElementById('eEmail2').textContent = 'Email addresses do not match.'; document.getElementById('fEmail2').classList.add('field-err'); bad = true; }
+    if (password.length < 8) { document.getElementById('ePassword').textContent = 'Password must be at least 8 characters.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    else if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) { document.getElementById('ePassword').textContent = 'Include at least one letter and one number.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    if (password !== password2) { document.getElementById('ePassword2').textContent = 'Passwords do not match.'; document.getElementById('fPassword2').classList.add('field-err'); bad = true; }
+    if (!Captcha.isComplete()) { document.getElementById('eCaptcha').textContent = 'Select exactly 3 drink brands.'; bad = true; }
+    if (bad) return;
+
+    btn.disabled = true; btn.textContent = 'Creating account…';
+    try {
+      const res = await api('/api/auth/signup', {
+        method: 'POST', auth: false,
+        body: { email, email2, password, password2, name, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
+      });
+      sessionStorage.setItem('cps_pending_email', email);
+      if (res.dev_pin) sessionStorage.setItem('cps_dev_pin', res.dev_pin);
+      window.location.href = '/verify';
+    } catch (err) {
+      showAlert(alertEl, err.message, 'err');
+      if (err.code === 'CAPTCHA_FAIL') Captcha.reset();
+      btn.disabled = false; btn.textContent = 'Create account & verify email';
+    }
+  });
+</script>
+</body>
+</html>
