@@ -1,0 +1,12 @@
+{
+  "email": {
+    "brand": "Wikigai",
+    "tagline": "Trouvez où ce que vous aimez rejoint ce pour quoi vous êtes doué",
+    "subjectVerify": "Votre code de vérification Wikigai",
+    "subjectReset": "Réinitialisez votre mot de passe Wikigai",
+    "hi": "Bonjour {name},",
+    "bodyVerify": "Utilisez ce code de vérification pour continuer. Il expire dans 10 minutes.",
+    "bodyReset": "Utilisez ce code de réinitialisation pour continuer. Il expire dans 10 minutes.",
+    "ignore": "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail."
+  }
+}

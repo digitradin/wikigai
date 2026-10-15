@@ -69,8 +69,8 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Authorization', 'Content-Type'],
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'X-WK-Lang'],
   maxAge: 86400,
 }));
 app.options('*', cors());

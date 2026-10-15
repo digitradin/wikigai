@@ -1,7 +1,5 @@
 import re, shutil, os, pathlib
-import sys
-ROOT=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC=os.path.join(ROOT,'frontend','public'); OUT=os.path.join(ROOT,'deploy','preview','site')
+SRC='/home/claude/wk/frontend/public'; OUT='/home/claude/preview/site'
 shutil.rmtree(OUT, ignore_errors=True); os.makedirs(OUT+'/assets/brand')
 def fixpaths(s):
     return re.sub(r'(["\'(`])/assets/', r'\1assets/', s)
@@ -17,13 +15,18 @@ def fixjs(s):
                 "function go(href) { history.pushState({}, '', window.__WK_URL__ ? window.__WK_URL__(href) : href); render(true); }")
     return s
 # assets
-for f in ['app.js','survey.js','ikigai.js','support.js','site.js','survey-data.js','survey-bank-1.js','survey-bank-2.js','survey-data-2b.js']:
+for f in ['app.js','survey.js','ikigai.js','support.js','site.js','survey-data.js','survey-bank-1.js','survey-bank-2.js','survey-data-2b.js','pay-eu.js']:
     open(f'{OUT}/assets/{f}','w').write(fixjs(open(f'{SRC}/assets/{f}').read()))
 for f in ['app.css','brand.css','survey.css','ikigai.css','wk.css']:
     open(f'{OUT}/assets/{f}','w').write(fixpaths(open(f'{SRC}/assets/{f}').read()))
 for f in ['wikigai-logo.png','favicon.png','stage1.jpg','stage2.jpg','stage3.jpg','wikigai-demo.gif']:
     shutil.copy(f'{SRC}/assets/brand/{f}', f'{OUT}/assets/brand/{f}')
-shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)),'preview.js'), f'{OUT}/assets/preview.js')
+shutil.copy('/home/claude/preview/preview.js', f'{OUT}/assets/preview.js')
+# translations: runtime + every locale file
+for src in pathlib.Path(f'{SRC}/assets/i18n').rglob('*.js'):
+    dst = pathlib.Path(OUT) / src.relative_to(SRC)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(fixpaths(src.read_text()))
 PRE='<script src="assets/preview.js"></script>\n'
 def page(src, dst):
     s=open(src).read()

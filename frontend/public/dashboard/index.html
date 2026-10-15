@@ -3,19 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard — Wikigai</title>
+<title data-i18n="meta.dashboard">Dashboard — Wikigai</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="icon" href="/assets/brand/favicon.png">
 <link rel="stylesheet" href="/assets/survey.css">
 <link rel="stylesheet" href="/assets/wk.css">
+<script src="/assets/i18n/i18n.js" data-content="taxonomy,careers"></script>
 </head>
 <body class="wk-body">
 <div id="wkNav"></div>
 
 <main class="wk-page" id="content">
-  <div class="wk-skeleton">Loading your journey…</div>
+  <div class="wk-skeleton" data-i18n="dash.loading">Loading your journey…</div>
 </main>
 
 <script src="/assets/app.js"></script>
@@ -26,6 +27,7 @@
 (function () {
   const { api, Store } = window.CPS;
   if (!Store.token) { window.location.href = '/login'; return; }
+  const I = WK.i18n, T = (k, v) => I.t(k, v), C = (s) => I.tc(s);
   const MAX_DOMAINS = 4;
   const AREAS = window.STAGE_DATA?.areas || {};
   const $ = (id) => document.getElementById(id);
@@ -33,10 +35,12 @@
   const isDone = (st) => !!(st && typeof st === 'object' && (st.completedAt || (st.partial !== true && (st.ranked || st.love || st.top))));
 
   const STAGES = [
-    { n: 1, title: 'World Discovery', img: '/assets/brand/stage1.jpg', desc: 'Instinctive paired questions that map the areas of work that excite you.', meta: '70 pairs · ~12 min', total: 70, start: '/survey?stage=1', review: '/survey?stage=1&review=1' },
-    { n: 2, title: 'Profession Focus', img: '/assets/brand/stage2.jpg', desc: 'Zoom into your top domains, then duel real professions head to head.', meta: 'subfield pairs + duels · ~15 min', total: 0, start: '/survey?stage=2', review: '/ikigai/love' },
-    { n: 3, title: 'What I’m good at', img: '/assets/brand/stage3.jpg', desc: 'Add last year’s grades (optional) and unlock your Wikigai match.', meta: 'grades · ~2 min', total: 0, start: '/ikigai/skills?flow=1', review: '/ikigai' },
+    { n: 1, key: 's1', img: '/assets/brand/stage1.jpg', total: 70, start: '/survey?stage=1', review: '/survey?stage=1&review=1' },
+    { n: 2, key: 's2', img: '/assets/brand/stage2.jpg', total: 0, start: '/survey?stage=2', review: '/ikigai/love' },
+    { n: 3, key: 's3', img: '/assets/brand/stage3.jpg', total: 0, start: '/ikigai/skills?flow=1', review: '/ikigai' },
   ];
+
+  let cache = null; // { user, results } — re-rendered on language change without refetching
 
   async function load() {
     let profile;
@@ -50,88 +54,89 @@
     Store.user = user;
     let results = {};
     try { results = (await api('/api/user/results')).results || {}; } catch {}
+    cache = { user, results };
+    paint();
+  }
 
+  function paint() {
+    if (!cache) return;
+    const { user, results } = cache;
     const done = [1, 2, 3].filter(n => isDone(results['stage_' + n]));
     const next = [1, 2, 3].find(n => !done.includes(n)) || 0;
-    const first = (user.name || user.email || 'there').split(/[@ ]/)[0];
+    const first = (user.name || user.email || T('nav.there')).split(/[@ ]/)[0];
     const love = Array.isArray(results.stage_2?.love) ? results.stage_2.love : [];
     const top = Array.isArray(results.stage_3?.top) ? results.stage_3.top : [];
 
-    const nextLine = {
-      1: 'Start with Stage 1 — it maps the areas of work that excite you. No right or wrong answers.',
-      2: 'Great start! Stage 2 turns your favourite domains into a shortlist of real professions.',
-      3: 'Almost there — add your grades to see where what you love meets what you’re good at.',
-      0: 'Your Wikigai match is ready. Explore it, or retake a stage any time.',
-    }[next];
+    const nextLine = T('dash.next' + next);
     const heroCta = next
-      ? `<a class="wk-btn primary" href="${STAGES[next - 1].start}">${done.length ? 'Continue' : 'Start'} Stage ${next} →</a>`
-      : `<a class="wk-btn primary" href="/ikigai">See my Wikigai match →</a>`;
+      ? `<a class="wk-btn primary" href="${STAGES[next - 1].start}">${T(done.length ? 'dash.continueStage' : 'dash.startStage', { n: next })}</a>`
+      : `<a class="wk-btn primary" href="/ikigai">${T('dash.seeMatch')}</a>`;
 
     const stageCards = STAGES.map(s => {
       const st = results['stage_' + s.n];
       const isD = done.includes(s.n);
       const unlocked = isD || s.n === next || s.n < next || next === 0;
       const partial = !isD && st && st.partial === true && st.answered;
-      const status = isD ? ['done', '✓ Completed'] : !unlocked ? ['locked', 'Locked'] : partial ? ['progress', 'In progress'] : ['ready', 'Ready'];
+      const status = isD ? ['done', T('dash.stDone')] : !unlocked ? ['locked', T('dash.stLocked')] : partial ? ['progress', T('dash.stProgress')] : ['ready', T('dash.stReady')];
       const pct = isD ? 100 : partial && s.total ? Math.min(99, Math.round(st.answered / s.total * 100)) : 0;
-      const progLabel = isD ? 'Done' : partial && s.total ? `${st.answered}/${s.total}` : (unlocked ? 'Not started' : '—');
+      const progLabel = isD ? T('dash.progDone') : partial && s.total ? `${st.answered}/${s.total}` : (unlocked ? T('dash.progNot') : '—');
       const actions = isD
-        ? `<a class="wk-btn primary sm" href="${s.review}">View results</a><a class="wk-btn ghost sm" href="${s.start}">Retake</a>`
+        ? `<a class="wk-btn primary sm" href="${s.review}">${T('dash.viewResults')}</a><a class="wk-btn ghost sm" href="${s.start}">${T('dash.retake')}</a>`
         : unlocked
-          ? `<a class="wk-btn primary block" href="${s.start}">${partial ? 'Continue' : 'Start'} Stage ${s.n}</a>`
-          : `<span class="wk-btn ghost block" aria-disabled="true">Complete Stage ${s.n - 1} to unlock</span>`;
+          ? `<a class="wk-btn primary block" href="${s.start}">${T(partial ? 'dash.continueBtn' : 'dash.startBtn', { n: s.n })}</a>`
+          : `<span class="wk-btn ghost block" aria-disabled="true">${T('dash.unlock', { n: s.n - 1 })}</span>`;
       return `<div class="wk-card wk-stage ${!unlocked ? 'locked' : ''} ${s.n === next ? 'next' : ''}">
         <div class="card-header"><img class="wk-mascot" src="${s.img}" alt="" loading="lazy"><span class="wk-status ${status[0]}">${status[1]}</span></div>
-        <h3>Stage ${s.n}: ${s.title}</h3>
-        <p>${s.desc}</p>
-        <div class="wk-meta">${s.meta}</div>
-        <div class="wk-progress"><div class="wk-progress-row"><span>Progress</span><span>${progLabel}</span></div><div class="wk-bar"><i style="width:${pct}%"></i></div></div>
+        <h3>${T('dash.stageTitle', { n: s.n, title: T('dash.' + s.key + 'Title') })}</h3>
+        <p>${T('dash.' + s.key + 'Desc')}</p>
+        <div class="wk-meta">${T('dash.' + s.key + 'Meta')}</div>
+        <div class="wk-progress"><div class="wk-progress-row"><span>${T('dash.progress')}</span><span>${progLabel}</span></div><div class="wk-bar"><i style="width:${pct}%"></i></div></div>
         <div class="wk-stage-actions">${actions}</div>
       </div>`;
     }).join('');
 
     const best = top[0] || (love[0] ? { career: love[0].career, match: love[0].L } : null);
-    const stats = `<div class="wk-card"><div class="wk-section-h" style="margin-bottom:16px"><h2>Your progress</h2></div><div class="wk-stats">
-      <div class="wk-stat"><b>${done.length}<span style="font-size:1rem;color:var(--t3)">/3</span></b><span>Stages completed</span></div>
-      <div class="wk-stat"><b>${love.length}</b><span>Professions on your shortlist</span></div>
-      <div class="wk-stat"><b>${best ? esc(best.match ?? best.IK ?? '—') + '%' : '—'}</b><span>Best Wikigai match</span><small>${best ? esc(best.career) : 'Complete the stages to find out'}</small></div>
+    const stats = `<div class="wk-card"><div class="wk-section-h" style="margin-bottom:16px"><h2>${T('dash.yourProgress')}</h2></div><div class="wk-stats">
+      <div class="wk-stat"><b>${done.length}<span style="font-size:1rem;color:var(--t3)">/3</span></b><span>${T('dash.statStages')}</span></div>
+      <div class="wk-stat"><b>${love.length}</b><span>${T('dash.statShortlist')}</span></div>
+      <div class="wk-stat"><b>${best ? esc(best.match ?? best.IK ?? '—') + '%' : '—'}</b><span>${T('dash.statBest')}</span><small>${best ? esc(C(best.career)) : T('dash.statBestEmpty')}</small></div>
     </div></div>`;
 
     const list = (top.length ? top : love.map(l => ({ career: l.career, domain: l.domain, match: l.L }))).slice(0, 3);
     const matches = list.length ? `<section class="wk-section">
-      <div class="wk-section-h"><h2>${top.length ? 'Your top Wikigai matches' : 'Your profession shortlist so far'}</h2><a href="/ikigai">See all →</a></div>
-      <div class="wk-careers">${list.map((r, i) => { const a = AREAS[r.domain] || {}; const t = r.trend;
-        const chip = t ? `<span class="wk-chip ${t === 'UP' ? 'up' : t === 'DOWN' ? 'down' : t === 'UNCERTAIN' ? 'unc' : ''}">${{UP:'↑ trending up',STABLE:'→ stable',UNCERTAIN:'? uncertain',DOWN:'↓ trending down'}[t] || ''}</span>` : '';
+      <div class="wk-section-h"><h2>${T(top.length ? 'dash.topMatches' : 'dash.shortlistSoFar')}</h2><a href="/ikigai">${T('common.seeAll')}</a></div>
+      <div class="wk-careers">${list.map((r, i) => { const a = AREAS[r.domain] || {}; const tr = r.trend;
+        const chip = tr ? `<span class="wk-chip ${tr === 'UP' ? 'up' : tr === 'DOWN' ? 'down' : tr === 'UNCERTAIN' ? 'unc' : ''}">${I.has('trend.chip' + tr) ? T('trend.chip' + tr) : ''}</span>` : '';
         return `<a class="wk-card wk-career" href="/ikigai">
-          <span class="wk-rank">#${i + 1}</span><h3>${esc(r.career)}</h3>
-          <span class="wk-match">✓ ${esc(r.match ?? r.IK)}% ${top.length ? 'match' : 'love'}</span>
+          <span class="wk-rank">#${i + 1}</span><h3>${esc(C(r.career))}</h3>
+          <span class="wk-match">✓ ${esc(r.match ?? r.IK)}% ${T(top.length ? 'dash.match' : 'dash.love')}</span>
           <div class="wk-bar"><i style="width:${Math.max(0, Math.min(100, r.match ?? r.IK ?? 0))}%"></i></div>
-          <small>${esc(a.icon || '')} ${esc(a.name || '')}</small>${chip ? `<div class="wk-chips">${chip}</div>` : ''}
+          <small>${esc(a.icon || '')} ${esc(C(a.name || ''))}</small>${chip ? `<div class="wk-chips">${chip}</div>` : ''}
         </a>`; }).join('')}</div></section>` : '';
 
     const circles = `<section class="wk-section">
-      <div class="wk-section-h"><h2>Explore your Wikigai</h2><p>Love and Good at decide your match. World needs and pay inform it.</p></div>
+      <div class="wk-section-h"><h2>${T('dash.exploreTitle')}</h2><p>${T('dash.exploreSub')}</p></div>
       <div class="wk-circles">
-        <a class="wk-card wk-circle key" href="/ikigai/love"><span class="ico">❤️</span><h3>What I love</h3><p>Your domains, subfields and profession shortlist.</p><span class="tag">key</span></a>
-        <a class="wk-card wk-circle key" href="/ikigai/skills"><span class="ico">🎯</span><h3>What I’m good at</h3><p>Your grades turned into strengths.</p><span class="tag">key</span></a>
-        <a class="wk-card wk-circle info" href="/ikigai/needs"><span class="ico">🌍</span><h3>What the world needs</h3><p>Job outlook for every profession to 2035.</p><span class="tag">info</span></a>
-        <a class="wk-card wk-circle info" href="/ikigai/pay"><span class="ico">💰</span><h3>What pays</h3><p>Official pay data, US and Europe.</p><span class="tag">info</span></a>
+        <a class="wk-card wk-circle key" href="/ikigai/love"><span class="ico">❤️</span><h3>${T('dash.cLove')}</h3><p>${T('dash.cLoveD')}</p><span class="tag">${T('common.key')}</span></a>
+        <a class="wk-card wk-circle key" href="/ikigai/skills"><span class="ico">🎯</span><h3>${T('dash.cSkills')}</h3><p>${T('dash.cSkillsD')}</p><span class="tag">${T('common.key')}</span></a>
+        <a class="wk-card wk-circle info" href="/ikigai/needs"><span class="ico">🌍</span><h3>${T('dash.cNeeds')}</h3><p>${T('dash.cNeedsD')}</p><span class="tag">${T('common.info')}</span></a>
+        <a class="wk-card wk-circle info" href="/ikigai/pay"><span class="ico">💰</span><h3>${T('dash.cPay')}</h3><p>${T('dash.cPayD')}</p><span class="tag">${T('common.info')}</span></a>
       </div></section>`;
 
     $('content').innerHTML = `
       <section class="wk-hero">
-        <h1>Welcome back, <span class="grad">${esc(first)}</span></h1>
+        <h1>${T('dash.welcome', { name: esc(first) })}</h1>
         <p>${nextLine}</p>
         <div class="wk-hero-cta">${heroCta}</div>
       </section>
-      <section class="wk-section"><div class="wk-section-h"><h2>Your 3-stage journey</h2><p>From egg to eagle — each stage builds on the last.</p></div>
+      <section class="wk-section"><div class="wk-section-h"><h2>${T('dash.journey')}</h2><p>${T('dash.journeySub')}</p></div>
         <div class="wk-stages">${stageCards}</div></section>
       <section class="wk-section">${stats}</section>
       ${matches}
       ${circles}
       <section class="wk-section" id="focusSlot"></section>
       <section class="wk-section" id="dashSupport"></section>
-      <p class="wk-footer">Your results are saved to your account · <a href="/support">Wikigai is free for everyone</a></p>`;
+      <p class="wk-footer">${T('dash.footer')}</p>`;
 
     renderDomainTuner(results);
     if (window.WikiSupport) window.WikiSupport.render($('dashSupport'));
@@ -154,26 +159,28 @@
       const pct = Math.round(((r.score ?? 0) / max) * 100);
       return `<div class="wk-dt ${on ? '' : 'off'}" data-area="${r.area}">
         <span class="rk">${i + 1}</span><span class="ic" style="background:${m.color}22;color:${m.color}">${m.icon}</span>
-        <span>${esc(m.name)}</span><div class="wk-bar"><i style="width:${pct}%;background:${m.color}"></i></div><span class="pc">${pct}%</span>
-        <button class="wk-toggle ${on ? 'on' : 'off'}" data-toggle="${r.area}">${on ? '✓ Included' : '✕ Excluded'}</button></div>`;
+        <span>${esc(C(m.name))}</span><div class="wk-bar"><i style="width:${pct}%;background:${m.color}"></i></div><span class="pc">${pct}%</span>
+        <button class="wk-toggle ${on ? 'on' : 'off'}" data-toggle="${r.area}">${T(on ? 'common.included' : 'common.excluded')}</button></div>`;
     }).join('');
     const slot = $('focusSlot');
     slot.innerHTML = `<details class="wk-card wk-focus">
-      <summary><div><h2>🧭 Domain focus</h2><div style="color:var(--t2);font-size:.85rem">Stage 2 zooms into up to ${MAX_DOMAINS} domains from Stage 1.</div></div><span class="more">Adjust ▾</span><span class="less">Close ▴</span></summary>
+      <summary><div><h2>${T('dash.focusTitle')}</h2><div style="color:var(--t2);font-size:.85rem">${T('dash.focusSub', { max: MAX_DOMAINS })}</div></div><span class="more">${T('dash.adjust')}</span><span class="less">${T('dash.close')}</span></summary>
       <div style="margin-top:14px">${rows}</div><div class="wk-note" id="tunerNote"></div></details>`;
-    slot.addEventListener('click', async (e) => {
+    slot.onclick = async (e) => {
       const btn = e.target.closest('[data-toggle]'); if (!btn) return;
       const key = btn.dataset.toggle, on = prefs[key] === false, note = $('tunerNote');
-      if (on && Object.values(prefs).filter(v => v !== false).length >= MAX_DOMAINS) { note.textContent = `You can keep up to ${MAX_DOMAINS} domains. Exclude one first.`; return; }
+      if (on && Object.values(prefs).filter(v => v !== false).length >= MAX_DOMAINS) { note.textContent = T('dash.maxDomains', { max: MAX_DOMAINS }); return; }
       prefs[key] = on;
-      btn.className = `wk-toggle ${on ? 'on' : 'off'}`; btn.textContent = on ? '✓ Included' : '✕ Excluded';
+      btn.className = `wk-toggle ${on ? 'on' : 'off'}`; btn.textContent = T(on ? 'common.included' : 'common.excluded');
       slot.querySelector(`.wk-dt[data-area="${key}"]`).classList.toggle('off', !on);
-      try { await api('/api/user/results', { method: 'POST', body: { stage: 1, results: { domainPrefs: prefs } } }); note.textContent = '✓ Saved — Stage 2 will use these domains.'; }
-      catch { note.textContent = 'Could not save right now — please retry.'; }
-    });
+      results.stage_1 = Object.assign({}, results.stage_1, { domainPrefs: prefs });
+      try { await api('/api/user/results', { method: 'POST', body: { stage: 1, results: { domainPrefs: prefs } } }); note.textContent = T('dash.focusSaved'); }
+      catch { note.textContent = T('dash.focusFail'); }
+    };
   }
 
-  load();
+  I.onChange(paint);
+  I.ready.then(load);
 })();
 </script>
 </body>

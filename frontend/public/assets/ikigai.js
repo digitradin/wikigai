@@ -21,41 +21,52 @@
   const area = (k) => AREAS[k] || { name: k, icon: '•', color: '#94a3b8' };
   const careerOf = (name) => CAREERS.find((c) => c.career === name) || {};
 
-  /* ── reference data ── */
+  /* ── i18n ── */
+  const I = window.WK.i18n;
+  const T = (k, v) => I.t(k, v);
+  const C = (s) => I.tc(s);                      // content (domains, subfields, professions…)
+  const areaName = (k) => C(area(k).name);
+  const subName = (k) => C(SUBS[k]?.name || k);
+  const subjName = (k) => C(SUBJECTS[k] || k);
+
+  /* ── reference data (labels come from the dictionary: hub.countries / hub.grading) ── */
   const COUNTRIES = [
-    { code: 'US', name: 'United States', flag: '🇺🇸', market: 'US', grading: 'US_GPA' },
-    { code: 'ES', name: 'Spain', flag: '🇪🇸', market: 'EU', grading: 'ES' },
-    { code: 'UK', name: 'United Kingdom', flag: '🇬🇧', market: 'EU', grading: 'UK_GCSE' },
-    { code: 'DE', name: 'Germany', flag: '🇩🇪', market: 'EU', grading: 'DE' },
-    { code: 'FR', name: 'France', flag: '🇫🇷', market: 'EU', grading: 'FR' },
-    { code: 'IT', name: 'Italy', flag: '🇮🇹', market: 'EU', grading: 'IT' },
-    { code: 'PT', name: 'Portugal', flag: '🇵🇹', market: 'EU', grading: 'PT' },
-    { code: 'NL', name: 'Netherlands', flag: '🇳🇱', market: 'EU', grading: 'NL' },
-    { code: 'IE', name: 'Ireland', flag: '🇮🇪', market: 'EU', grading: 'PCT' },
-    { code: 'EU', name: 'Other European country', flag: '🇪🇺', market: 'EU', grading: 'OTHER' },
+    { code: 'US', flag: '🇺🇸', market: 'US', grading: 'US_GPA' },
+    { code: 'ES', flag: '🇪🇸', market: 'EU', grading: 'ES' },
+    { code: 'UK', flag: '🇬🇧', market: 'EU', grading: 'UK_GCSE' },
+    { code: 'DE', flag: '🇩🇪', market: 'EU', grading: 'DE' },
+    { code: 'FR', flag: '🇫🇷', market: 'EU', grading: 'FR' },
+    { code: 'IT', flag: '🇮🇹', market: 'EU', grading: 'IT' },
+    { code: 'PT', flag: '🇵🇹', market: 'EU', grading: 'PT' },
+    { code: 'NL', flag: '🇳🇱', market: 'EU', grading: 'NL' },
+    { code: 'IE', flag: '🇮🇪', market: 'EU', grading: 'PCT' },
+    { code: 'EU', flag: '🇪🇺', market: 'EU', grading: 'OTHER' },
   ];
+  const countryName = (code) => T('hub.countries.' + code);
   const GRADING = {
-    ES: { label: 'Spain (0–10)', worst: 0, best: 10, hint: 'Pass is 5.' },
-    FR: { label: 'France (0–20)', worst: 0, best: 20, hint: 'Pass is 10.' },
-    DE: { label: 'Germany (1–6, 1 is best)', worst: 6, best: 1, hint: '1 = sehr gut, 4 = ausreichend (pass).' },
-    IT: { label: 'Italy (1–10)', worst: 1, best: 10, hint: 'Pass is 6.' },
-    PT: { label: 'Portugal (0–20)', worst: 0, best: 20, hint: 'Pass is 10.' },
-    NL: { label: 'Netherlands (1–10)', worst: 1, best: 10, hint: 'Pass is 5.5.' },
-    UK_GCSE: { label: 'UK GCSE (1–9)', worst: 1, best: 9, hint: '9 is the top grade, 4 a standard pass.' },
-    UK_ALEVEL: { label: 'UK A-level (E=1 … A*=6)', worst: 1, best: 6, hint: 'Enter E=1, D=2, C=3, B=4, A=5, A*=6.' },
-    US_GPA: { label: 'US GPA (0–4)', worst: 0, best: 4, hint: 'A=4, B=3, C=2, D=1, F=0.' },
-    PCT: { label: 'Percentage (0–100)', worst: 0, best: 100, hint: 'Use your % mark per subject.' },
-    IB: { label: 'IB (1–7)', worst: 1, best: 7, hint: '7 is the top grade.' },
-    OTHER: { label: 'Other / custom', worst: 0, best: 100, hint: 'Set the lowest and highest grade your school uses.' },
+    ES: { worst: 0, best: 10 },
+    FR: { worst: 0, best: 20 },
+    DE: { worst: 6, best: 1 },
+    IT: { worst: 1, best: 10 },
+    PT: { worst: 0, best: 20 },
+    NL: { worst: 1, best: 10 },
+    UK_GCSE: { worst: 1, best: 9 },
+    UK_ALEVEL: { worst: 1, best: 6 },
+    US_GPA: { worst: 0, best: 4 },
+    PCT: { worst: 0, best: 100 },
+    IB: { worst: 1, best: 7 },
+    OTHER: { worst: 0, best: 100 },
   };
+  const gradingLabel = (k) => T('hub.grading.' + k);
+  const gradingHint = (k) => T('hub.grading.' + k + 'h');
   const SUBJECTS = CFG.subjectClusters || {};
   const TREND = {
-    UP: { label: '↑ Trending up', short: 'Up', cls: 'up', rule: 'US jobs grow 5% or more by 2035 (faster than the 3.5% average), or a severe EU shortage.' },
-    STABLE: { label: '→ Stable', short: 'Stable', cls: 'stable', rule: 'US jobs grow 0–4% — steady demand, mostly openings from retirements.' },
-    UNCERTAIN: { label: '? Uncertain', short: 'Uncertain', cls: 'unc', rule: 'Sources disagree, AI or funding changes could swing it, or there is no official series.' },
-    DOWN: { label: '↓ Trending down', short: 'Down', cls: 'down', rule: 'US jobs shrink by 2035. Openings still appear as people retire.' },
+    UP: { cls: 'up', short: 'upShort' },
+    STABLE: { cls: 'stable', short: 'stableShort' },
+    UNCERTAIN: { cls: 'unc', short: 'uncertainShort' },
+    DOWN: { cls: 'down', short: 'downShort' },
   };
-  const BAND = { HIGH: 'High', MID: 'Mid', LOW: 'Low', VAR: 'Variable' };
+  const trendLabel = (k) => T('trend.' + k);
   const US_MEDIAN = CFG.usNationalMedian2025 || 50980;
   const LG = { love: 0.6, good: 0.4 }; // match = love^0.6 × goodAt^0.4
 
@@ -134,7 +145,7 @@
           await api('/api/user/results', { method: 'POST', body: { stage: 3, results: fields } });
           results.stage_3 = { ...(results.stage_3 || {}), ...fields };
           if (msg) toast(msg);
-        } catch { toast('Could not save right now — please retry.'); }
+        } catch { toast(T('common.saveFailed')); }
         resolve();
       }, 150);
     });
@@ -150,7 +161,7 @@
       region: st.region,
       top: top.map((r) => ({ career: r.career, domain: r.domain, subfield: r.subfield, match: r.match, IK: r.match, L: r.L, G: r.G, trend: r.trend, pay: r.pay })),
       ranked: top.slice(0, 10).map((r) => ({ area: r.domain, name: r.career, score: r.match, pct: r.match })),
-    }, '✓ Saved to your account');
+    }, T('common.savedShort'));
   }
   function toast(m) {
     const t = $('ikToast');
@@ -164,56 +175,67 @@
   const hasGrades = () => !!profile();
 
   function pageHead(icon, kicker, title, lead, kind) {
-    const tag = kind === 'key' ? '<span class="ik-kind key">Counts in your match</span>' : kind === 'info' ? '<span class="ik-kind info">For information — does not change your match</span>' : '';
+    const tag = kind === 'key' ? `<span class="ik-kind key">${T('hub.kindKey')}</span>` : kind === 'info' ? `<span class="ik-kind info">${T('hub.kindInfo')}</span>` : '';
     return `<header class="ik-head"><div class="ik-kicker">${icon} ${esc(kicker)}</div><h1>${title}</h1><p>${lead}</p>${tag}</header>`;
   }
   function empty(msg, href, cta) {
     return `<div class="ik-card ik-center ik-empty"><p>${msg}</p><a class="btn-primary" href="${href}">${cta}</a></div>`;
   }
+  function pct(n) { return (n > 0 ? '+' : '') + I.fmt.number(n) + '%'; }
   function trendChip(t, growth) {
-    const x = TREND[t] || TREND.UNCERTAIN;
-    const g = growth != null ? ` ${growth > 0 ? '+' : ''}${growth}%` : '';
-    return `<span class="ik-trend ${x.cls}">${x.label}${esc(g)}</span>`;
+    const x = TREND[t] ? t : 'UNCERTAIN';
+    const g = growth != null ? ' ' + pct(growth) : '';
+    return `<span class="ik-trend ${TREND[x].cls}">${trendLabel(x)}${esc(g)}</span>`;
   }
-  function bandChip(b) { return `<span class="ik-band b-${(b || 'VAR').toLowerCase()}">${BAND[b] || '—'} pay</span>`; }
-  function usPay(c) { return c.usMedianPay2025 ? `$${Math.round(c.usMedianPay2025 / 1000)}k` : '—'; }
+  function bandChip(b) { const k = ['HIGH', 'MID', 'LOW', 'VAR'].includes(b) ? b : 'none'; return `<span class="ik-band b-${(b || 'VAR').toLowerCase()}">${T('hub.band.' + k)}</span>`; }
+  function usd(n) { return I.fmt.money(n, 'USD', { notation: 'compact', maximumFractionDigits: 0 }); }
+  /* European pay in euros (Eurostat SES 2022, assets/pay-eu.js) */
+  const PAY = window.PAY_EU || null;
+  function euPlace() {
+    if (!PAY || st.region.mode !== 'custom') return 'EU';
+    return st.region.countries.find((c) => PAY.countries[c]) || 'EU';
+  }
+  function placeLabel(cc) { return cc === 'EU' ? '🇪🇺 ' + T('hub.euAvg') : ((COUNTRIES.find((x) => x.code === cc) || {}).flag || '') + ' ' + countryName(cc); }
+  function eur(n) { return I.fmt.money(n, 'EUR', { notation: 'compact', maximumFractionDigits: 0 }); }
+  function euPay(c) { return PAY ? PAY.value(c.career, euPlace()) : null; }
+  function usPay(c) { return c.usMedianPay2025 ? usd(c.usMedianPay2025) : '—'; }
   function bar(v, color) { return `<div class="ik-track"><i style="width:${v ?? 0}%;background:${color}"></i></div>`; }
   function regionLabel() {
-    if (st.region.mode === 'blend' || !st.region.countries.length) return '🌍 US + Europe blend';
-    return st.region.countries.map((c) => { const x = COUNTRIES.find((y) => y.code === c); return x ? `${x.flag} ${x.name}` : c; }).join(', ');
+    if (st.region.mode === 'blend' || !st.region.countries.length) return T('hub.blend');
+    return st.region.countries.map((c) => { const x = COUNTRIES.find((y) => y.code === c); return x ? `${x.flag} ${countryName(x.code)}` : c; }).join(', ');
   }
   function regionPicker() {
     const custom = st.region.mode === 'custom';
     return `<div class="ik-card ik-region">
-      <div class="ik-region-row"><strong>Market:</strong>
-        <button class="ik-chip ${!custom ? 'sel' : ''}" data-act="region-blend">🌍 US + Europe blend</button>
-        <button class="ik-chip ${custom ? 'sel' : ''}" data-act="region-custom">📍 Pick countries</button>
+      <div class="ik-region-row"><strong>${T('hub.market')}</strong>
+        <button class="ik-chip ${!custom ? 'sel' : ''}" data-act="region-blend">${T('hub.blend')}</button>
+        <button class="ik-chip ${custom ? 'sel' : ''}" data-act="region-custom">${T('hub.pickCountries')}</button>
       </div>
       <div class="ik-countries" style="display:${custom ? 'flex' : 'none'}">
-        ${COUNTRIES.map((c) => `<button class="ik-chip ${st.region.countries.includes(c.code) ? 'sel' : ''}" data-country="${c.code}">${c.flag} ${c.name}</button>`).join('')}
+        ${COUNTRIES.map((c) => `<button class="ik-chip ${st.region.countries.includes(c.code) ? 'sel' : ''}" data-country="${c.code}">${c.flag} ${esc(countryName(c.code))}</button>`).join('')}
       </div>
     </div>`;
   }
 
   /* ── PAGE: overview ── */
   function pageOverview() {
-    if (!s1Done()) return pageHead('✨', 'My Wikigai', 'Find where what you <span class="grad">love</span> meets what you’re <span class="grad">good at</span>', 'Wikigai maps the overlap of four circles. Start with what you love — it takes about 25 minutes.') + empty('You haven’t started yet. Stage 1 maps the areas of work that excite you.', '/survey?stage=1', '▶ Start Stage 1');
-    if (!s2Done()) return pageHead('✨', 'My Wikigai', 'Your <span class="grad">Wikigai</span> is taking shape', 'Stage 2 turns your favourite domains into a shortlist of real professions.') + circles() + empty('Next: zoom into professions inside your top domains.', '/survey?stage=2', '→ Continue to Stage 2');
+    if (!s1Done()) return pageHead('✨', T('hub.ovKicker'), T('hub.ovStartTitle'), T('hub.ovStartLead')) + empty(T('hub.ovStartEmpty'), '/survey?stage=1', T('hub.startS1'));
+    if (!s2Done()) return pageHead('✨', T('hub.ovKicker'), T('hub.ovShapeTitle'), T('hub.ovShapeLead')) + circles() + empty(T('hub.ovShapeEmpty'), '/survey?stage=2', T('hub.toS2'));
     const list = scored();
     const sorters = { match: (a, b) => b.match - a.match, needs: (a, b) => (rankT(b.trend) - rankT(a.trend)) || b.match - a.match, pay: (a, b) => b.pay - a.pay || b.match - a.match };
     const doms = [...new Set(list.map((r) => r.domain))];
     const shown = list.filter((r) => ui.domain === 'ALL' || r.domain === ui.domain).sort(sorters[ui.sort]).slice(0, 20);
     const nudge = !hasGrades()
-      ? `<div class="ik-nudge">🎯 <span>Add last year’s grades to complete <strong>What I’m good at</strong> — your match then weighs love and skill together.</span><a class="btn-primary sm" href="/ikigai/skills">Add grades</a></div>` : '';
-    return pageHead('✨', 'My Wikigai', 'Your <span class="grad">Wikigai</span> match', `Your match combines the two key circles: <strong>what you love</strong> and <strong>what you’re good at</strong>. World needs and pay are shown beside each profession to inform your choice. Market: ${esc(regionLabel())}.`)
+      ? `<div class="ik-nudge">🎯 <span>${T('hub.nudge')}</span><a class="btn-primary sm" href="/ikigai/skills">${T('hub.addGrades')}</a></div>` : '';
+    return pageHead('✨', T('hub.ovKicker'), T('hub.ovTitle'), T('hub.ovLead', { market: esc(regionLabel()) }))
       + circles() + nudge
       + `<div class="ik-toolbar">
-          <div class="ik-filters"><button class="ik-chip ${ui.domain === 'ALL' ? 'sel' : ''}" data-dom="ALL">All</button>${doms.map((d) => `<button class="ik-chip ${ui.domain === d ? 'sel' : ''}" data-dom="${d}">${area(d).icon} ${esc(area(d).name)}</button>`).join('')}</div>
-          <label class="ik-sort">Sort by <select data-act="sort"><option value="match" ${ui.sort === 'match' ? 'selected' : ''}>Best match</option><option value="needs" ${ui.sort === 'needs' ? 'selected' : ''}>World needs</option><option value="pay" ${ui.sort === 'pay' ? 'selected' : ''}>Pay</option></select></label>
+          <div class="ik-filters"><button class="ik-chip ${ui.domain === 'ALL' ? 'sel' : ''}" data-dom="ALL">${T('hub.all')}</button>${doms.map((d) => `<button class="ik-chip ${ui.domain === d ? 'sel' : ''}" data-dom="${d}">${area(d).icon} ${esc(areaName(d))}</button>`).join('')}</div>
+          <label class="ik-sort">${T('hub.sortBy')} <select data-act="sort"><option value="match" ${ui.sort === 'match' ? 'selected' : ''}>${T('hub.sortMatch')}</option><option value="needs" ${ui.sort === 'needs' ? 'selected' : ''}>${T('hub.sortNeeds')}</option><option value="pay" ${ui.sort === 'pay' ? 'selected' : ''}>${T('hub.sortPay')}</option></select></label>
         </div>
         <div class="ik-results">${shown.map((r, i) => matchCard(r, i)).join('')}</div>`
       + refreshCard() + `<div id="ikSupport"></div>`
-      + `<p class="ik-foot">Match = Love<sup>0.6</sup> × Good at<sup>0.4</sup>. World needs: BLS Employment Projections 2025–35, Cedefop, EURES. Pay: BLS OEWS 2025, Eurostat SES 2022 (European bands are estimates).</p>`;
+      + `<p class="ik-foot">${T('hub.foot')}</p>`;
   }
   const rankT = (t) => ({ UP: 3, STABLE: 2, UNCERTAIN: 1, DOWN: 0 })[t] ?? 1;
 
@@ -225,155 +247,194 @@
     const up = top.filter((r) => r.trend === 'UP').length;
     const hi = top.filter((r) => r.band === 'HIGH').length;
     const c = [
-      { k: 'love', ico: '❤️', t: 'What I love', v: s2Done() ? esc(top[0]?.career || '') : (s1Done() ? 'Stage 2 to do' : 'Not started'), s: s2Done() ? `${list.length} professions on your shortlist` : 'Stages 1–2', href: '/ikigai/love', key: true, done: s2Done() },
-      { k: 'skills', ico: '🎯', t: 'What I’m good at', v: prof ? esc(SUBJECTS[bestSubj[0]] || '') : 'Add grades', s: prof ? `strongest of ${prof.n} subjects` : 'optional, 2 minutes', href: '/ikigai/skills', key: true, done: !!prof },
-      { k: 'needs', ico: '🌍', t: 'What the world needs', v: s2Done() ? `${up} of top ${top.length}` : '—', s: 'trending up to 2035', href: '/ikigai/needs', key: false, done: true },
-      { k: 'pay', ico: '💰', t: 'What pays', v: s2Done() ? `${hi} of top ${top.length}` : '—', s: 'in the high pay band', href: '/ikigai/pay', key: false, done: true },
+      { k: 'love', ico: '❤️', t: T('hub.cLove'), v: s2Done() ? esc(C(top[0]?.career || '')) : (s1Done() ? T('hub.s2Todo') : T('hub.notStarted')), s: s2Done() ? T('hub.onShortlist', { count: list.length }) : T('hub.stages12'), href: '/ikigai/love', key: true, done: s2Done() },
+      { k: 'skills', ico: '🎯', t: T('hub.cSkills'), v: prof ? esc(subjName(bestSubj[0])) : T('hub.addGrades'), s: prof ? T('hub.strongestOf', { count: prof.n }) : T('hub.optional2'), href: '/ikigai/skills', key: true, done: !!prof },
+      { k: 'needs', ico: '🌍', t: T('hub.cNeeds'), v: s2Done() ? T('hub.xOfTop', { x: up, n: top.length }) : '—', s: T('hub.trendingUp'), href: '/ikigai/needs', key: false, done: true },
+      { k: 'pay', ico: '💰', t: T('hub.cPay'), v: s2Done() ? T('hub.xOfTop', { x: hi, n: top.length }) : '—', s: T('hub.highBand'), href: '/ikigai/pay', key: false, done: true },
     ];
     return `<div class="ik-circles">
       <div class="ik-venn" aria-hidden="true"><i class="v1"></i><i class="v2"></i><i class="v3"></i><i class="v4"></i><b>Wikigai</b></div>
       <div class="ik-cgrid">${c.map((x) => `<a class="ik-ccard ${x.k} ${x.key ? 'key' : 'info'} ${x.done ? '' : 'todo'}" href="${x.href}" data-nav>
-        <div class="ik-ct">${x.ico} ${x.t}<span>${x.key ? 'key' : 'info'}</span></div>
+        <div class="ik-ct">${x.ico} ${x.t}<span>${T(x.key ? 'common.key' : 'common.info')}</span></div>
         <div class="ik-cv">${x.v}</div><div class="ik-cs">${x.s}</div></a>`).join('')}</div>
     </div>`;
   }
 
+  function sourceLine(c) { return esc(C(c.blsProxy || '') || '—') + (c.note ? ' — ' + esc(C(c.note)) : ''); }
+
   function matchCard(r, i) {
     const m = area(r.domain);
+    const m0 = market(), ev = m0.eu ? euPay(r.c) : null;
+    const payNote = [
+      m0.us ? (r.c.usMedianPay2025 ? T('hub.usMedian', { pay: usPay(r.c) }) : T('hub.noPaySeries')) : '',
+      ev ? T('hub.euGross', { pay: eur(ev.eur), place: placeLabel(ev.cc) }) : (m0.eu ? T('hub.euEstimate') : ''),
+    ].filter(Boolean).join(' · ');
     return `<div class="ik-res ${i < 3 ? 'top' : ''}">
       <div class="ik-res-head">
         <div class="rank-badge">${i + 1}</div>
         <div class="area-icon-wrap" style="background:${m.color}22;color:${m.color}">${m.icon}</div>
-        <div class="ik-res-name"><strong>${esc(r.career)}</strong><small>${esc(SUBS[r.subfield]?.name || '')} · ${esc(m.name)}</small></div>
-        ${r.strong ? '<span class="ik-sweet">✨ Strong match</span>' : ''}
-        <div class="ik-score"><b>${r.match}</b><small>match</small></div>
+        <div class="ik-res-name"><strong>${esc(C(r.career))}</strong><small>${esc(SUBS[r.subfield] ? subName(r.subfield) : '')} · ${esc(areaName(r.domain))}</small></div>
+        ${r.strong ? `<span class="ik-sweet">${T('hub.strong')}</span>` : ''}
+        <div class="ik-score"><b>${r.match}</b><small>${T('hub.match')}</small></div>
       </div>
       <div class="ik-bars">
-        <div class="ik-bar"><span>❤️ Love</span>${bar(r.L, '#ff6b9d')}<b>${r.L}</b></div>
-        <div class="ik-bar"><span>🎯 Good at</span>${r.G != null ? bar(r.G, '#c44dff') + `<b>${r.G}</b>` : '<a class="ik-addg" href="/ikigai/skills" data-nav>add grades</a><b>—</b>'}</div>
+        <div class="ik-bar"><span>${T('hub.love')}</span>${bar(r.L, '#ff6b9d')}<b>${r.L}</b></div>
+        <div class="ik-bar"><span>${T('hub.goodAt')}</span>${r.G != null ? bar(r.G, '#c44dff') + `<b>${r.G}</b>` : `<a class="ik-addg" href="/ikigai/skills" data-nav>${T('hub.addGradesLink')}</a><b>—</b>`}</div>
       </div>
-      <div class="ik-meta">${trendChip(r.trend, r.c.usGrowth2535)}${bandChip(r.band)}<span class="ik-dim">${market().us ? (r.c.usMedianPay2025 ? 'US median ' + usPay(r.c) : 'no official pay series') : 'Europe estimate'}</span></div>
-      <details class="ik-why"><summary>A day in this job</summary><p>${esc(r.c.task || '')}</p>
-        <p class="ik-dim">Love = ${r.D}% domain · ${r.S}% subfield · ${r.C}% duels. Outlook source: ${esc(r.c.blsProxy || '—')}${r.c.note ? ' — ' + esc(r.c.note) : ''}.</p></details>
+      <div class="ik-meta">${trendChip(r.trend, r.c.usGrowth2535)}${bandChip(r.band)}<span class="ik-dim">${payNote}</span></div>
+      <details class="ik-why"><summary>${T('hub.dayInJob')}</summary><p>${esc(C(r.c.task || ''))}</p>
+        <p class="ik-dim">${T('hub.loveBreakdown', { d: r.D, s: r.S, c: r.C, src: sourceLine(r.c) })}</p></details>
     </div>`;
   }
 
   function refreshCard() {
     const d = new Date(); d.setMonth(d.getMonth() + 6);
-    const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    return `<div class="stage2-cta ik-refresh"><h3>Keep your map fresh</h3>
-      <p>Interests, grades, job outlooks and pay all change. We can remind you to refresh your Wikigai every 6 months.</p>
-      <label class="ik-check"><input type="checkbox" data-act="refresh" ${st.refresh?.optIn ? 'checked' : ''}> Remind me next spring (around ${label}) and every 6 months after.</label></div>`;
+    const label = I.fmt.date(d, { month: 'long', year: 'numeric' });
+    return `<div class="stage2-cta ik-refresh"><h3>${T('hub.refreshTitle')}</h3>
+      <p>${T('hub.refreshText')}</p>
+      <label class="ik-check"><input type="checkbox" data-act="refresh" ${st.refresh?.optIn ? 'checked' : ''}> ${T('hub.refreshCheck', { date: esc(label) })}</label></div>`;
   }
 
   /* ── PAGE: love ── */
   function pageLove() {
-    let h = pageHead('❤️', 'Circle 1 · What I love', 'What you <span class="grad">love</span>', 'Built from your instinctive answers: Stage 1 found the areas of work that excite you, Stage 2 narrowed them to subfields and real professions through head-to-head duels.', 'key');
+    let h = pageHead('❤️', T('hub.loveKicker'), T('hub.loveTitle'), T('hub.loveLead'), 'key');
     const s1 = results.stage_1;
     h += `<div class="ik-steps2">
-      ${stepCard(1, 'World Discovery', '70 pairs · 8 domains', s1Done(), '/survey?stage=1', s1Done() ? '/survey?stage=1&review=1' : null)}
-      ${stepCard(2, 'Profession Focus', 'subfield pairs + profession duels', s2Done(), s1Done() ? '/survey?stage=2' : null, s2Done() ? '/survey?stage=2&review=1' : null)}
+      ${stepCard(1, T('hub.step1'), T('hub.step1d'), s1Done(), '/survey?stage=1', s1Done() ? '/survey?stage=1&review=1' : null)}
+      ${stepCard(2, T('hub.step2'), T('hub.step2d'), s2Done(), s1Done() ? '/survey?stage=2' : null, s2Done() ? '/survey?stage=2&review=1' : null)}
     </div>`;
-    if (!s1Done()) return h + empty('Start with Stage 1 — about 12 minutes, no right or wrong answers.', '/survey?stage=1', '▶ Start Stage 1');
+    if (!s1Done()) return h + empty(T('hub.loveEmpty1'), '/survey?stage=1', T('hub.startS1'));
     const ranked = (s1.ranked || []).slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     const max = Math.max(1, ...ranked.map((r) => r.score ?? 0));
     const prefs = s1.domainPrefs || {};
-    h += `<div class="ik-card"><h2>Your domains</h2><p class="ik-sub">Up to 4 domains go into Stage 2. Change them on your <a href="/dashboard">dashboard</a>.</p>
-      ${ranked.map((r) => { const m = area(r.area); const pct = Math.round(((r.score ?? 0) / max) * 100); const on = prefs[r.area] !== false;
-        return `<div class="ik-row ${on ? '' : 'off'}"><span class="ik-rlabel">${m.icon} ${esc(m.name)}</span>${bar(pct, m.color)}<b>${pct}%</b><span class="ik-dim">${on ? 'kept' : '—'}</span></div>`; }).join('')}
+    h += `<div class="ik-card"><h2>${T('hub.domainsTitle')}</h2><p class="ik-sub">${T('hub.domainsSub')}</p>
+      ${ranked.map((r) => { const m = area(r.area); const p = Math.round(((r.score ?? 0) / max) * 100); const on = prefs[r.area] !== false;
+        return `<div class="ik-row ${on ? '' : 'off'}"><span class="ik-rlabel">${m.icon} ${esc(areaName(r.area))}</span>${bar(p, m.color)}<b>${p}%</b><span class="ik-dim">${on ? T('hub.kept') : '—'}</span></div>`; }).join('')}
     </div>`;
-    if (!s2Done()) return h + empty('Next: Stage 2 zooms into your kept domains — about 15 minutes.', '/survey?stage=2', '→ Continue to Stage 2');
+    if (!s2Done()) return h + empty(T('hub.loveEmpty2'), '/survey?stage=2', T('hub.toS2'));
     const s2 = results.stage_2;
     const subPct = s2.subPct || {};
     const kept = Object.keys(s2.subPrefs || {}).filter((k) => s2.subPrefs[k]);
-    h += `<div class="ik-card"><h2>Your favourite subfields</h2><p class="ik-sub">From 12 quick pairs per domain. These went into the profession duels.</p>
-      ${kept.sort((a, b) => (subPct[b] || 0) - (subPct[a] || 0)).map((s) => { const m = area(SUBS[s]?.domain); return `<div class="ik-row"><span class="ik-rlabel">${m.icon} ${esc(SUBS[s]?.name || s)}</span>${bar(subPct[s], m.color)}<b>${subPct[s] ?? '—'}%</b><span></span></div>`; }).join('')}
+    h += `<div class="ik-card"><h2>${T('hub.subsTitle')}</h2><p class="ik-sub">${T('hub.subsSub')}</p>
+      ${kept.sort((a, b) => (subPct[b] || 0) - (subPct[a] || 0)).map((s) => { const m = area(SUBS[s]?.domain); return `<div class="ik-row"><span class="ik-rlabel">${m.icon} ${esc(subName(s))}</span>${bar(subPct[s], m.color)}<b>${subPct[s] ?? '—'}%</b><span></span></div>`; }).join('')}
     </div>`;
     const love = loveList().slice(0, 20);
-    h += `<div class="ik-card"><h2>Your profession shortlist</h2><p class="ik-sub">Love score = 40% domain fit + 35% subfield fit + 25% duel wins.</p>
-      <div class="ik-table"><div class="ik-tr ik-th"><span>#</span><span>Profession</span><span>Love</span><span>Domain</span><span>Subfield</span><span>Duels</span></div>
-      ${love.map((l, i) => `<div class="ik-tr"><span>${i + 1}</span><span><strong>${esc(l.career)}</strong><small>${esc(SUBS[l.subfield]?.name || '')}</small></span><span class="ik-num love">${l.L}</span><span>${l.D}%</span><span>${l.S}%</span><span>${l.C}%</span></div>`).join('')}
+    h += `<div class="ik-card"><h2>${T('hub.shortTitle')}</h2><p class="ik-sub">${T('hub.shortSub')}</p>
+      <div class="ik-table"><div class="ik-tr ik-th"><span>#</span><span>${T('hub.colProfession')}</span><span>${T('hub.colLove')}</span><span>${T('hub.colDomain')}</span><span>${T('hub.colSubfield')}</span><span>${T('hub.colDuels')}</span></div>
+      ${love.map((l, i) => `<div class="ik-tr"><span>${i + 1}</span><span><strong>${esc(C(l.career))}</strong><small>${esc(SUBS[l.subfield] ? subName(l.subfield) : '')}</small></span><span class="ik-num love">${l.L}</span><span>${l.D}%</span><span>${l.S}%</span><span>${l.C}%</span></div>`).join('')}
       </div></div>`;
-    return h + nextLink('/ikigai/skills', '🎯 Next: What I’m good at');
+    return h + nextLink('/ikigai/skills', T('hub.nextSkills'));
   }
   function stepCard(n, t, d, done, href, review) {
-    return `<div class="ik-stepcard ${done ? 'done' : ''}"><div class="ik-stepn">${done ? '✓' : n}</div><div><strong>Stage ${n} · ${t}</strong><small>${d}</small></div>
-      <div class="ik-stepact">${review ? `<a class="btn-ghost sm" href="${review}">Review</a>` : ''}${href ? `<a class="${done ? 'btn-ghost' : 'btn-primary'} sm" href="${href}">${done ? 'Retake' : 'Start'}</a>` : '<span class="ik-dim">after Stage 1</span>'}</div></div>`;
+    return `<div class="ik-stepcard ${done ? 'done' : ''}"><div class="ik-stepn">${done ? '✓' : n}</div><div><strong>${T('hub.stepTitle', { n, title: t })}</strong><small>${d}</small></div>
+      <div class="ik-stepact">${review ? `<a class="btn-ghost sm" href="${review}">${T('hub.review')}</a>` : ''}${href ? `<a class="${done ? 'btn-ghost' : 'btn-primary'} sm" href="${href}">${T(done ? 'hub.retake' : 'hub.start')}</a>` : `<span class="ik-dim">${T('hub.afterS1')}</span>`}</div></div>`;
   }
   function nextLink(href, label) { return `<div class="ik-next"><a class="btn-primary" href="${href}" data-nav>${label} →</a></div>`; }
 
   /* ── PAGE: skills ── */
   function pageSkills() {
     const g = st.grades;
-    const sys = GRADING[g.system] || GRADING.OTHER;
+    const sysKey = GRADING[g.system] ? g.system : 'OTHER';
     const prof = profile();
-    let h = pageHead('🎯', 'Circle 2 · What I’m good at', 'What you’re <span class="grad">good at</span>', 'Your grades from last year show where your strengths are. We compare each subject with <em>your own</em> average too, so a strict school or a tough year doesn’t hide a real talent. Optional — but it makes your match much sharper.', 'key');
+    let h = pageHead('🎯', T('hub.skillsKicker'), T('hub.skillsTitle'), T('hub.skillsLead'), 'key');
     h += `<div class="ik-card">
-      <h2>Your grades <span class="ik-opt">optional · 2 minutes</span></h2>
+      <h2>${T('hub.gradesTitle')} <span class="ik-opt">${T('hub.gradesOpt')}</span></h2>
       <div class="ik-grid2">
-        <label class="ik-field">Where did you study?
-          <select data-act="country">${['', ...COUNTRIES.map((c) => c.code)].map((c) => { const x = COUNTRIES.find((y) => y.code === c); return `<option value="${c}" ${c === (st.grades.country || '') ? 'selected' : ''}>${x ? x.flag + ' ' + x.name : 'Choose a country…'}</option>`; }).join('')}</select>
+        <label class="ik-field">${T('hub.whereStudy')}
+          <select data-act="country">${['', ...COUNTRIES.map((c) => c.code)].map((c) => { const x = COUNTRIES.find((y) => y.code === c); return `<option value="${c}" ${c === (st.grades.country || '') ? 'selected' : ''}>${x ? x.flag + ' ' + esc(countryName(x.code)) : T('hub.chooseCountry')}</option>`; }).join('')}</select>
         </label>
-        <label class="ik-field">Grading system
-          <select data-act="system">${Object.keys(GRADING).map((k) => `<option value="${k}" ${k === g.system ? 'selected' : ''}>${GRADING[k].label}</option>`).join('')}</select>
+        <label class="ik-field">${T('hub.gradingSystem')}
+          <select data-act="system">${Object.keys(GRADING).map((k) => `<option value="${k}" ${k === g.system ? 'selected' : ''}>${esc(gradingLabel(k))}</option>`).join('')}</select>
         </label>
       </div>
       <div class="ik-range-row">
-        <label class="ik-field">Lowest grade<input data-act="worst" type="number" step="any" value="${g.worst}"></label>
+        <label class="ik-field">${T('hub.lowest')}<input data-act="worst" type="number" step="any" value="${g.worst}"></label>
         <span class="ik-arrow">→</span>
-        <label class="ik-field">Highest grade<input data-act="best" type="number" step="any" value="${g.best}"></label>
-        <p class="ik-note">${esc(sys.hint)} Edit the range if your school uses a different one.</p>
+        <label class="ik-field">${T('hub.highest')}<input data-act="best" type="number" step="any" value="${g.best}"></label>
+        <p class="ik-note">${esc(T('hub.rangeNote', { hint: gradingHint(sysKey) }))}</p>
       </div>
       <div class="ik-subjects">
-        ${Object.keys(SUBJECTS).map((k) => `<label class="ik-subject"><span>${esc(SUBJECTS[k])}</span><input type="number" step="any" inputmode="decimal" data-subj="${k}" value="${g.values[k] ?? ''}" placeholder="—"></label>`).join('')}
+        ${Object.keys(SUBJECTS).map((k) => `<label class="ik-subject"><span>${esc(subjName(k))}</span><input type="number" step="any" inputmode="decimal" data-subj="${k}" value="${g.values[k] ?? ''}" placeholder="—"></label>`).join('')}
       </div>
       <p class="ik-note ik-err" id="ikGradeErr"></p>
-      <div class="cta-row"><button class="btn-ghost" data-act="skip">Skip for now</button><button class="btn-primary" data-act="save-grades">${flow ? 'Save and see my Wikigai →' : 'Save grades'}</button></div>
+      <div class="cta-row"><button class="btn-ghost" data-act="skip">${T('hub.skip')}</button><button class="btn-primary" data-act="save-grades">${T(flow ? 'hub.saveSee' : 'hub.saveGrades')}</button></div>
     </div>`;
     if (prof) {
       const subj = Object.entries(prof.pct).sort((a, b) => b[1] - a[1]);
-      h += `<div class="ik-card"><h2>Your strengths</h2><p class="ik-sub">Bar = your grade on a 0–100 scale. ▲ = above your own average (${Math.round(prof.mean)}).</p>
-        ${subj.map(([k, v]) => `<div class="ik-row"><span class="ik-rlabel">${esc(SUBJECTS[k])}</span>${bar(Math.round(v), v >= prof.mean ? '#c44dff' : '#6b5bff')}<b>${Math.round(v)}</b><span class="ik-dim">${v >= prof.mean + 5 ? '▲ strength' : v <= prof.mean - 5 ? '▼' : ''}</span></div>`).join('')}
+      h += `<div class="ik-card"><h2>${T('hub.strengthsTitle')}</h2><p class="ik-sub">${T('hub.strengthsSub', { avg: Math.round(prof.mean) })}</p>
+        ${subj.map(([k, v]) => `<div class="ik-row"><span class="ik-rlabel">${esc(subjName(k))}</span>${bar(Math.round(v), v >= prof.mean ? '#c44dff' : '#6b5bff')}<b>${Math.round(v)}</b><span class="ik-dim">${v >= prof.mean + 5 ? T('hub.strength') : v <= prof.mean - 5 ? '▼' : ''}</span></div>`).join('')}
       </div>`;
       const fits = Object.keys(CFG.subjectWeights || {}).map((s) => ({ s, G: goodAt(s, prof) })).sort((a, b) => b.G - a.G);
       const mine = new Set(loveList().map((l) => l.subfield));
-      h += `<div class="ik-card"><h2>Subfields that fit your strengths</h2><p class="ik-sub">All 32 subfields, scored on the subjects they rely on most. ❤️ = also on your love shortlist.</p>
-        ${fits.slice(0, 12).map((f) => { const m = area(SUBS[f.s]?.domain); return `<div class="ik-row"><span class="ik-rlabel">${m.icon} ${esc(SUBS[f.s]?.name || f.s)} ${mine.has(f.s) ? '❤️' : ''}</span>${bar(f.G, m.color)}<b>${f.G}</b><span class="ik-dim">${esc(Object.keys(CFG.subjectWeights[f.s]).map((k) => (SUBJECTS[k] || k).split(/[ ,/&]/)[0]).join(' · '))}</span></div>`; }).join('')}
-      </div>` + nextLink('/ikigai', '✨ See my Wikigai match');
+      h += `<div class="ik-card"><h2>${T('hub.fitsTitle')}</h2><p class="ik-sub">${T('hub.fitsSub')}</p>
+        ${fits.slice(0, 12).map((f) => { const m = area(SUBS[f.s]?.domain); return `<div class="ik-row"><span class="ik-rlabel">${m.icon} ${esc(subName(f.s))} ${mine.has(f.s) ? '❤️' : ''}</span>${bar(f.G, m.color)}<b>${f.G}</b><span class="ik-dim">${esc(Object.keys(CFG.subjectWeights[f.s]).map((k) => subjName(k).split(/[ ,/&]/)[0]).join(' · '))}</span></div>`; }).join('')}
+      </div>` + nextLink('/ikigai', T('hub.seeMatch'));
     }
     return h;
   }
 
   /* ── PAGE: needs ── */
   function pageNeeds() {
-    let h = pageHead('🌍', 'Circle 3 · What the world needs', 'What the <span class="grad">world needs</span>', 'How demand for each profession is expected to change to 2035. Use it to inform your choice: a stable or uncertain field can still be right for you, and every field has openings when people retire.', 'info');
-    h += `<div class="ik-legend">${Object.keys(TREND).map((k) => `<div class="ik-leg"><span class="ik-trend ${TREND[k].cls}">${TREND[k].label}</span><small>${TREND[k].rule}</small></div>`).join('')}</div>`;
+    let h = pageHead('🌍', T('hub.needsKicker'), T('hub.needsTitle'), T('hub.needsLead'), 'info');
+    h += `<div class="ik-legend">${Object.keys(TREND).map((k) => `<div class="ik-leg"><span class="ik-trend ${TREND[k].cls}">${trendLabel(k)}</span><small>${T('trend.rule' + k)}</small></div>`).join('')}</div>`;
     h += exploreTable('needs');
-    h += `<div class="ik-card ik-sources"><h2>Where this comes from</h2><ul>
-      <li><a href="https://www.bls.gov/news.release/ecopro.nr0.htm" target="_blank" rel="noopener">US BLS Employment Projections 2025–35</a> (27 Aug 2026) — main source; all jobs grow 3.5%.</li>
-      <li><a href="https://www.cedefop.europa.eu/en/tools/skills-forecast" target="_blank" rel="noopener">Cedefop Skills Forecast 2035</a> and the <a href="https://www.ela.europa.eu/en/news/ela-launches-2025-eures-report-highlighting-structural-labour-shortages-across-europe" target="_blank" rel="noopener">EURES labour shortages report 2025</a> — European checks (e.g. doctors and nurses in shortage).</li>
-      <li><a href="https://www.weforum.org/stories/2025/01/future-of-jobs-report-2025-the-fastest-growing-and-declining-jobs/" target="_blank" rel="noopener">WEF Future of Jobs 2025</a> and the <a href="https://www.ilo.org/sites/default/files/2025-05/Research%20brief_GenAI%202025%20Update.pdf" target="_blank" rel="noopener">ILO GenAI exposure index 2025</a> — AI disruption signals.</li>
-      </ul><p class="ik-dim">Some professions use a close official occupation as a proxy; it is named under each one.</p></div>`;
+    h += `<div class="ik-card ik-sources"><h2>${T('hub.sourcesTitle')}</h2><ul>
+      <li>${T('hub.needsSrc1')}</li>
+      <li>${T('hub.needsSrc2')}</li>
+      <li>${T('hub.needsSrc3')}</li>
+      </ul><p class="ik-dim">${T('hub.needsProxy')}</p></div>`;
     return h;
   }
 
   /* ── PAGE: pay ── */
   function pagePay() {
     const m = market();
-    let h = pageHead('💰', 'Circle 4 · What pays', 'What <span class="grad">pays</span>', 'Typical pay for each profession from official statistics. Pay varies a lot by country, experience and city, so treat it as a guide — starting pay is lower than these medians.', 'info');
+    let h = pageHead('💰', T('hub.payKicker'), T('hub.payTitle'), T('hub.payLead'), 'info');
     h += regionPicker();
     h += `<div class="ik-legend">
-      <div class="ik-leg">${bandChip('HIGH')}<small>US ≥ $100k a year (about 2× the US median of $${Math.round(US_MEDIAN / 1000)}k). Europe: ≥ 1.5× the country’s median.</small></div>
-      <div class="ik-leg">${bandChip('MID')}<small>US $60k–$99k. Europe: 1.0–1.5× the country’s median.</small></div>
-      <div class="ik-leg">${bandChip('LOW')}<small>US under $60k. Europe: below the country’s median.</small></div>
-      <div class="ik-leg">${bandChip('VAR')}<small>No official series (founders, diplomats…) — income varies widely.</small></div>
+      <div class="ik-leg">${bandChip('HIGH')}<small>${T('hub.payHigh', { median: usd(US_MEDIAN) })}</small></div>
+      <div class="ik-leg">${bandChip('MID')}<small>${T('hub.payMid')}</small></div>
+      <div class="ik-leg">${bandChip('LOW')}<small>${T('hub.payLow')}</small></div>
+      <div class="ik-leg">${bandChip('VAR')}<small>${T('hub.payVar')}</small></div>
     </div>`;
+    if (m.eu && PAY) h += `<p class="ik-sub ik-eurnote">💶 ${T('hub.payEurNote', { place: placeLabel(euPlace()) })}</p>`;
     h += exploreTable('pay');
-    h += `<div class="ik-card ik-sources"><h2>Where this comes from</h2><ul>
-      ${m.us ? '<li><a href="https://www.bls.gov/ooh/" target="_blank" rel="noopener">US Occupational Outlook Handbook</a> — 2025 median pay per occupation; <a href="https://www.bls.gov/news.release/ocwage.t01.htm" target="_blank" rel="noopener">BLS OEWS May 2025</a> for the national median.</li>' : ''}
-      ${m.eu ? '<li><a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Earnings_statistics" target="_blank" rel="noopener">Eurostat Structure of Earnings Survey 2022</a> — pay by occupation group (managers 1.9×, professionals 1.3×, technicians 1.1× the average). European bands per profession are estimates.</li>' : ''}
-      </ul></div>`;
+    h += `<div class="ik-card ik-sources"><h2>${T('hub.sourcesTitle')}</h2>
+      ${m.us ? `<h3 class="ik-src-h">🇺🇸 ${esc(countryName('US'))}</h3><ul><li>${T('hub.paySrcUS')}</li></ul>` : ''}
+      ${m.eu ? euSources() : ''}
+      </div>`;
     return h;
+  }
+
+  /* European pay sources: EU-wide + each country's statistics office.
+     Labels live in the dictionary (hub.paySrc*); links are data here. */
+  const PAY_EU = [
+    { key: 'paySrcSes', url: (window.PAY_EU || {}).source ? window.PAY_EU.source.url : 'https://ec.europa.eu/eurostat/cache/metadata/EN/earn_ses2022_esms.htm' },
+    { key: 'paySrcMinWage', url: 'https://ec.europa.eu/eurostat/cache/metadata/en/earn_minw_esms.htm' },
+    { key: 'paySrcOECD', url: 'https://www.oecd-ilibrary.org/en/data/indicators/average-annual-wages.html' },
+  ];
+  const PAY_NATIONAL = [
+    { cc: 'ES', org: 'INE', url: 'https://ine.es/dyngs/Prensa/es/EAES2024.htm' },
+    { cc: 'FR', org: 'INSEE', url: 'https://www.insee.fr/fr/statistiques/2407703' },
+    { cc: 'DE', org: 'Destatis', url: 'https://www.destatis.de/DE/Themen/Arbeit/Verdienste/Verdienste-Branche-Berufe/_inhalt.html' },
+    { cc: 'IT', org: 'ISTAT', url: 'https://www.istat.it/wp-content/uploads/2025/01/REPORT_STRUTTURA_RETRIBUZIONI_2022.pdf' },
+    { cc: 'PT', org: 'dados.gov.pt', url: 'https://dados.gov.pt/es/datasets/ganho-mensal-eur-4/' },
+    { cc: 'NL', org: 'CBS', url: 'https://www.cbs.nl/nl-nl/longread/rapportages/2021/lonen-en-loonkosten-een-overzicht-van-de-verschillende-cbs-cijfers/3-statistieken-over-lonen-en-loonkosten' },
+    { cc: 'IE', org: 'CSO', url: 'https://www.cso.ie/en/releasesandpublications/ep/p-eaads/earningsanalysisusingadministrativedatasources2023/' },
+    { cc: 'UK', org: 'ONS', url: 'https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/bulletins/annualsurveyofhoursandearnings/latest' },
+  ];
+  function euSources() {
+    const picked = st.region.mode === 'custom' ? st.region.countries : [];
+    const nat = PAY_NATIONAL.slice().sort((a, b) => (picked.includes(b.cc) ? 1 : 0) - (picked.includes(a.cc) ? 1 : 0));
+    const link = (url, text) => `<a href="${url}" target="_blank" rel="noopener">${text}</a>`;
+    return `<h3 class="ik-src-h">🇪🇺 ${T('hub.paySrcEuWide')}</h3><ul>
+      ${PAY_EU.map((s) => `<li>${s.url ? link(s.url, T('hub.' + s.key + 'Name')) + ' — ' + T('hub.' + s.key) : T('hub.' + s.key)}</li>`).join('')}
+      </ul>
+      <h3 class="ik-src-h">🏛️ ${T('hub.paySrcNational')}</h3>
+      <p class="ik-dim">${T('hub.paySrcNationalSub')}</p>
+      <ul class="ik-natsrc">${nat.map((s) => { const c = COUNTRIES.find((x) => x.code === s.cc) || {}; const mine = picked.includes(s.cc);
+        return `<li class="${mine ? 'mine' : ''}"><strong>${c.flag || ''} ${esc(countryName(s.cc))}</strong> · ${link(s.url, esc(s.org) + ': ' + T('hub.paySrcNat.' + s.cc))}${mine ? ` <span class="ik-src-tag">${T('hub.paySrcYours')}</span>` : ''}</li>`; }).join('')}
+      </ul>`;
   }
 
   function exploreTable(kind) {
@@ -386,17 +447,17 @@
     else rows.sort((a, b) => payScore(b) - payScore(a));
     const doms = Object.keys(AREAS);
     const counts = {}; rows.forEach((c) => { counts[c.trend] = (counts[c.trend] || 0) + 1; });
-    const opts = `${mineMap.size ? `<option value="MINE" ${ui.exploreDomain === 'MINE' ? 'selected' : ''}>❤️ My shortlist (${mineMap.size})</option>` : ''}<option value="ALL" ${ui.exploreDomain === 'ALL' ? 'selected' : ''}>All ${CAREERS.length} professions</option>${doms.map((d) => `<option value="${d}" ${ui.exploreDomain === d ? 'selected' : ''}>${area(d).icon} ${esc(area(d).name)}</option>`).join('')}`;
-    const tf = kind === 'needs' ? `<select data-act="trendf"><option value="ALL">All outlooks</option>${Object.keys(TREND).map((k) => `<option value="${k}" ${ui.trendFilter === k ? 'selected' : ''}>${TREND[k].label}</option>`).join('')}</select>` : '';
-    const summary = kind === 'needs' ? `<p class="ik-sub">${Object.keys(TREND).map((k) => `${TREND[k].short}: <strong>${counts[k] || 0}</strong>`).join(' · ')}</p>` : '';
+    const opts = `${mineMap.size ? `<option value="MINE" ${ui.exploreDomain === 'MINE' ? 'selected' : ''}>${T('hub.myShortlist', { n: mineMap.size })}</option>` : ''}<option value="ALL" ${ui.exploreDomain === 'ALL' ? 'selected' : ''}>${T('hub.allProfessions', { n: CAREERS.length })}</option>${doms.map((d) => `<option value="${d}" ${ui.exploreDomain === d ? 'selected' : ''}>${area(d).icon} ${esc(areaName(d))}</option>`).join('')}`;
+    const tf = kind === 'needs' ? `<select data-act="trendf"><option value="ALL">${T('hub.allOutlooks')}</option>${Object.keys(TREND).map((k) => `<option value="${k}" ${ui.trendFilter === k ? 'selected' : ''}>${trendLabel(k)}</option>`).join('')}</select>` : '';
+    const summary = kind === 'needs' ? `<p class="ik-sub">${Object.keys(TREND).map((k) => `${T('trend.' + TREND[k].short)}: <strong>${counts[k] || 0}</strong>`).join(' · ')}</p>` : '';
     const m = market();
-    return `<div class="ik-card"><div class="ik-toolbar"><h2>${kind === 'needs' ? 'Outlook by profession' : 'Pay by profession'}</h2><div class="ik-selects"><select data-act="explore">${opts}</select>${tf}</div></div>${summary}
+    return `<div class="ik-card"><div class="ik-toolbar"><h2>${T(kind === 'needs' ? 'hub.outlookBy' : 'hub.payBy')}</h2><div class="ik-selects"><select data-act="explore">${opts}</select>${tf}</div></div>${summary}
       <div class="ik-table ${kind}">
-        <div class="ik-tr ik-th"><span>Profession</span>${kind === 'needs' ? '<span>Outlook to 2035</span><span>US change</span><span>Source / note</span>' : `<span>${m.us && m.eu ? 'Blended band' : m.us ? 'US band' : 'Europe band'}</span>${m.us ? '<span>US median</span>' : ''}`}</div>
+        <div class="ik-tr ik-th"><span>${T('hub.colProfession')}</span>${kind === 'needs' ? `<span>${T('hub.colOutlook')}</span><span>${T('hub.colUsChange')}</span><span>${T('hub.colSource')}</span>` : `<span>${T(m.us && m.eu ? 'hub.colBlended' : m.us ? 'hub.colUsBand' : 'hub.colEuBand')}</span>${m.eu && PAY ? `<span>${T('hub.colEuGross')}</span>` : ''}${m.us ? `<span>${T('hub.colUsMedian')}</span>` : ''}`}</div>
         ${rows.map((c) => { const mine = mineMap.has(c.career); const ar = area(c.domain);
-          return `<div class="ik-tr ${mine ? 'mine' : ''}"><span><strong>${mine ? '❤️ ' : ''}${esc(c.career)}</strong><small>${ar.icon} ${esc(c.subfieldName || '')}</small></span>${kind === 'needs'
-            ? `<span>${trendChip(c.trend)}</span><span class="ik-num">${c.usGrowth2535 != null ? (c.usGrowth2535 > 0 ? '+' : '') + c.usGrowth2535 + '%' : '—'}</span><span class="ik-dim">${esc(c.blsProxy || '')}${c.note ? ' — ' + esc(c.note) : ''}</span>`
-            : `<span>${bandChip(payBand(c))}</span>${m.us ? `<span class="ik-num">${usPay(c)}</span>` : ''}`}</div>`; }).join('') || '<p class="ik-dim" style="padding:12px">No professions match this filter.</p>'}
+          return `<div class="ik-tr ${mine ? 'mine' : ''}"><span><strong>${mine ? '❤️ ' : ''}${esc(C(c.career))}</strong><small>${ar.icon} ${esc(C(c.subfieldName || ''))}</small></span>${kind === 'needs'
+            ? `<span>${trendChip(c.trend)}</span><span class="ik-num">${c.usGrowth2535 != null ? pct(c.usGrowth2535) : '—'}</span><span class="ik-dim">${esc(C(c.blsProxy || ''))}${c.note ? ' — ' + esc(C(c.note)) : ''}</span>`
+            : `<span>${bandChip(payBand(c))}</span>${m.eu && PAY ? (() => { const v = euPay(c); return `<span class="ik-num">${eur(v.eur)}<small>${esc(T('hub.isco.' + v.group))}</small></span>`; })() : ''}${m.us ? `<span class="ik-num">${usPay(c)}</span>` : ''}`}</div>`; }).join('') || `<p class="ik-dim" style="padding:12px">${T('hub.noRows')}</p>`}
       </div></div>`;
   }
 
@@ -413,7 +474,7 @@
     let html = PAGES[page]();
     if (page === 'overview' && !html.includes('id="ikSupport"')) html += '<div id="ikSupport"></div>';
     $('ikApp').innerHTML = `<div class="ik-page">${html}</div>`;
-    document.title = { overview: 'My Wikigai', love: 'What I love', skills: 'What I’m good at', needs: 'What the world needs', pay: 'What pays' }[page] + (page === 'overview' ? '' : ' — Wikigai');
+    document.title = T({ overview: 'meta.hub', love: 'meta.hubLove', skills: 'meta.hubSkills', needs: 'meta.hubNeeds', pay: 'meta.hubPay' }[page]);
     if (scrollTop) window.scrollTo(0, 0);
     const sup = $('ikSupport'); if (sup) renderSupport(sup);
   }
@@ -435,10 +496,10 @@
       const c = b.dataset.country, list = st.region.countries, i = list.indexOf(c);
       if (i >= 0) list.splice(i, 1); else list.push(c);
       if (!list.length) st.region.mode = 'blend';
-      render(); save({ region: st.region }, '✓ Market updated'); return;
+      render(); save({ region: st.region }, T('hub.marketUpdated')); return;
     }
     const act = b.dataset.act;
-    if (act === 'region-blend') { st.region = { mode: 'blend', countries: [] }; render(); save({ region: st.region }, '✓ Market updated'); }
+    if (act === 'region-blend') { st.region = { mode: 'blend', countries: [] }; render(); save({ region: st.region }, T('hub.marketUpdated')); }
     if (act === 'region-custom') { st.region.mode = 'custom'; render(); }
     if (act === 'skip') { st.gradesSkipped = true; completeStage3().then(() => go('/ikigai')); }
     if (act === 'save-grades') saveGrades();
@@ -451,7 +512,7 @@
     if (act === 'refresh') {
       const d = new Date(); d.setMonth(d.getMonth() + 6);
       st.refresh = t.checked ? { optIn: true, cadenceMonths: 6, nextDue: d.toISOString().slice(0, 10) } : { optIn: false };
-      save({ refresh: st.refresh }, t.checked ? '🔔 We’ll remind you in 6 months' : 'Reminder off');
+      save({ refresh: st.refresh }, T(t.checked ? 'hub.refreshOn' : 'hub.refreshOff'));
     }
     if (act === 'country') {
       st.grades.country = t.value;
@@ -475,12 +536,12 @@
   function saveGrades() {
     readGradeInputs();
     const g = st.grades, err = $('ikGradeErr');
-    if (!isFinite(g.worst) || !isFinite(g.best) || g.worst === g.best) { err.textContent = 'Lowest and highest grade must be two different numbers.'; return; }
+    if (!isFinite(g.worst) || !isFinite(g.best) || g.worst === g.best) { err.textContent = T('hub.errRange'); return; }
     const lo = Math.min(g.worst, g.best), hi = Math.max(g.worst, g.best);
     const bad = Object.entries(g.values).filter(([, v]) => v !== '' && v != null && (v < lo || v > hi));
-    if (bad.length) { err.textContent = `${bad.map(([k]) => SUBJECTS[k]).join(', ')}: outside ${lo}–${hi}. Fix the grade or edit the range.`; return; }
+    if (bad.length) { err.textContent = T('hub.errOutside', { subjects: bad.map(([k]) => subjName(k)).join(', '), lo, hi }); return; }
     const filled = Object.values(g.values).filter((v) => v !== '' && v != null).length;
-    if (!filled) { err.textContent = 'Enter at least one grade, or choose “Skip for now”.'; return; }
+    if (!filled) { err.textContent = T('hub.errNone'); return; }
     st.gradesSkipped = false;
     completeStage3().then(() => { if (flow) go('/ikigai'); else render(); });
   }
@@ -488,6 +549,7 @@
   /* ── boot ── */
   async function boot() {
     if (!window.CPS?.Store?.token) { location.href = '/login'; return; }
+    await I.ready;
     try { results = (await api('/api/user/results')).results || {}; }
     catch (err) { if (err.status === 401) { window.CPS.Store.clear(); location.href = '/login'; return; } results = {}; }
     const s3 = results.stage_3;
@@ -498,6 +560,7 @@
       if (s3.refresh) st.refresh = s3.refresh;
     }
     render(false);
+    I.onChange(() => { readGradeInputs(); render(false); });
   }
   boot();
 

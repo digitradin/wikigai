@@ -112,6 +112,15 @@ async function main() {
   await nav(BASE + '/login');
   check('login has password field', await evaluate(`document.getElementById('password')?.type === 'password'`));
   check('login has forgot link', await evaluate(`!!document.querySelector('a[href="/forgot"]')`));
+  check('login has captcha', await evaluate(`!!document.getElementById('cpGrid')`));
+  await evaluate(`(async () => {
+    for (let i = 0; i < 30 && !window.CPS.Captcha.id; i++) await new Promise(r => setTimeout(r, 100));
+    const r = await fetch('/api/captcha/_debug/solve'); const data = await r.json();
+    window.CPS.Captcha.id = data.captcha_id; window.CPS.Captcha.selected = new Set(data.answer);
+    window.CPS.Captcha.render(data.tiles);
+    data.tiles.forEach(t => { const el = document.querySelector('.tile[data-id="'+t.id+'"]'); if (el && data.answer.includes(t.id)) el.classList.add('sel'); });
+    window.CPS.Captcha.updateCount(); return true;
+  })()`);
   await evaluate(`(() => {
     document.getElementById('email').value = ${JSON.stringify(EMAIL)};
     document.getElementById('password').value = ${JSON.stringify(PW)};
@@ -144,6 +153,14 @@ async function main() {
     document.getElementById('email').value = ${JSON.stringify(EMAIL)};
     document.getElementById('password').value = ${JSON.stringify(PW2)};
     return true;
+  })()`);
+  await evaluate(`(async () => {
+    for (let i = 0; i < 30 && !window.CPS.Captcha.id; i++) await new Promise(r => setTimeout(r, 100));
+    const r = await fetch('/api/captcha/_debug/solve'); const data = await r.json();
+    window.CPS.Captcha.id = data.captcha_id; window.CPS.Captcha.selected = new Set(data.answer);
+    window.CPS.Captcha.render(data.tiles);
+    data.tiles.forEach(t => { const el = document.querySelector('.tile[data-id="'+t.id+'"]'); if (el && data.answer.includes(t.id)) el.classList.add('sel'); });
+    window.CPS.Captcha.updateCount(); return true;
   })()`);
   await evaluate(`document.getElementById('loginForm').dispatchEvent(new Event('submit', {cancelable:true, bubbles:true}))`);
   await sleep(1800);

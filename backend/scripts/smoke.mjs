@@ -18,6 +18,8 @@ async function j(path, opts = {}) {
   return { status: res.status, data };
 }
 const email = `smoke_${Date.now()}@example.com`;
+// fresh solvable captcha for each login (EXPOSE_PINS=true only)
+async function cap() { const s = await j('/api/captcha/_debug/solve'); return { captcha_id: s.data.captcha_id, captcha_answer: s.data.answer }; }
 const PASSWORD = 'Sunshine42';
 
 console.log('\n▶ CPS smoke test (password auth) —', BASE, '\nemail:', email, '\n');
@@ -65,11 +67,15 @@ check('verify succeeds + token', verify.status === 200 && typeof verify.data.tok
 const token = verify.data.token;
 
 console.log('— login with password —');
-const wrongPw = await j('/api/auth/login', { method: 'POST', body: { email, password: 'WrongPass1' } });
+const noCap = await j('/api/auth/login', { method: 'POST', body: { email, password: PASSWORD } });
+check('login without captcha → 400 CAPTCHA_FAIL', noCap.status === 400 && noCap.data.code === 'CAPTCHA_FAIL');
+const badCap = await j('/api/auth/login', { method: 'POST', body: { email, password: PASSWORD, captcha_id: (await cap()).captcha_id, captcha_answer: ['x', 'y', 'z'] } });
+check('login with wrong captcha → 400 CAPTCHA_FAIL', badCap.status === 400 && badCap.data.code === 'CAPTCHA_FAIL');
+const wrongPw = await j('/api/auth/login', { method: 'POST', body: { email, password: 'WrongPass1', ...(await cap()) } });
 check('wrong password → 401', wrongPw.status === 401 && wrongPw.data.code === 'BAD_CREDENTIALS');
-const login = await j('/api/auth/login', { method: 'POST', body: { email, password: PASSWORD } });
+const login = await j('/api/auth/login', { method: 'POST', body: { email, password: PASSWORD, ...(await cap()) } });
 check('correct password → token', login.status === 200 && typeof login.data.token === 'string');
-const unknownPw = await j('/api/auth/login', { method: 'POST', body: { email: 'nobody_' + Date.now() + '@example.com', password: PASSWORD } });
+const unknownPw = await j('/api/auth/login', { method: 'POST', body: { email: 'nobody_' + Date.now() + '@example.com', password: PASSWORD, ...(await cap()) } });
 check('unknown email → uniform 401', unknownPw.status === 401 && unknownPw.data.code === 'BAD_CREDENTIALS');
 
 console.log('— session + results —');
@@ -95,9 +101,9 @@ const resetWeak = await j('/api/auth/reset', { method: 'POST', body: { email, pi
 check('reset weak password rejected', resetWeak.status === 400 && resetWeak.data.code === 'WEAK_PASSWORD');
 const reset = await j('/api/auth/reset', { method: 'POST', body: { email, pin: resetPin, password: NEWPW, password2: NEWPW } });
 check('reset succeeds', reset.status === 200, JSON.stringify(reset.data));
-const loginOld = await j('/api/auth/login', { method: 'POST', body: { email, password: PASSWORD } });
+const loginOld = await j('/api/auth/login', { method: 'POST', body: { email, password: PASSWORD, ...(await cap()) } });
 check('old password no longer works', loginOld.status === 401);
-const loginNew = await j('/api/auth/login', { method: 'POST', body: { email, password: NEWPW } });
+const loginNew = await j('/api/auth/login', { method: 'POST', body: { email, password: NEWPW, ...(await cap()) } });
 check('new password works', loginNew.status === 200 && typeof loginNew.data.token === 'string');
 
 console.log(`\n${failed === 0 ? '✅ ALL PASS' : '❌ FAILURES'} — passed=${passed} failed=${failed}\n`);

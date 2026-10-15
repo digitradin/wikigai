@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Assessment — Digitradin CPS</title>
+<title data-i18n="meta.widget">Assessment — Wikigai</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
+<script src="/assets/i18n/i18n.js"></script>
 </head>
 <body>
 <nav class="top"><div class="inner">
-  <div class="logo"><span class="mark">◈</span> Digitradin<span style="color:var(--muted);font-weight:500;font-size:13px;margin-left:6px">Stage <span id="stageNum">1</span></span></div>
-  <div class="nav-links"><a class="btn btn-ghost" href="/dashboard">Exit</a></div>
+  <div class="logo"><img src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:30px"><span style="color:var(--muted);font-weight:500;font-size:13px;margin-left:6px"><span data-i18n="widget.stage">Stage</span> <span id="stageNum">1</span></span></div>
+  <div class="nav-links"><div data-wk-lang></div><a class="btn btn-ghost" href="/dashboard" data-i18n="widget.exit">Exit</a></div>
 </div></nav>
 
 <main class="narrow" style="padding-top:34px">
@@ -30,32 +31,11 @@
   const stage = Math.min(3, Math.max(1, parseInt(params.get('stage') || '1', 10)));
   document.getElementById('stageNum').textContent = stage;
 
-  // Demo question bank per stage (to be replaced by the full adaptive bank).
-  const BANK = {
-    1: [
-      'Which kinds of problems do you lose track of time solving?',
-      'What topics do you read about for fun, with no one asking you to?',
-      'When you help someone, what do they usually come to you for?',
-      'Which environments make you feel most alive?',
-      'What would you still do even if it paid nothing?',
-    ],
-    2: [
-      'Rate your comfort building something from scratch.',
-      'Rate how well you explain complex ideas simply.',
-      'Rate your ability to organise and lead a small project.',
-      'Rate your analytical and data reasoning.',
-      'Rate your creative and design sense.',
-    ],
-    3: [
-      'How important is remote flexibility to you?',
-      'How important is visible impact in your work?',
-      'How much does salary drive your decision?',
-      'How much do you value working with people all day?',
-      'How important is job security versus upside?',
-    ],
-  };
+  // Demo question bank per stage — text lives in the dictionary (widget.q1…q3).
+  const BANK = { 1: [], 2: [], 3: [] };
 
-  const TOTAL = BANK[stage].length;
+  const T = (k, v) => WK.i18n.t(k, v);
+  const TOTAL = 5;
   let idx = 0;
   const answers = {};
 
@@ -63,7 +43,8 @@
 
   function render() {
     document.getElementById('stageNum').textContent = stage;
-    document.getElementById('stepInd').textContent = `Question ${idx + 1} of ${TOTAL}`;
+    BANK[stage] = T('widget.q' + stage);
+    document.getElementById('stepInd').textContent = T('widget.questionOf', { n: idx + 1, total: TOTAL });
     document.getElementById('progress').style.width = Math.round(((idx) / TOTAL) * 100) + '%';
     const q = BANK[stage][idx];
     const sel = answers[idx];
@@ -72,12 +53,12 @@
         <h3 style="font-size:19px;line-height:1.35;margin-bottom:18px">${esc(q)}</h3>
         <div style="display:flex;flex-direction:column;gap:9px" id="opts">
           ${[1,2,3,4,5].map(v => `
-            <button type="button" class="btn ${sel===v?'btn-primary':'btn-ghost'}" data-v="${v}" style="justify-content:flex-start">${v} — ${v===1?'Not at all':v===5?'Very much':'Somewhat'}</button>
+            <button type="button" class="btn ${sel===v?'btn-primary':'btn-ghost'}" data-v="${v}" style="justify-content:flex-start">${v} — ${T(v===1?'widget.notAtAll':v===5?'widget.veryMuch':'widget.somewhat')}</button>
           `).join('')}
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:22px">
-          <button class="btn btn-ghost" id="prev" ${idx===0?'disabled':''}>← Back</button>
-          <button class="btn btn-primary" id="next" ${sel?'':'disabled'}>${idx===TOTAL-1?'Finish':'Next →'}</button>
+          <button class="btn btn-ghost" id="prev" ${idx===0?'disabled':''}>${T('widget.back')}</button>
+          <button class="btn btn-primary" id="next" ${sel?'':'disabled'}>${T(idx===TOTAL-1?'widget.finish':'widget.next')}</button>
         </div>
       </div>`;
     document.querySelectorAll('#opts .btn').forEach(b => b.addEventListener('click', () => {
@@ -91,7 +72,7 @@
   }
 
   async function finish() {
-    document.getElementById('app').innerHTML = `<div class="card card-pad" style="text-align:center"><span class="spinner"></span><p style="margin-top:12px;color:var(--muted)">Saving your results…</p></div>`;
+    document.getElementById('app').innerHTML = `<div class="card card-pad" style="text-align:center"><span class="spinner"></span><p style="margin-top:12px;color:var(--muted)">${T('widget.saving')}</p></div>`;
     const scores = Object.values(answers);
     const avg = scores.reduce((a,b)=>a+b,0) / (scores.length || 1);
     const payload = {
@@ -104,16 +85,17 @@
       await api('/api/user/results', { method: 'POST', body: { stage, results: payload } });
       document.getElementById('app').innerHTML = `
         <div class="card card-pad" style="text-align:center">
-          <h2 style="margin-bottom:8px">Stage ${stage} complete 🎉</h2>
-          <p style="color:var(--muted);margin-bottom:20px">Your results are saved to your account.</p>
-          <a class="btn btn-primary" href="/dashboard">Back to dashboard</a>
+          <h2 style="margin-bottom:8px">${T('widget.complete', { n: stage })}</h2>
+          <p style="color:var(--muted);margin-bottom:20px">${T('widget.saved')}</p>
+          <a class="btn btn-primary" href="/dashboard">${T('common.backToDashboard')}</a>
         </div>`;
     } catch (err) {
-      document.getElementById('app').innerHTML = `<div class="card card-pad"><div class="alert show alert-err">${esc(err.message)}</div><a class="btn btn-ghost" href="/dashboard">Back to dashboard</a></div>`;
+      document.getElementById('app').innerHTML = `<div class="card card-pad"><div class="alert show alert-err">${esc(err.message)}</div><a class="btn btn-ghost" href="/dashboard">${T('common.backToDashboard')}</a></div>`;
     }
   }
 
-  render();
+  WK.i18n.ready.then(render);
+  WK.i18n.onChange(render);
 </script>
 </body>
 </html>

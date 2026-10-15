@@ -196,3 +196,13 @@
   .ik-res-name{min-width:0;flex:1 1 140px}
   .ik-sweet{order:5}
 }
+/* What pays — source groups */
+.ik-sources .ik-src-h{font-size:.9rem;font-weight:700;margin:16px 0 4px;color:var(--t1,#f1f5f9)}
+.ik-sources .ik-src-h:first-of-type{margin-top:10px}
+.ik-sources .ik-natsrc li.mine strong{color:var(--c4,#4dc9f6)}
+.ik-src-tag{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 8px;border-radius:10px;background:rgba(77,201,246,.14);color:var(--c4,#4dc9f6);margin-left:4px}
+/* What pays — euro column (Eurostat) */
+.ik-table.pay .ik-tr{grid-template-columns:1.6fr 130px 130px 100px}
+.ik-table.pay .ik-num small{font-family:inherit}
+.ik-eurnote{margin:4px 0 12px}
+@media (max-width:640px){.ik-table.pay .ik-tr{grid-template-columns:1fr auto auto}.ik-table.pay .ik-tr>span:nth-child(n+4){display:none}}

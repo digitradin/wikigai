@@ -3,6 +3,16 @@
   'use strict';
 
   const API_BASE = window.__CPS_API__ || window.location.origin;
+  const I = () => window.WK && window.WK.i18n;
+  const T = (k, v) => (I() ? I().t(k, v) : k);
+  /* Server errors carry a stable `code`; show the message in the user's language. */
+  function localError(data, status) {
+    const i = I();
+    if (i && data && data.code && i.has('errors.' + data.code)) return i.t('errors.' + data.code);
+    if (i && status === 429) return i.t('errors.tooMany');
+    if (i && i.lang !== 'en') return i.t('errors.generic');
+    return data.error || ('Request failed (' + status + ')');
+  }
 
   const Store = {
     TOKEN_KEY: 'cps_token',
@@ -16,14 +26,22 @@
   async function api(path, { method = 'GET', body, auth = true } = {}) {
     const headers = { 'Content-Type': 'application/json' };
     if (auth && Store.token) headers.Authorization = 'Bearer ' + Store.token;
-    const res = await fetch(API_BASE + path, {
-      method, headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    if (I()) headers['X-WK-Lang'] = I().lang;
+    let res;
+    try {
+      res = await fetch(API_BASE + path, {
+        method, headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (netErr) {
+      const err = new Error(I() ? T('errors.network') : 'Network error');
+      err.status = 0; err.code = 'NETWORK';
+      throw err;
+    }
     let data = null;
     try { data = await res.json(); } catch { data = {}; }
     if (!res.ok) {
-      const err = new Error(data.error || ('Request failed (' + res.status + ')'));
+      const err = new Error(localError(data, res.status));
       err.status = res.status;
       err.code = data.code;
       err.data = data;
@@ -45,16 +63,18 @@
         <div class="captcha-box">
           <div class="captcha-head">
             <div>
-              <div class="captcha-prompt" id="cpPrompt">Select the 3 drink brands</div>
-              <div class="captcha-count" id="cpCount">0 of 3 selected</div>
+              <div class="captcha-prompt" id="cpPrompt" data-i18n="captcha.prompt">${T('captcha.prompt')}</div>
+              <div class="captcha-count" id="cpCount"></div>
             </div>
-            <button type="button" class="captcha-refresh" id="cpRefresh">↻ New grid</button>
+            <button type="button" class="captcha-refresh" id="cpRefresh" data-i18n="captcha.refresh">${T('captcha.refresh')}</button>
           </div>
           <div class="captcha-grid" id="cpGrid">
             <div class="skeleton" style="padding:20px"><span class="spinner"></span></div>
           </div>
         </div>`;
       wrap.querySelector('#cpRefresh').addEventListener('click', () => this.load());
+      this.updateCount();
+      if (I()) I().onChange(() => { I().apply(wrap); this.updateCount(); });
       await this.load();
     },
 
@@ -67,11 +87,11 @@
         const data = await api('/api/captcha/new', { auth: false });
         this.id = data.captcha_id;
         this.selected = new Set();
-        if (data.prompt) document.getElementById('cpPrompt').textContent = data.prompt;
+        // the prompt is always "pick the 3 drink brands": shown from the dictionary
         this.render(data.tiles);
         this.updateCount();
       } catch (e) {
-        grid.innerHTML = '<div class="skeleton" style="grid-column:1/-1;color:var(--err)">Could not load captcha. <a href="#" id="cpRetry">Retry</a></div>';
+        grid.innerHTML = `<div class="skeleton" style="grid-column:1/-1;color:var(--err)">${T('captcha.loadFail')} <a href="#" id="cpRetry">${T('common.retry')}</a></div>`;
         const r = document.getElementById('cpRetry');
         if (r) r.addEventListener('click', (ev) => { ev.preventDefault(); this.load(); });
       }
@@ -101,7 +121,7 @@
 
     updateCount() {
       const c = document.getElementById('cpCount');
-      if (c) c.textContent = `${this.selected.size} of ${this.required} selected`;
+      if (c) c.textContent = T('captcha.count', { n: this.selected.size, total: this.required });
     },
 
     answer() { return [...this.selected]; },

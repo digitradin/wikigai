@@ -12,6 +12,10 @@ const {
 } = require('../lib/crypto');
 const { createSessionToken, verifySessionToken } = require('../lib/session');
 const { sendMail } = require('../lib/mailer');
+const i18n = require('../i18n');
+
+/* language for emails: the account's saved locale, else the request's */
+function userLang(user, req) { return i18n.normalize(user && user.locale) || i18n.fromRequest(req); }
 
 const PIN_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_PIN_ATTEMPTS = 5;
@@ -74,7 +78,7 @@ router.post('/signup', async (req, res, next) => {
     const password = String(req.body.password || '');
     const password2 = String(req.body.password2 ?? req.body.password ?? '');
     const name = typeof req.body.name === 'string' ? req.body.name.trim().slice(0, 80) : '';
-    const locale = ['en', 'es', 'fr'].includes(req.body.locale) ? req.body.locale : 'en';
+    const locale = i18n.fromRequest(req);
     const { captcha_id, captcha_answer } = req.body;
 
     if (!EMAIL_RE.test(email)) {
@@ -132,8 +136,8 @@ router.post('/signup', async (req, res, next) => {
     const pin = await issuePin(emailHash, 'signup');
     await sendMail({
       to: email,
-      subject: 'Your Digitradin verification code',
-      html: pinEmailHtml(pin, name || email.split('@')[0]),
+      subject: i18n.t(locale, 'email.subjectVerify'),
+      html: pinEmailHtml(pin, name || email.split('@')[0], 'verify', locale),
     });
 
     res.status(201).json({
@@ -191,15 +195,15 @@ router.post('/resend', async (req, res, next) => {
     const email = normalizeEmail(req.body.email);
     if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Invalid email.', code: 'BAD_EMAIL' });
     const emailHash = hashEmail(email);
-    const user = await db.getOne('SELECT id, name, email_verified FROM users WHERE email_hash = $1', [emailHash]);
+    const user = await db.getOne('SELECT id, name, locale, email_verified FROM users WHERE email_hash = $1', [emailHash]);
     if (!user) return res.status(404).json({ error: 'Account not found.', code: 'NO_USER' });
     if (user.email_verified) return res.status(409).json({ error: 'Account already verified. Please sign in.', code: 'ALREADY_VERIFIED' });
 
     const pin = await issuePin(emailHash, 'signup');
     await sendMail({
       to: email,
-      subject: 'Your Digitradin verification code',
-      html: pinEmailHtml(pin, user.name || email.split('@')[0]),
+      subject: i18n.t(userLang(user, req), 'email.subjectVerify'),
+      html: pinEmailHtml(pin, user.name || email.split('@')[0], 'verify', userLang(user, req)),
     });
     res.json({
       ok: true,
@@ -221,6 +225,16 @@ router.post('/login', async (req, res, next) => {
     const password = String(req.body.password || '');
     if (!EMAIL_RE.test(email) || !password) {
       return res.status(400).json({ error: 'Enter your email and password.', code: 'BAD_INPUT' });
+    }
+
+    // Human check (same 3-drink-brands grid as signup). Checked before the
+    // password so bots cannot test passwords; each challenge works once.
+    // Emergency switch: LOGIN_CAPTCHA=false in the server environment.
+    if (process.env.LOGIN_CAPTCHA !== 'false') {
+      const captcha = await checkCaptcha(req.body.captcha_id, req.body.captcha_answer);
+      if (!captcha.ok) {
+        return res.status(400).json({ error: 'Captcha failed. Please try again.', code: 'CAPTCHA_FAIL' });
+      }
     }
 
     const emailHash = hashEmail(email);
@@ -260,8 +274,8 @@ router.post('/login', async (req, res, next) => {
       const pin = await issuePin(emailHash, 'signup');
       await sendMail({
         to: email,
-        subject: 'Your Digitradin verification code',
-        html: pinEmailHtml(pin, user.name || email.split('@')[0]),
+        subject: i18n.t(userLang(user, req), 'email.subjectVerify'),
+        html: pinEmailHtml(pin, user.name || email.split('@')[0], 'verify', userLang(user, req)),
       });
       return res.status(403).json({
         error: 'Please verify your email first — we just sent a new code.',
@@ -297,13 +311,13 @@ router.post('/forgot', async (req, res, next) => {
     if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Invalid email.', code: 'BAD_EMAIL' });
 
     const emailHash = hashEmail(email);
-    const user = await db.getOne('SELECT id, name, status FROM users WHERE email_hash = $1', [emailHash]);
+    const user = await db.getOne('SELECT id, name, locale, status FROM users WHERE email_hash = $1', [emailHash]);
     if (user && user.status === 'active') {
       const pin = await issuePin(emailHash, 'reset');
       await sendMail({
         to: email,
-        subject: 'Reset your Digitradin password',
-        html: pinEmailHtml(pin, user.name || email.split('@')[0], 'password reset'),
+        subject: i18n.t(userLang(user, req), 'email.subjectReset'),
+        html: pinEmailHtml(pin, user.name || email.split('@')[0], 'reset', userLang(user, req)),
       });
       // Dev/preprod only.
       if (process.env.EXPOSE_PINS === 'true') {
@@ -469,16 +483,17 @@ async function checkCaptcha(captchaId, answer) {
   return { ok: h === row.answer_hash };
 }
 
-function pinEmailHtml(pin, name, kind = 'verification') {
-  return `<!doctype html><html><body style="margin:0;background:#0f172a;font-family:-apple-system,Segoe UI,Roboto,sans-serif">
+function pinEmailHtml(pin, name, kind = 'verify', lang = 'en') {
+  const t = (k, v) => i18n.t(lang, 'email.' + k, v);
+  return `<!doctype html><html lang="${escapeHtml(lang)}"><body style="margin:0;background:#0f172a;font-family:-apple-system,Segoe UI,Roboto,sans-serif">
   <div style="max-width:480px;margin:0 auto;padding:32px">
-    <h1 style="color:#fff;font-size:20px;margin:0 0 4px">Digitradin</h1>
-    <p style="color:#94a3b8;margin:0 0 24px;font-size:13px">Career Positioning System</p>
+    <h1 style="color:#fff;font-size:20px;margin:0 0 4px">${t('brand')}</h1>
+    <p style="color:#94a3b8;margin:0 0 24px;font-size:13px">${escapeHtml(t('tagline'))}</p>
     <div style="background:#1e293b;border-radius:16px;padding:28px;color:#e2e8f0">
-      <p style="margin:0 0 8px">Hi ${escapeHtml(name)},</p>
-      <p style="margin:0 0 20px;color:#cbd5e1;font-size:14px">Use this ${kind} code to continue. It expires in 10 minutes.</p>
+      <p style="margin:0 0 8px">${escapeHtml(t('hi', { name }))}</p>
+      <p style="margin:0 0 20px;color:#cbd5e1;font-size:14px">${escapeHtml(t(kind === 'reset' ? 'bodyReset' : 'bodyVerify'))}</p>
       <div style="font-size:34px;letter-spacing:8px;font-weight:700;color:#fff;background:#0f172a;border-radius:12px;padding:18px;text-align:center">${pin}</div>
-      <p style="margin:20px 0 0;color:#64748b;font-size:12px">If you didn't request this, you can safely ignore this email.</p>
+      <p style="margin:20px 0 0;color:#64748b;font-size:12px">${escapeHtml(t('ignore'))}</p>
     </div>
   </div></body></html>`;
 }

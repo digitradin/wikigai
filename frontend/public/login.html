@@ -3,67 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in — Wikigai</title>
+<title data-i18n="meta.login">Sign in — Wikigai</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 <link rel="icon" href="/assets/brand/favicon.png">
 <link rel="stylesheet" href="/assets/brand.css">
+<script src="/assets/i18n/i18n.js"></script>
 </head>
 <body>
 <div class="auth-shell">
   <div class="narrow auth-card">
     <div class="auth-head">
       <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
-      <h2>Welcome back</h2>
-      <p>Sign in to continue your Wikigai</p>
+      <h2 data-i18n="auth.login.title">Welcome back</h2>
+      <p data-i18n="auth.login.sub">Sign in to continue your Wikigai</p>
     </div>
 
     <div class="card card-pad">
       <div class="alert" id="alert"></div>
       <form id="loginForm" novalidate>
         <div class="field" id="fEmail">
-          <label for="email">Email address</label>
-          <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+          <label for="email" data-i18n="auth.emailLabel">Email address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com" data-i18n-attr="placeholder:auth.emailPh" autocomplete="email" required>
           <div class="err-msg" id="eEmail"></div>
         </div>
         <div class="field" id="fPassword">
-          <label for="password">Password</label>
+          <label for="password" data-i18n="auth.passwordLabel">Password</label>
           <div class="pw-wrap">
-            <input class="input" type="password" id="password" placeholder="Your password" autocomplete="current-password" required>
-            <button type="button" class="pw-toggle" data-target="password" aria-label="Show password">Show</button>
+            <input class="input" type="password" id="password" placeholder="Your password" data-i18n-attr="placeholder:auth.passwordPh" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" data-target="password" data-i18n="common.show" data-i18n-attr="aria-label:common.showPassword" aria-label="Show password">Show</button>
           </div>
           <div class="err-msg" id="ePassword"></div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin:-6px 0 12px">
-          <a href="/forgot" style="font-size:13px">Forgot password?</a>
+        <div class="field">
+          <label data-i18n="auth.signup.human">Human check</label>
+          <div id="captcha"></div>
+          <div class="err-msg" id="eCaptcha"></div>
         </div>
 
-        <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Sign in</button>
+        <div style="display:flex;justify-content:flex-end;margin:-6px 0 12px">
+          <a href="/forgot" style="font-size:13px" data-i18n="auth.login.forgot">Forgot password?</a>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" id="submitBtn" data-i18n="auth.login.submit">Sign in</button>
       </form>
-      <div class="switch-line">New here? <a href="/signup">Create an account</a></div>
+      <div class="switch-line"><span data-i18n="auth.login.switch">New here?</span> <a href="/signup" data-i18n="auth.login.switchLink">Create an account</a></div>
     </div>
-    <p class="hint" style="text-align:center;margin-top:16px">Protected by a human check and secure session.</p>
+    <p class="hint" style="text-align:center;margin-top:16px" data-i18n="auth.login.hint">Protected by a human check and secure session.</p>
   </div>
 </div>
 
 <script src="/assets/app.js"></script>
 <script>
-  const { api, showAlert, hideAlert, Store } = window.CPS;
+  const { api, Captcha, showAlert, hideAlert, Store } = window.CPS;
   const alertEl = document.getElementById('alert');
   const form = document.getElementById('loginForm');
   const btn = document.getElementById('submitBtn');
+  const T = (k, v) => WK.i18n.t(k, v);
+  WK.i18n.onChange(() => {}); // static text re-applies itself; keep typed input
 
   if (Store.token) window.location.href = '/dashboard';
+  WK.i18n.ready.then(() => Captcha.mount('captcha'));
   const flash = sessionStorage.getItem('cps_flash');
   if (flash) { sessionStorage.removeItem('cps_flash'); showAlert(alertEl, flash, 'ok'); }
   document.querySelectorAll('.pw-toggle').forEach(b => b.addEventListener('click', () => {
     const inp = document.getElementById(b.dataset.target);
     const show = inp.type === 'password';
     inp.type = show ? 'text' : 'password';
-    b.textContent = show ? 'Hide' : 'Show';
+    b.textContent = T(show ? 'common.hide' : 'common.show'); b.setAttribute('data-i18n', show ? 'common.hide' : 'common.show');
   }));
 
   function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
@@ -71,19 +81,20 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert(alertEl);
-    ['eEmail','ePassword'].forEach(id => document.getElementById(id).textContent = '');
+    ['eEmail','ePassword','eCaptcha'].forEach(id => document.getElementById(id).textContent = '');
     document.querySelectorAll('.field').forEach(f => f.classList.remove('field-err'));
 
     const email = document.getElementById('email').value.trim().toLowerCase();
     const password = document.getElementById('password').value;
     let bad = false;
-    if (!validEmail(email)) { document.getElementById('eEmail').textContent = 'Enter a valid email address.'; document.getElementById('fEmail').classList.add('field-err'); bad = true; }
-    if (!password) { document.getElementById('ePassword').textContent = 'Enter your password.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    if (!validEmail(email)) { document.getElementById('eEmail').textContent = T('auth.errEmail'); document.getElementById('fEmail').classList.add('field-err'); bad = true; }
+    if (!password) { document.getElementById('ePassword').textContent = T('auth.errPassword'); document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    if (!Captcha.isComplete()) { document.getElementById('eCaptcha').textContent = T('auth.errCaptcha'); bad = true; }
     if (bad) return;
 
-    btn.disabled = true; btn.textContent = 'Signing in…';
+    btn.disabled = true; btn.textContent = T('auth.login.busy');
     try {
-      const res = await api('/api/auth/login', { method: 'POST', auth: false, body: { email, password } });
+      const res = await api('/api/auth/login', { method: 'POST', auth: false, body: { email, password, captcha_id: Captcha.id, captcha_answer: Captcha.answer() } });
       Store.token = res.token;
       Store.user = res.user;
       window.location.href = '/dashboard';
@@ -95,7 +106,8 @@
         return;
       }
       showAlert(alertEl, err.message, 'err');
-      btn.disabled = false; btn.textContent = 'Sign in';
+      Captcha.reset(); // each grid works once: load a fresh one for the next try
+      btn.disabled = false; btn.textContent = T('auth.login.submit');
     }
   });
 </script>

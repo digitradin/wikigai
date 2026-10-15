@@ -13,7 +13,7 @@
   const ALL = {
     1: window.STAGE_DATA,   // survey-data.js
     2: S2,                  // survey-data-2b.js (old survey-data-2.js kept as survey-data-2.legacy.js)
-    3: { ui: { navStage: 'Stage 3 of 3 — Wikigai Match' }, questions: [] },
+    3: { questions: [] },
   };
 
   const UNDESIRED_THRESHOLD = 0.25; // <25% of the top score => undesired
@@ -52,16 +52,22 @@
   let subPctMap = {};
 
   const $ = (id) => document.getElementById(id);
+  /* i18n: questions keep their English source text (the msgid) and are
+     translated when shown, so switching language mid-survey is instant. */
+  const I = window.WK.i18n;
+  const T = (k, v) => I.t(k, v);
+  const C = (s) => I.tc(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const areaMeta = (k) => (window.STAGE_DATA?.areas || {})[k] || { name: k, icon: '•', color: '#94a3b8', desc: '' };
-  const subName = (k) => (S2?.subfields?.[k]?.name) || k;
+  const areaName = (k) => C(areaMeta(k).name);
+  const subName = (k) => C((S2?.subfields?.[k]?.name) || k);
 
   const areaTagOf = (q) => {
     if (!q) return '';
-    if (q.subA && q.subB) return areaMeta(q.domain).name;
+    if (q.subA && q.subB) return areaName(q.domain);
     if (q.careerA) return subName(q.sub);
-    const a = q.areaA ? (AREAS[q.areaA]?.name || q.areaA) : '';
-    const b = q.areaB ? (AREAS[q.areaB]?.name || q.areaB) : '';
+    const a = q.areaA ? C(AREAS[q.areaA]?.name || q.areaA) : '';
+    const b = q.areaB ? C(AREAS[q.areaB]?.name || q.areaB) : '';
     if (a && b) return `${a}  ·  ${b}`;
     return a || b || '';
   };
@@ -103,7 +109,7 @@
     const curated = shuffle((bank.pairs || []).slice());
     let curatedLeft = Math.round(N * (bank.curatedShare ?? 0.3));
     const stmt = {}; areas.forEach((a) => { stmt[a] = shuffle((bank.statements[a] || []).slice()); });
-    const stems = bank.stems && bank.stems.length ? bank.stems : ['Which sounds more like you?'];
+    const stems = bank.stems && bank.stems.length ? bank.stems : [T('survey.defaultStem1')];
     let lastStem = -1;
     const takeStmt = (a) => { while (stmt[a].length) { const t = stmt[a].pop(); if (!used.has(t)) { used.add(t); return t; } } return null; };
     return ordered.map(([x, y], i) => {
@@ -128,7 +134,7 @@
 
   /* ── Stage 2 bank: fresh pairs, no phrase or task line shown twice ── */
   function pickStem(stems, last) {
-    if (!stems || !stems.length) return { i: -1, t: 'Which would you rather do?' };
+    if (!stems || !stems.length) return { i: -1, t: T('survey.defaultStem2') };
     let i; do { i = Math.floor(Math.random() * stems.length); } while (stems.length > 1 && i === last);
     return { i, t: stems[i] };
   }
@@ -191,30 +197,26 @@
   }
 
   function applyStageChrome() {
-    const ui = D.ui || {};
-    if (ui.navStage) $('navStage').textContent = ui.navStage;
-    if (ui.badgeText) $('badgeText').textContent = ui.badgeText;
-    if (ui.introTitle) $('introTitle').textContent = ui.introTitle;
-    if (ui.introSub) $('introSub').textContent = ui.introSub;
-    $('beginLabel').textContent = `Begin Stage ${stage}`;
-    $('resultsBadge').textContent = `Stage ${stage} Complete`;
-    const titles = {
-      1: ['Your Career', 'World Map'],
-      2: ['Your Profession', 'Shortlist'],
-      3: ['Your Wikigai', 'Match'],
-    }[stage] || ['Your', 'Results'];
-    $('resultsTitleA').textContent = titles[0];
-    $('resultsTitleB').textContent = titles[1];
-    $('ctaTitle').textContent = `Stage ${stage} complete — well done!`;
-    $('ctaText').textContent = 'Your results have been saved to your account.';
+    const s = stage === 2 ? 'stage2' : stage === 3 ? 'stage3' : 'stage1';
+    $('navStage').textContent = T('survey.' + s + 'Nav');
+    if (stage < 3) {
+      $('badgeText').textContent = T('survey.' + s + 'Badge');
+      $('introTitle').textContent = T('survey.' + s + 'Title');
+      $('introSub').textContent = T('survey.' + s + 'Sub');
+    }
+    $('beginLabel').textContent = T('survey.begin', { n: stage });
+    $('resultsBadge').textContent = T('survey.resultsBadge', { n: stage });
+    $('resultsTitleA').textContent = T('survey.results' + stage + 'A');
+    $('resultsTitleB').textContent = T('survey.results' + stage + 'B');
+    $('ctaTitle').textContent = stage === 1 ? T('survey.ctaTitleHatch') : T('survey.ctaTitle', { n: stage });
+    $('ctaText').textContent = stage === 1 ? T('survey.ctaTextHatch') : T('survey.ctaText');
     $('nextBtn').style.display = stage < 3 ? 'inline-flex' : 'none';
-    if (stage < 3) $('nextBtn').textContent = `→ Continue to Stage ${stage + 1}`;
-    $('retakeBtn').textContent = `↺ Retake Stage ${stage}`;
+    if (stage < 3) $('nextBtn').textContent = T('survey.continueTo', { n: stage + 1 });
+    $('retakeBtn').textContent = T('survey.retakeStage', { n: stage });
     $('domainTuner').style.display = stage === 1 ? 'block' : 'none';
     if (stage === 2) {
-      document.querySelectorAll('.how-card h4')[2] && (document.querySelectorAll('.how-card h4')[2].textContent = 'Two short parts');
-      const p = document.querySelectorAll('.how-card p');
-      if (p[2]) p[2].textContent = 'First pick the subfields you like in each domain, then duel real professions head to head.';
+      $('how3t').setAttribute('data-i18n', 'survey.how3tS2'); $('how3t').textContent = T('survey.how3tS2');
+      $('how3d').setAttribute('data-i18n', 'survey.how3dS2'); $('how3d').textContent = T('survey.how3dS2');
     }
   }
 
@@ -334,11 +336,9 @@
   function showFilterNotice() {
     const el = $('filterNotice');
     if (stage === 2) {
-      const names = keptDomains.map((k) => `${areaMeta(k).icon} ${areaMeta(k).name}`).join(', ');
+      const names = keptDomains.map((k) => `${areaMeta(k).icon} ${areaName(k)}`).join(', ');
       el.style.display = 'block';
-      el.innerHTML = `🔎 Focused on your ${keptDomains.length} domain${keptDomains.length === 1 ? '' : 's'}: <strong>${esc(names)}</strong>. ` +
-        `Part A has ${keptDomains.length * 12} quick pairs; Part B duels follow for the subfields you keep. ` +
-        `<a href="/dashboard" style="color:inherit">Change domains</a>`;
+      el.innerHTML = T(keptDomains.length === 1 ? 'survey.filterNotice1' : 'survey.filterNotice', { count: keptDomains.length, names: esc(names), pairs: keptDomains.length * 12 });
       return;
     }
     if (stage === 1 || !domainPrefs) { el.style.display = 'none'; return; }
@@ -411,11 +411,7 @@
   function renderQ() {
     if (currentQ >= active.length) return finishStage();
     const q = active[currentQ];
-    $('qBadge').textContent = stage === 2 ? (s2phase === 'A' ? `Part A · ${currentQ + 1}` : `Part B · ${currentQ + 1}`) : (q.id || `Q${String(currentQ + 1).padStart(3, '0')}`);
-    $('qAreaTag').textContent = areaTagOf(q);
-    $('qText').textContent = q.text;
-    $('optA').textContent = q.a || '—';
-    $('optB').textContent = q.b || '—';
+    paintQ(q);
 
     const total = active.length;
     $('progLabel').textContent = `${currentQ + 1} / ${total}`;
@@ -430,6 +426,16 @@
     void $('qOuter').offsetWidth;
     $('qOuter').style.animation = 'popIn .35s';
     startTimer();
+  }
+
+  /* question text only — used on render and on language change (timer keeps running) */
+  function paintQ(q) {
+    if (!q) return;
+    $('qBadge').textContent = stage === 2 ? T('survey.partBadge', { part: s2phase === 'A' ? 'A' : 'B', n: currentQ + 1 }) : (q.id || `Q${String(currentQ + 1).padStart(3, '0')}`);
+    $('qAreaTag').textContent = areaTagOf(q);
+    $('qText').textContent = C(q.text);
+    $('optA').textContent = q.a ? C(q.a) : '—';
+    $('optB').textContent = q.b ? C(q.b) : '—';
   }
 
   let committing = false;
@@ -491,7 +497,8 @@
     const ranked = rankScores();
     const max = Math.max(1, ...ranked.map((r) => r.score));
     if (stage === 1) domainPrefs = prefsFromRanking(ranked, max);
-    renderResults(ranked, max, { readonly: false });
+    view = () => renderResults(ranked, max, { readonly: false });
+    view();
     showScreen('results');
     persistStage(ranked, max);
   }
@@ -509,10 +516,10 @@
     wrap.innerHTML = '';
     if (stage === 1 && !readonly) {
       $('domainTuner').style.display = 'block';
-      $('resultsSub').textContent = `Here are your 8 ranked areas. We keep your top ${MAX_DOMAINS} (above 25%) for the next stage — click any area to change that.`;
+      $('resultsSub').textContent = T('survey.resultsSubTune', { max: MAX_DOMAINS });
     } else {
       $('domainTuner').style.display = 'none';
-      $('resultsSub').textContent = 'Here are your 8 ranked areas, in order of how strongly they resonated.';
+      $('resultsSub').textContent = T('survey.resultsSubRead');
     }
 
     ranked.forEach((row, i) => {
@@ -532,11 +539,11 @@
           <div class="rank-badge">${rank}</div>
           <div class="area-icon-wrap" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</div>
           <div class="area-info">
-            <div class="area-name">${meta.name}
-              ${excluded ? '<span class="area-badge-undesired"> · not for you</span>' : ''}</div>
-            <div class="area-desc">${meta.desc || ''}</div>
+            <div class="area-name">${esc(C(meta.name))}
+              ${excluded ? `<span class="area-badge-undesired">${T('survey.notForYou')}</span>` : ''}</div>
+            <div class="area-desc">${esc(C(meta.desc || ''))}</div>
           </div>
-          ${tunable ? `<span class="area-toggle ${on ? 'on' : 'off'}" data-toggle="${row.key}">${on ? '✓ Included' : '✕ Excluded'}</span>` : ''}
+          ${tunable ? `<span class="area-toggle ${on ? 'on' : 'off'}" data-toggle="${row.key}">${T(on ? 'common.included' : 'common.excluded')}</span>` : ''}
           <div class="area-score-wrap">
             <div class="area-score-num">${pct}%</div>
             <div class="area-score-bar"><div class="area-score-fill" style="width:${pct}%;background:${meta.color}"></div></div>
@@ -544,8 +551,8 @@
           <i class="fa-solid fa-chevron-down area-chevron"></i>
         </div>
         <div class="area-body"><div class="area-body-inner">
-          <div class="careers-label">Example careers</div>
-          <div class="career-chips">${careers.map((c) => `<span class="chip">${c}</span>`).join('')}</div>
+          <div class="careers-label">${T('survey.exampleCareers')}</div>
+          <div class="career-chips">${careers.map((c) => `<span class="chip">${esc(C(c))}</span>`).join('')}</div>
         </div></div>`;
       card.querySelector('.area-header').addEventListener('click', (e) => {
         if (e.target.closest('[data-toggle]')) return;
@@ -560,20 +567,20 @@
         const key = btn.dataset.toggle;
         const turningOn = domainPrefs[key] === false;
         if (turningOn && countOn(domainPrefs) >= MAX_DOMAINS) {
-          flashNote(`You can keep up to ${MAX_DOMAINS} domains. Exclude one first, then add this one.`);
+          flashNote(T('survey.maxDomains', { max: MAX_DOMAINS }));
           return;
         }
         domainPrefs[key] = turningOn;
         const on = domainPrefs[key];
         btn.className = `area-toggle ${on ? 'on' : 'off'}`;
-        btn.textContent = on ? '✓ Included' : '✕ Excluded';
+        btn.textContent = T(on ? 'common.included' : 'common.excluded');
         const card = wrap.querySelector(`.area-card[data-area="${key}"]`);
         if (card) {
           card.classList.toggle('excluded', !on);
           const nameEl = card.querySelector('.area-name');
-          nameEl.innerHTML = `${AREAS[key]?.name || key}` + (on ? '' : ' <span class="area-badge-undesired"> · not for you</span>');
+          nameEl.innerHTML = esc(areaName(key)) + (on ? '' : ` <span class="area-badge-undesired">${T('survey.notForYou')}</span>`);
         }
-        flashNote(`${countOn(domainPrefs)} of ${MAX_DOMAINS} domains kept.`);
+        flashNote(T('survey.keptOf', { n: countOn(domainPrefs), max: MAX_DOMAINS }));
         persistDomainPrefs();
       });
     });
@@ -591,14 +598,16 @@
     if (s2phase === 'A') {
       computeSubPct();
       subPrefs = defaultSubPrefs();
-      renderSubfieldTuner(false);
+      view = () => renderSubfieldTuner(false);
+      view();
       showScreen('results');
       persist2({ partial: true, phase: 'A-done', keptDomains, domainPct, subScores, subPct: subPctMap, subPrefs });
       return;
     }
     s2phase = 'done';
     const love = computeLove();
-    renderLoveShortlist(love, false);
+    view = () => renderLoveShortlist(love, false);
+    view();
     showScreen('results');
     persist2({
       completedAt: new Date().toISOString(),
@@ -612,10 +621,10 @@
   }
 
   function renderSubfieldTuner(readonly) {
-    $('resultsBadge').textContent = 'Part A Complete';
-    $('resultsTitleA').textContent = 'Your favourite';
-    $('resultsTitleB').textContent = 'Subfields';
-    $('resultsSub').textContent = `We keep your top ${KEEP_SUBS} subfields per domain for the profession duels. Click any subfield to include or exclude it.`;
+    $('resultsBadge').textContent = T('survey.partADone');
+    $('resultsTitleA').textContent = T('survey.subTitleA');
+    $('resultsTitleB').textContent = T('survey.subTitleB');
+    $('resultsSub').textContent = T('survey.subSub', { keep: KEEP_SUBS });
     $('domainTuner').style.display = 'none';
     const wrap = $('areaCards');
     wrap.innerHTML = '';
@@ -627,20 +636,20 @@
       card.innerHTML = `
         <div class="area-header">
           <div class="area-icon-wrap" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</div>
-          <div class="area-info"><div class="area-name">${esc(meta.name)}</div>
-          <div class="area-desc">Phase 1 fit: ${domainPct[d] ?? '—'}%</div></div>
+          <div class="area-info"><div class="area-name">${esc(areaName(d))}</div>
+          <div class="area-desc">${T('survey.phase1Fit', { pct: domainPct[d] ?? '—' })}</div></div>
         </div>
         <div class="area-body"><div class="area-body-inner sub-list">
           ${subs.map((s) => {
             const on = !!subPrefs[s];
             const pct = subPctMap[s] || 0;
-            const careers = S2.careers.filter((c) => c.subfield === s).map((c) => c.career);
+            const careers = S2.careers.filter((c) => c.subfield === s).map((c) => C(c.career));
             return `<div class="sub-row ${on ? '' : 'off'}" data-sub="${s}">
               <div class="sub-main"><div class="sub-name">${esc(subName(s))}</div>
                 <div class="sub-careers">${careers.map(esc).join(' · ')}</div></div>
               <div class="sub-bar"><div class="area-score-fill" style="width:${pct}%;background:${meta.color}"></div></div>
               <div class="sub-pct">${pct}%</div>
-              ${readonly ? '' : `<span class="area-toggle ${on ? 'on' : 'off'}" data-subtoggle="${s}">${on ? '✓ Included' : '✕ Excluded'}</span>`}
+              ${readonly ? '' : `<span class="area-toggle ${on ? 'on' : 'off'}" data-subtoggle="${s}">${T(on ? 'common.included' : 'common.excluded')}</span>`}
             </div>`;
           }).join('')}
         </div></div>`;
@@ -653,16 +662,16 @@
         subPrefs[s] = !subPrefs[s];
         const on = subPrefs[s];
         btn.className = `area-toggle ${on ? 'on' : 'off'}`;
-        btn.textContent = on ? '✓ Included' : '✕ Excluded';
+        btn.textContent = T(on ? 'common.included' : 'common.excluded');
         btn.closest('.sub-row').classList.toggle('off', !on);
         updateDuelCount();
       });
     });
-    $('ctaTitle').textContent = 'Part A done — now meet the professions';
+    $('ctaTitle').textContent = T('survey.partACta');
     updateDuelCount();
     $('nextBtn').style.display = 'inline-flex';
-    $('nextBtn').textContent = '→ Continue to profession duels';
-    $('retakeBtn').textContent = '↺ Restart Stage 2';
+    $('nextBtn').textContent = T('survey.toDuels');
+    $('retakeBtn').textContent = T('survey.restart2');
   }
 
   function updateDuelCount() {
@@ -670,15 +679,15 @@
       ? Object.keys(subPrefs).filter((k) => subPrefs[k]).reduce((t, k) => { const c = S2.careers.filter((x) => x.subfield === k).length; return t + (c < 2 ? 0 : c === 2 ? 1 : Math.min(c, 6)); }, 0)
       : (S2.partB || []).filter((q) => subPrefs[q.sub]).length;
     const kept = Object.values(subPrefs).filter(Boolean).length;
-    $('ctaText').textContent = `${kept} subfield${kept === 1 ? '' : 's'} kept → ${n} quick duels between real professions.`;
+    $('ctaText').textContent = T('survey.duelCount', { count: kept, duels: n });
     $('nextBtn').disabled = n === 0;
   }
 
   function renderLoveShortlist(love, readonly) {
-    $('resultsBadge').textContent = 'Stage 2 Complete';
-    $('resultsTitleA').textContent = 'Your Profession';
-    $('resultsTitleB').textContent = 'Shortlist';
-    $('resultsSub').textContent = 'Ranked by how much you would love the work (Love score = domain fit + subfield fit + duel wins). Stage 3 adds your grades, job outlook and pay.';
+    $('resultsBadge').textContent = T('survey.resultsBadge', { n: 2 });
+    $('resultsTitleA').textContent = T('survey.results2A');
+    $('resultsTitleB').textContent = T('survey.results2B');
+    $('resultsSub').textContent = T('survey.loveSub');
     $('domainTuner').style.display = 'none';
     const wrap = $('areaCards');
     wrap.innerHTML = '';
@@ -692,16 +701,16 @@
         <div class="area-header">
           <div class="rank-badge">${i + 1}</div>
           <div class="area-icon-wrap" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</div>
-          <div class="area-info"><div class="area-name">${esc(l.career)}</div>
-            <div class="area-desc">${esc(subName(l.subfield))} · ${esc(meta.name)}</div></div>
+          <div class="area-info"><div class="area-name">${esc(C(l.career))}</div>
+            <div class="area-desc">${esc(subName(l.subfield))} · ${esc(areaName(l.domain))}</div></div>
           <div class="area-score-wrap"><div class="area-score-num">${l.L}</div>
             <div class="area-score-bar"><div class="area-score-fill" style="width:${l.L}%;background:${meta.color}"></div></div></div>
           <i class="fa-solid fa-chevron-down area-chevron"></i>
         </div>
         <div class="area-body"><div class="area-body-inner">
-          <div class="careers-label">A day could look like</div>
-          <p class="area-desc" style="margin-bottom:8px">${esc(task)}</p>
-          <div class="career-chips"><span class="chip">Domain ${l.D}%</span><span class="chip">Subfield ${l.S}%</span><span class="chip">Duels ${l.C}%</span></div>
+          <div class="careers-label">${T('survey.dayLike')}</div>
+          <p class="area-desc" style="margin-bottom:8px">${esc(C(task))}</p>
+          <div class="career-chips"><span class="chip">${T('survey.chipDomain', { pct: l.D })}</span><span class="chip">${T('survey.chipSub', { pct: l.S })}</span><span class="chip">${T('survey.chipDuels', { pct: l.C })}</span></div>
         </div></div>`;
       card.querySelector('.area-header').addEventListener('click', () => card.classList.toggle('open'));
       wrap.appendChild(card);
@@ -709,28 +718,31 @@
     if (love.length > 15) {
       const more = document.createElement('p');
       more.className = 'save-note';
-      more.textContent = `+ ${love.length - 15} more professions carried into Stage 3.`;
+      more.textContent = T('survey.more', { n: love.length - 15 });
       wrap.appendChild(more);
     }
-    $('ctaTitle').textContent = 'Stage 2 complete — your shortlist is ready';
-    $('ctaText').textContent = 'Next: add last year’s grades (optional, 2 minutes) so we can match what you love with what you’re good at. Job outlook and pay are shown alongside.';
+    $('ctaTitle').textContent = T('survey.s2CtaTitle');
+    $('ctaText').textContent = T('survey.s2CtaText');
     $('nextBtn').disabled = false;
     $('nextBtn').style.display = readonly ? 'none' : 'inline-flex';
-    $('nextBtn').textContent = '→ Next: What I’m good at';
-    $('retakeBtn').textContent = '↺ Retake Stage 2';
+    $('nextBtn').textContent = T('survey.toSkills');
+    $('retakeBtn').textContent = T('survey.retakeStage', { n: 2 });
   }
 
+  let noteKey = null;
+  function setNote(key) { noteKey = key; const n = $('saveNote'); if (n) n.textContent = key ? T(key) : ''; }
+
   function persist2(body) {
-    const note = $('saveNote');
+    setNote('common.savingResults');
     const token = window.CPS?.Store?.token;
-    if (!token || !window.CPS?.api) { if (note) note.textContent = 'Sign in to save your results to your account.'; return; }
+    if (!token || !window.CPS?.api) { setNote('common.signInToSave'); return; }
     window.CPS.api('/api/user/results', { method: 'POST', body: { stage: 2, results: body } })
-      .then(() => { if (note) note.textContent = '✓ Saved to your account.'; })
-      .catch(() => { if (note) note.textContent = "Could not save right now — we'll retry next time you sign in."; });
+      .then(() => setNote('common.saved'))
+      .catch(() => setNote('common.saveFailedLater'));
   }
 
   function persistStage(ranked, max) {
-    const note = $('saveNote');
+    setNote('common.savingResults');
     const token = window.CPS?.Store?.token;
     const summary = {
       stage,
@@ -744,12 +756,12 @@
     };
     if (stage === 1) summary.domainPrefs = domainPrefs;
     if (!token || !window.CPS?.api) {
-      if (note) note.textContent = 'Sign in to save your results to your account.';
+      setNote('common.signInToSave');
       return;
     }
     window.CPS.api('/api/user/results', { method: 'POST', body: { stage, results: summary } })
-      .then(() => { if (note) note.textContent = '✓ Saved to your account.'; })
-      .catch(() => { if (note) note.textContent = "Could not save right now — we'll retry next time you sign in."; });
+      .then(() => setNote('common.saved'))
+      .catch(() => setNote('common.saveFailedLater'));
   }
 
   function persistDomainPrefs() {
@@ -768,16 +780,18 @@
     applyStageChrome();
     if (stage === 2) {
       if (Array.isArray(savedStage?.love)) {
-        renderLoveShortlist(savedStage.love, true);
+        view = () => { renderLoveShortlist(savedStage.love, true); $('nextBtn').style.display = 'none'; };
+        view();
       }
     } else {
       const ranked = (savedStage?.ranked || []).map((r) => ({ key: r.area, score: r.score ?? r.raw ?? 0 }));
       ranked.sort((a, b) => b.score - a.score);
       const max = Math.max(1, ...ranked.map((r) => r.score));
       if (stage === 1) domainPrefs = savedStage?.domainPrefs || prefsFromRanking(ranked, max);
-      renderResults(ranked, max, { readonly: true });
+      view = () => { renderResults(ranked, max, { readonly: true }); $('nextBtn').style.display = 'none'; };
+      view();
     }
-    $('saveNote').textContent = 'Saved results — review mode.';
+    setNote('common.reviewMode');
     $('nextBtn').style.display = 'none';
     showScreen('results');
   };
@@ -790,7 +804,6 @@
   /* ── wiring ── */
   function bindUI() {
     const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
-    document.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => window.setLang(b.dataset.lang)));
     on('beginBtn', 'click', () => window.startSurvey());
     on('backBtn', 'click', () => { window.location.href = '/dashboard'; });
     on('goDashBtn', 'click', () => { window.location.href = '/dashboard'; });
@@ -814,23 +827,17 @@
     if (optB) optB.addEventListener('click', () => window.selectPip(4));
   }
 
-  /* ── i18n ── */
-  const COPY = {
-    EN: { stage: 'Stage 1 of 3 — World Discovery', badge: 'Stage 1 · Domain Discovery', title: 'Discover Your World of Interest', sub: "70 instinctive paired questions — no right or wrong answers. Follow your gut. We'll rank the 8 major areas of the working world that fit you best." },
-    ES: { stage: 'Etapa 1 de 3 — Descubrimiento', badge: 'Etapa 1 · Descubrimiento de Dominios', title: 'Descubre Tu Mundo de Intereses', sub: '70 preguntas emparejadas instintivas — sin respuestas correctas o incorrectas. Confía en tu instinto.' },
-    FR: { stage: 'Étape 1 sur 3 — Découverte', badge: 'Étape 1 · Découverte de Domaines', title: "Découvrez Votre Monde d'Intérêts", sub: '70 questions appariées instinctives — pas de bonnes ou mauvaises réponses. Faites confiance à votre instinct.' },
-  };
-  window.setLang = function (lang) {
-    const t = COPY[lang] || COPY.EN;
-    localStorage.setItem('ikigai_lang', lang);
-    document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
-    if (stage === 1 && !reviewMode) {
-      $('navStage').textContent = (ALL[1]?.ui?.navStage) || t.stage;
-      $('badgeText').textContent = (ALL[1]?.ui?.badgeText) || t.badge;
-      $('introTitle').textContent = t.title;
-      $('introSub').textContent = t.sub;
-    }
-  };
+  /* ── language change: repaint whatever is on screen, keep answers and timer ── */
+  let view = null; // repaints the current results screen
+  function onLang() {
+    const scr = document.querySelector('.screen.active');
+    const id = scr ? scr.id : 'intro';
+    applyStageChrome();
+    if (stage === 2) showFilterNotice();
+    if (id === 'survey') paintQ(active[currentQ]);
+    if (id === 'results' && view) view();
+    if (noteKey) setNote(noteKey);
+  }
 
   /* ── boot ── */
   async function boot() {
@@ -839,10 +846,9 @@
     stage = [1, 2, 3].includes(stageParam) ? stageParam : 1;
     if (stage === 2 && !S2) stage = 1;
 
+    await I.ready;
     if (!setDataset(stage)) { stage = 1; setDataset(1); }
-
-    const savedLang = params.get('lang') || localStorage.getItem('ikigai_lang') || 'EN';
-    if (['EN', 'ES', 'FR'].includes(savedLang)) window.setLang(savedLang);
+    I.onChange(onLang);
 
     let allResults = {};
     if (stage > 1 || params.get('review') === '1') {
@@ -878,8 +884,6 @@
       const saved = allResults[`stage_${stage}`];
       if (saved && (saved.ranked || saved.love)) {
         window.openReview(stage, saved);
-        const langParam = params.get('lang');
-        if (['EN', 'ES', 'FR'].includes(langParam)) window.setLang(langParam);
       }
     }
   }

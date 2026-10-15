@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Confirm your email — Wikigai</title>
+<title data-i18n="meta.verify">Confirm your email — Wikigai</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 <link rel="icon" href="/assets/brand/favicon.png">
 <link rel="stylesheet" href="/assets/brand.css">
+<script src="/assets/i18n/i18n.js"></script>
 </head>
 <body>
 <div class="auth-shell">
@@ -17,8 +18,8 @@
     <div class="auth-head">
       <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
       <div class="progress-steps"><span class="step-dot active"></span><span class="step-dot active"></span></div>
-      <h2>Check your inbox</h2>
-      <p>Enter the 6-digit code we sent to <b id="emailShown">your email</b></p>
+      <h2 data-i18n="auth.verify.title">Check your inbox</h2>
+      <p id="verifySub">Enter the 6-digit code we sent to <b id="emailShown">your email</b></p>
     </div>
 
     <div class="card card-pad">
@@ -27,13 +28,13 @@
       <form id="verifyForm">
         <div class="pin-row" id="pinRow"></div>
         <div class="err-msg" id="ePin" style="text-align:center"></div>
-        <button class="btn btn-primary btn-block" type="submit" id="submitBtn" style="margin-top:14px">Verify &amp; continue</button>
+        <button class="btn btn-primary btn-block" type="submit" id="submitBtn" style="margin-top:14px" data-i18n="auth.verify.submit">Verify &amp; continue</button>
       </form>
       <div class="switch-line">
-        Didn't get it? <a href="#" id="resendLink">Resend code</a>
+        <span data-i18n="auth.verify.resendQ">Didn't get it?</span> <a href="#" id="resendLink" data-i18n="auth.verify.resend">Resend code</a>
       </div>
     </div>
-    <p class="hint" style="text-align:center;margin-top:16px"><a href="/signup">← Use a different email</a></p>
+    <p class="hint" style="text-align:center;margin-top:16px"><a href="/signup" data-i18n="auth.verify.otherEmail">← Use a different email</a></p>
   </div>
 </div>
 
@@ -45,12 +46,19 @@
   const form = document.getElementById('verifyForm');
   const btn = document.getElementById('submitBtn');
   const email = sessionStorage.getItem('cps_pending_email');
+  const T = (k, v) => WK.i18n.t(k, v);
+  WK.i18n.onChange(paintSub);
+  function paintSub() {
+    const sub = document.getElementById('verifySub');
+    sub.innerHTML = T('auth.verify.sub');
+    document.getElementById('emailShown').textContent = email || T('auth.verify.yourEmail');
+  }
+  WK.i18n.ready.then(paintSub);
 
   if (!email) window.location.href = '/signup';
-  document.getElementById('emailShown').textContent = email || 'your email';
 
   const devPin = sessionStorage.getItem('cps_dev_pin');
-  if (devPin) { devPinEl.className = 'alert show alert-info'; devPinEl.textContent = 'Preprod code (dev): ' + devPin; }
+  if (devPin) { devPinEl.className = 'alert show alert-info'; WK.i18n.ready.then(() => { devPinEl.textContent = T('auth.verify.devPin', { pin: devPin }); }); }
 
   let pin;
   pin = setupPinRow('pinRow', () => form.requestSubmit());
@@ -61,8 +69,8 @@
     hideAlert(alertEl);
     document.getElementById('ePin').textContent = '';
     const code = pin.value();
-    if (code.length !== 6) { document.getElementById('ePin').textContent = 'Enter all 6 digits.'; return; }
-    btn.disabled = true; btn.textContent = 'Verifying…';
+    if (code.length !== 6) { document.getElementById('ePin').textContent = T('auth.errPin'); return; }
+    btn.disabled = true; btn.textContent = T('auth.verify.busy');
     try {
       const res = await api('/api/auth/verify', { method: 'POST', auth: false, body: { email, pin: code } });
       Store.token = res.token; Store.user = res.user;
@@ -72,7 +80,7 @@
     } catch (err) {
       showAlert(alertEl, err.message, 'err');
       pin.clear();
-      btn.disabled = false; btn.textContent = 'Verify & continue';
+      btn.disabled = false; btn.textContent = T('auth.verify.submit');
     }
   });
 
@@ -81,8 +89,8 @@
     hideAlert(alertEl);
     try {
       const res = await api('/api/auth/resend', { method: 'POST', auth: false, body: { email } });
-      showAlert(alertEl, res.message || 'A new code has been sent.', 'ok');
-      if (res.dev_pin) { devPinEl.className = 'alert show alert-info'; devPinEl.textContent = 'Preprod code (dev): ' + res.dev_pin; }
+      showAlert(alertEl, T('auth.verify.resent'), 'ok');
+      if (res.dev_pin) { devPinEl.className = 'alert show alert-info'; devPinEl.textContent = T('auth.verify.devPin', { pin: res.dev_pin }); }
     } catch (err) { showAlert(alertEl, err.message, 'err'); }
   });
 </script>

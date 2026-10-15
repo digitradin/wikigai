@@ -1,0 +1,12 @@
+{
+  "email": {
+    "brand": "Wikigai",
+    "tagline": "Descubre dónde lo que te encanta se une con aquello en lo que destacas",
+    "subjectVerify": "Tu código de verificación de Wikigai",
+    "subjectReset": "Restablece tu contraseña de Wikigai",
+    "hi": "Hola, {name}:",
+    "bodyVerify": "Usa este código de verificación para continuar. Caduca en 10 minutos.",
+    "bodyReset": "Usa este código de restablecimiento para continuar. Caduca en 10 minutos.",
+    "ignore": "Si no lo has solicitado tú, puedes ignorar este correo."
+  }
+}

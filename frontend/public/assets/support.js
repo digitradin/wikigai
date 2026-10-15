@@ -13,22 +13,22 @@
     const base = /(^|\.)digitradin\.cloud$|(^|\.)wikigai\.com$/.test(h) ? location.origin : PUBLIC_SITE;
     return `${base}/?ref=share`;
   };
-  const shareText = 'I just mapped my Wikigai — what I love, what I’m good at, and the careers that fit. It’s free: ';
+  const T = (k, v) => (window.WK && WK.i18n ? WK.i18n.t(k, v) : k);
 
   function shareRow() {
     const url = shareUrl();
-    const u = encodeURIComponent(url), t = encodeURIComponent(shareText);
-    const subject = encodeURIComponent('Find your Wikigai — free career discovery');
-    const body = encodeURIComponent(`Hi!\n\nI just mapped my Wikigai: what I love, what I'm good at, and the careers that fit me. It's free and takes about 25 minutes.\n\nTry it here: ${url}\n`);
-    return `<div class="ws-share"><span class="ws-share-l">Know someone choosing their path? Share Wikigai:</span>
+    const u = encodeURIComponent(url), t = encodeURIComponent(T('support.shareText'));
+    const subject = encodeURIComponent(T('support.mailSubject'));
+    const body = encodeURIComponent(T('support.mailBody', { url }));
+    return `<div class="ws-share"><span class="ws-share-l">${T('support.shareLead')}</span>
       <div class="ws-share-b">
         <a class="ws-btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?text=${t}${u}">WhatsApp</a>
         <a class="ws-btn" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${u}">LinkedIn</a>
         <a class="ws-btn" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${t}&url=${u}">X</a>
-        <a class="ws-btn" href="mailto:?subject=${subject}&body=${body}">✉️ Email</a>
-        <button type="button" class="ws-btn" data-ws="copy">🔗 Copy link</button>
+        <a class="ws-btn" href="mailto:?subject=${subject}&body=${body}">${T('support.email')}</a>
+        <button type="button" class="ws-btn" data-ws="copy">${T('support.copy')}</button>
       </div>
-      <input class="ws-link" type="text" readonly value="${esc(url)}" aria-label="Link to share" hidden>
+      <input class="ws-link" type="text" readonly value="${esc(url)}" aria-label="${esc(T('support.linkLabel'))}" hidden>
     </div>`;
   }
 
@@ -36,13 +36,14 @@
     if (!el) return;
     const o = opts || {};
     const c = await cfg();
+    if (window.WK && WK.i18n) await WK.i18n.ready;
     const url = c?.pricing?.donationUrl || '';
     el.innerHTML = `<div class="ws-box ${o.compact ? 'compact' : ''}">
       <div class="ws-main">
-        <div class="ws-copy"><strong>💛 Wikigai is free — for everyone.</strong>
-          Donations are optional. They go into improving our matching models and adding deeper career insights.
-          <a href="/support" class="ws-more">How donations are used</a></div>
-        ${url ? `<a class="ws-donate" href="${esc(url)}" target="_blank" rel="noopener">Donate</a>` : '<span class="ws-soon">Donations opening soon</span>'}
+        <div class="ws-copy"><strong>${T('support.boxTitle')}</strong>
+          ${T('support.boxText')}
+          <a href="/support" class="ws-more">${T('support.boxMore')}</a></div>
+        ${url ? `<a class="ws-donate" href="${esc(url)}" target="_blank" rel="noopener">${T('support.donate')}</a>` : `<span class="ws-soon">${T('support.soon')}</span>`}
       </div>
       ${o.share === false ? '' : shareRow()}
     </div>`;
@@ -61,8 +62,8 @@
         field.hidden = false; field.focus(); field.select();
         try { ok = document.execCommand('copy'); } catch { ok = false; }
       }
-      b.textContent = ok ? '✓ Link copied' : 'Copy the link below';
-      setTimeout(() => { b.textContent = '🔗 Copy link'; }, 2500);
+      b.textContent = T(ok ? 'support.copied' : 'support.copyManual');
+      setTimeout(() => { b.textContent = T('support.copy'); }, 2500);
     }
   });
 

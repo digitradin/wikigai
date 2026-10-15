@@ -3,21 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Choose a new password — Wikigai</title>
+<title data-i18n="meta.reset">Choose a new password — Wikigai</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 <link rel="icon" href="/assets/brand/favicon.png">
 <link rel="stylesheet" href="/assets/brand.css">
+<script src="/assets/i18n/i18n.js"></script>
 </head>
 <body>
 <div class="auth-shell">
   <div class="narrow auth-card">
     <div class="auth-head">
       <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
-      <h2>Choose a new password</h2>
-      <p>Enter the code we emailed you, then pick a new password</p>
+      <h2 data-i18n="auth.reset.title">Choose a new password</h2>
+      <p data-i18n="auth.reset.sub">Enter the code we emailed you, then pick a new password</p>
     </div>
 
     <div class="card card-pad">
@@ -25,35 +26,35 @@
       <div id="devHint" style="display:none" class="alert show alert-ok"></div>
       <form id="resetForm" novalidate>
         <div class="field" id="fEmail">
-          <label for="email">Email address</label>
-          <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+          <label for="email" data-i18n="auth.emailLabel">Email address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com" data-i18n-attr="placeholder:auth.emailPh" autocomplete="email" required>
           <div class="err-msg" id="eEmail"></div>
         </div>
         <div class="field">
-          <label>Reset code</label>
+          <label data-i18n="auth.reset.code">Reset code</label>
           <div class="pin-row" id="pinRow"></div>
           <div class="err-msg" id="ePin"></div>
         </div>
         <div class="field" id="fPassword">
-          <label for="password">New password</label>
+          <label for="password" data-i18n="auth.reset.newPassword">New password</label>
           <div class="pw-wrap">
-            <input class="input" type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required>
-            <button type="button" class="pw-toggle" data-target="password" aria-label="Show password">Show</button>
+            <input class="input" type="password" id="password" placeholder="At least 8 characters" data-i18n-attr="placeholder:auth.newPasswordPh" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" data-target="password" data-i18n="common.show" data-i18n-attr="aria-label:common.showPassword" aria-label="Show password">Show</button>
           </div>
           <div class="pw-meter" id="pwMeter"><span></span></div>
           <div class="err-msg" id="ePassword"></div>
         </div>
         <div class="field" id="fPassword2">
-          <label for="password2">Confirm new password</label>
+          <label for="password2" data-i18n="auth.reset.newPassword2">Confirm new password</label>
           <div class="pw-wrap">
-            <input class="input" type="password" id="password2" placeholder="Repeat your new password" autocomplete="new-password" required>
-            <button type="button" class="pw-toggle" data-target="password2" aria-label="Show password">Show</button>
+            <input class="input" type="password" id="password2" placeholder="Repeat your new password" data-i18n-attr="placeholder:auth.reset.newPassword2Ph" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" data-target="password2" data-i18n="common.show" data-i18n-attr="aria-label:common.showPassword" aria-label="Show password">Show</button>
           </div>
           <div class="err-msg" id="ePassword2"></div>
         </div>
-        <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Update password</button>
+        <button class="btn btn-primary btn-block" type="submit" id="submitBtn" data-i18n="auth.reset.submit">Update password</button>
       </form>
-      <div class="switch-line">Code expired? <a href="/forgot">Send a new one</a></div>
+      <div class="switch-line"><span data-i18n="auth.reset.switch">Code expired?</span> <a href="/forgot" data-i18n="auth.reset.switchLink">Send a new one</a></div>
     </div>
   </div>
 </div>
@@ -66,6 +67,8 @@
   const btn = document.getElementById('submitBtn');
   const pw = document.getElementById('password');
   const pw2 = document.getElementById('password2');
+  const T = (k, v) => WK.i18n.t(k, v);
+  WK.i18n.onChange(() => {}); // static text re-applies itself; keep typed input
 
   const saved = sessionStorage.getItem('cps_reset_email');
   if (saved) document.getElementById('email').value = saved;
@@ -73,7 +76,7 @@
   if (dev) {
     const h = document.getElementById('devHint');
     h.style.display = 'block';
-    h.textContent = 'Preprod code: ' + dev;
+    WK.i18n.ready.then(() => { h.textContent = T('auth.reset.devPin', { pin: dev }); });
   }
 
   const pinRow = setupPinRow('pinRow');
@@ -81,7 +84,7 @@
     const inp = document.getElementById(b.dataset.target);
     const show = inp.type === 'password';
     inp.type = show ? 'text' : 'password';
-    b.textContent = show ? 'Hide' : 'Show';
+    b.textContent = T(show ? 'common.hide' : 'common.show'); b.setAttribute('data-i18n', show ? 'common.hide' : 'common.show');
   }));
 
   function pwStrength(v) {
@@ -107,23 +110,23 @@
     const email = document.getElementById('email').value.trim().toLowerCase();
     const pin = pinRow.value();
     let bad = false;
-    if (!email) { document.getElementById('eEmail').textContent = 'Enter your email address.'; document.getElementById('fEmail').classList.add('field-err'); bad = true; }
-    if (pin.length !== 6) { document.getElementById('ePin').textContent = 'Enter the 6-digit code.'; bad = true; }
-    if (pw.value.length < 8) { document.getElementById('ePassword').textContent = 'Password must be at least 8 characters.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
-    else if (!/[A-Za-z]/.test(pw.value) || !/[0-9]/.test(pw.value)) { document.getElementById('ePassword').textContent = 'Include at least one letter and one number.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
-    if (pw.value !== pw2.value) { document.getElementById('ePassword2').textContent = 'Passwords do not match.'; document.getElementById('fPassword2').classList.add('field-err'); bad = true; }
+    if (!email) { document.getElementById('eEmail').textContent = T('auth.errEmailEmpty'); document.getElementById('fEmail').classList.add('field-err'); bad = true; }
+    if (pin.length !== 6) { document.getElementById('ePin').textContent = T('auth.errPin6'); bad = true; }
+    if (pw.value.length < 8) { document.getElementById('ePassword').textContent = T('auth.errPwLength'); document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    else if (!/[A-Za-z]/.test(pw.value) || !/[0-9]/.test(pw.value)) { document.getElementById('ePassword').textContent = T('auth.errPwMix'); document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    if (pw.value !== pw2.value) { document.getElementById('ePassword2').textContent = T('auth.errPwMatch'); document.getElementById('fPassword2').classList.add('field-err'); bad = true; }
     if (bad) return;
 
-    btn.disabled = true; btn.textContent = 'Updating…';
+    btn.disabled = true; btn.textContent = T('auth.reset.busy');
     try {
       const res = await api('/api/auth/reset', { method: 'POST', auth: false, body: { email, pin, password: pw.value, password2: pw2.value } });
       sessionStorage.removeItem('cps_reset_email');
       sessionStorage.removeItem('cps_dev_pin');
-      sessionStorage.setItem('cps_flash', res.message || 'Password updated. Please sign in.');
+      sessionStorage.setItem('cps_flash', T('auth.reset.done'));
       window.location.href = '/login';
     } catch (err) {
       showAlert(alertEl, err.message, 'err');
-      btn.disabled = false; btn.textContent = 'Update password';
+      btn.disabled = false; btn.textContent = T('auth.reset.submit');
     }
   });
 </script>

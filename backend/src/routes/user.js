@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../lib/db');
 const { hashEmail } = require('../lib/crypto');
 const { requireUser } = require('./auth');
+const i18n = require('../i18n');
 
 /**
  * All /api/user/* routes now authenticate with the signed session token
@@ -66,6 +67,24 @@ router.get('/results', async (req, res, next) => {
       registeredAt: row.created_at,
       lastUpdated: row.updated_at,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PUT /api/user/locale — remember the interface language on the account
+ * (used for emails and as the default on other devices).
+ * Body: { locale: 'en' | 'fr' | 'es' | … any code in i18n.SUPPORTED }
+ */
+router.put('/locale', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const locale = i18n.normalize(req.body && req.body.locale);
+    if (!locale) return res.status(400).json({ error: 'Unsupported language', code: 'BAD_LOCALE', supported: i18n.SUPPORTED });
+    await db.query('UPDATE users SET locale = $1 WHERE id = $2', [locale, user.id]);
+    res.json({ ok: true, locale });
   } catch (err) {
     next(err);
   }

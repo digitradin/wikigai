@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create your account — Wikigai</title>
+<title data-i18n="meta.signup">Create your account — Wikigai</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 <link rel="icon" href="/assets/brand/favicon.png">
 <link rel="stylesheet" href="/assets/brand.css">
+<script src="/assets/i18n/i18n.js"></script>
 </head>
 <body>
 <div class="auth-shell">
@@ -17,57 +18,57 @@
     <div class="auth-head">
       <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
       <div class="progress-steps"><span class="step-dot active"></span><span class="step-dot"></span></div>
-      <h2>Create your account</h2>
-      <p>Step 1 of 2 — confirm your email</p>
+      <h2 data-i18n="auth.signup.title">Create your account</h2>
+      <p data-i18n="auth.signup.sub">Step 1 of 2 — confirm your email</p>
     </div>
 
     <div class="card card-pad">
       <div class="alert" id="alert"></div>
       <form id="signupForm" novalidate>
         <div class="field" id="fEmail">
-          <label for="email">Email address</label>
-          <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+          <label for="email" data-i18n="auth.emailLabel">Email address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com" data-i18n-attr="placeholder:auth.emailPh" autocomplete="email" required>
           <div class="err-msg" id="eEmail"></div>
         </div>
         <div class="field" id="fEmail2">
-          <label for="email2">Confirm email address</label>
-          <input class="input" type="email" id="email2" placeholder="you@example.com again" autocomplete="email" required>
+          <label for="email2" data-i18n="auth.email2Label">Confirm email address</label>
+          <input class="input" type="email" id="email2" placeholder="you@example.com again" data-i18n-attr="placeholder:auth.email2Ph" autocomplete="email" required>
           <div class="err-msg" id="eEmail2"></div>
         </div>
         <div class="field">
-          <label for="name">Name <span style="color:var(--muted-2);font-weight:500">(optional)</span></label>
-          <input class="input" type="text" id="name" placeholder="How should we call you?" autocomplete="name" maxlength="80">
+          <label for="name"><span data-i18n="auth.nameLabel">Name</span> <span style="color:var(--muted-2);font-weight:500" data-i18n="common.optional">(optional)</span></label>
+          <input class="input" type="text" id="name" placeholder="How should we call you?" data-i18n-attr="placeholder:auth.namePh" autocomplete="name" maxlength="80">
         </div>
 
         <div class="field" id="fPassword">
-          <label for="password">Password</label>
+          <label for="password" data-i18n="auth.passwordLabel">Password</label>
           <div class="pw-wrap">
-            <input class="input" type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required>
-            <button type="button" class="pw-toggle" data-target="password" aria-label="Show password">Show</button>
+            <input class="input" type="password" id="password" placeholder="At least 8 characters" data-i18n-attr="placeholder:auth.newPasswordPh" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" data-target="password" data-i18n="common.show" data-i18n-attr="aria-label:common.showPassword" aria-label="Show password">Show</button>
           </div>
           <div class="pw-meter" id="pwMeter"><span></span></div>
           <div class="err-msg" id="ePassword"></div>
         </div>
         <div class="field" id="fPassword2">
-          <label for="password2">Confirm password</label>
+          <label for="password2" data-i18n="auth.password2Label">Confirm password</label>
           <div class="pw-wrap">
-            <input class="input" type="password" id="password2" placeholder="Repeat your password" autocomplete="new-password" required>
-            <button type="button" class="pw-toggle" data-target="password2" aria-label="Show password">Show</button>
+            <input class="input" type="password" id="password2" placeholder="Repeat your password" data-i18n-attr="placeholder:auth.password2Ph" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" data-target="password2" data-i18n="common.show" data-i18n-attr="aria-label:common.showPassword" aria-label="Show password">Show</button>
           </div>
           <div class="err-msg" id="ePassword2"></div>
         </div>
 
         <div class="field">
-          <label>Human check</label>
+          <label data-i18n="auth.signup.human">Human check</label>
           <div id="captcha"></div>
           <div class="err-msg" id="eCaptcha"></div>
         </div>
 
-        <button class="btn btn-primary btn-block" type="submit" id="submitBtn" style="margin-top:8px">Create account &amp; verify email</button>
+        <button class="btn btn-primary btn-block" type="submit" id="submitBtn" style="margin-top:8px" data-i18n="auth.signup.submit">Create account &amp; verify email</button>
       </form>
-      <div class="switch-line">Already have an account? <a href="/login">Sign in</a></div>
+      <div class="switch-line"><span data-i18n="auth.signup.switch">Already have an account?</span> <a href="/login" data-i18n="auth.signup.switchLink">Sign in</a></div>
     </div>
-    <p class="hint" style="text-align:center;margin-top:16px">We'll email you a 6-digit code to confirm it's you.</p>
+    <p class="hint" style="text-align:center;margin-top:16px" data-i18n="auth.signup.hint">We'll email you a 6-digit code to confirm it's you.</p>
   </div>
 </div>
 
@@ -80,14 +81,16 @@
   const pw = document.getElementById('password');
   const pw2 = document.getElementById('password2');
   const meter = document.getElementById('pwMeter');
+  const T = (k, v) => WK.i18n.t(k, v);
+  WK.i18n.onChange(() => {}); // static text re-applies itself; keep typed input
 
   if (Store.token) window.location.href = '/dashboard';
-  Captcha.mount('captcha');
+  WK.i18n.ready.then(() => Captcha.mount('captcha'));
   document.querySelectorAll('.pw-toggle').forEach(b => b.addEventListener('click', () => {
     const inp = document.getElementById(b.dataset.target);
     const show = inp.type === 'password';
     inp.type = show ? 'text' : 'password';
-    b.textContent = show ? 'Hide' : 'Show';
+    b.textContent = T(show ? 'common.hide' : 'common.show'); b.setAttribute('data-i18n', show ? 'common.hide' : 'common.show');
   }));
 
   function pwStrength(v) {
@@ -120,19 +123,19 @@
     const password2 = pw2.value;
     let bad = false;
 
-    if (!validEmail(email)) { document.getElementById('eEmail').textContent = 'Enter a valid email address.'; document.getElementById('fEmail').classList.add('field-err'); bad = true; }
-    if (email !== email2) { document.getElementById('eEmail2').textContent = 'Email addresses do not match.'; document.getElementById('fEmail2').classList.add('field-err'); bad = true; }
-    if (password.length < 8) { document.getElementById('ePassword').textContent = 'Password must be at least 8 characters.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
-    else if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) { document.getElementById('ePassword').textContent = 'Include at least one letter and one number.'; document.getElementById('fPassword').classList.add('field-err'); bad = true; }
-    if (password !== password2) { document.getElementById('ePassword2').textContent = 'Passwords do not match.'; document.getElementById('fPassword2').classList.add('field-err'); bad = true; }
-    if (!Captcha.isComplete()) { document.getElementById('eCaptcha').textContent = 'Select exactly 3 drink brands.'; bad = true; }
+    if (!validEmail(email)) { document.getElementById('eEmail').textContent = T('auth.errEmail'); document.getElementById('fEmail').classList.add('field-err'); bad = true; }
+    if (email !== email2) { document.getElementById('eEmail2').textContent = T('auth.errEmailMatch'); document.getElementById('fEmail2').classList.add('field-err'); bad = true; }
+    if (password.length < 8) { document.getElementById('ePassword').textContent = T('auth.errPwLength'); document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    else if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) { document.getElementById('ePassword').textContent = T('auth.errPwMix'); document.getElementById('fPassword').classList.add('field-err'); bad = true; }
+    if (password !== password2) { document.getElementById('ePassword2').textContent = T('auth.errPwMatch'); document.getElementById('fPassword2').classList.add('field-err'); bad = true; }
+    if (!Captcha.isComplete()) { document.getElementById('eCaptcha').textContent = T('auth.errCaptcha'); bad = true; }
     if (bad) return;
 
-    btn.disabled = true; btn.textContent = 'Creating account…';
+    btn.disabled = true; btn.textContent = T('auth.signup.busy');
     try {
       const res = await api('/api/auth/signup', {
         method: 'POST', auth: false,
-        body: { email, email2, password, password2, name, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
+        body: { email, email2, password, password2, name, locale: WK.i18n.lang, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
       });
       sessionStorage.setItem('cps_pending_email', email);
       if (res.dev_pin) sessionStorage.setItem('cps_dev_pin', res.dev_pin);
@@ -140,7 +143,7 @@
     } catch (err) {
       showAlert(alertEl, err.message, 'err');
       if (err.code === 'CAPTCHA_FAIL') Captcha.reset();
-      btn.disabled = false; btn.textContent = 'Create account & verify email';
+      btn.disabled = false; btn.textContent = T('auth.signup.submit');
     }
   });
 </script>
