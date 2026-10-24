@@ -20,11 +20,11 @@
       { href: '/ikigai/needs', icon: '🌍', label: 'side.demand' },
       { href: '/ikigai/pay', icon: '💰', label: 'side.payRanges' },
     ] },
-    { id: 'learn', icon: '📚', label: 'side.myLearning', href: '/learning', soon: true, items: [
-      { href: '/learning/plans', icon: '🗺️', label: 'side.plans' },
-      { href: '/learning/videos', icon: '🎬', label: 'side.videos' },
-      { href: '/learning/tools', icon: '🧰', label: 'side.tools' },
-      { href: '/learning/schools', icon: '🎓', label: 'side.schools' },
+    { id: 'learn', icon: '📚', label: 'side.myLearning', href: '/learning', items: [
+      { href: '/learning/plans', icon: '🗺️', label: 'side.plans', badge: 'ai' },
+      { href: '/learning/videos', icon: '🎬', label: 'side.videos', badge: 'soon' },
+      { href: '/learning/tools', icon: '🧰', label: 'side.tools', badge: 'soon' },
+      { href: '/learning/schools', icon: '🎓', label: 'side.schools', badge: 'soon' },
     ] },
     { id: 'profile', icon: '👤', label: 'side.myProfile', items: [
       { href: '/dashboard', icon: '🏠', label: 'side.dashboard' },
@@ -61,7 +61,7 @@
         : `<span class="wk-side-head"><span class="ico">${g.icon}</span><span class="lbl">${T(g.label)}</span></span>`;
       return `<div class="wk-side-group${open ? ' open' : ''}" data-group="${g.id}">
         <div class="wk-side-row">${head}<button type="button" class="wk-side-tog" data-tog="${g.id}" aria-expanded="${open}" aria-controls="wkSide-${g.id}" aria-label="${esc(T('side.toggle', { name: T(g.label) }))}"><span aria-hidden="true">▾</span></button></div>
-        <ul class="wk-side-list" id="wkSide-${g.id}">${items.map((i) => `<li><a href="${i.href}" class="${isActive(i.href) ? 'active' : ''}"${isActive(i.href) ? ' aria-current="page"' : ''}><span class="ico">${i.icon}</span><span class="lbl">${T(i.label)}</span></a></li>`).join('')}</ul>
+        <ul class="wk-side-list" id="wkSide-${g.id}">${items.map((i) => `<li><a href="${i.href}" class="${isActive(i.href) ? 'active' : ''}"${isActive(i.href) ? ' aria-current="page"' : ''}><span class="ico">${i.icon}</span><span class="lbl">${T(i.label)}</span>${i.badge ? `<span class="wk-badge ${i.badge}">${T(i.badge === 'ai' ? 'learn.aiBadge' : 'side.soon')}</span>` : ''}</a></li>`).join('')}</ul>
       </div>`;
     }).join('')}</nav>`;
   }

@@ -37,6 +37,17 @@ SURVEY_JWT_SECRET=$(R)
 SESSION_SECRET=$(R)
 CONF
 fi
+# AI research (My learning › Plans) — added once to older local.env files too
+if ! grep -q '^AI_ROUTER_TOKEN=' "$LOCAL/local.env"; then
+  cat >> "$LOCAL/local.env" <<'CONF'
+
+# AI research (My learning › Plans). Paste an rt_… token from
+# https://router.digitradin.cloud → My Tools → API tokens. Leave empty to test without AI.
+AI_ROUTER_URL=https://router.digitradin.cloud
+AI_ROUTER_TOKEN=
+AI_ROUTER_MODEL=auto
+CONF
+fi
 set -a; . "$LOCAL/local.env"; set +a
 export DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres"
 export PORT NODE_ENV=development EXPOSE_PINS=true SMTP_HOST=
@@ -65,6 +76,8 @@ if curl -s -o /dev/null "http://localhost:$PORT/health"; then
      tools/local/local.env), then open http://localhost:$PORT/admin
    • Your local data stays in tools/local/.data (delete that folder to reset).
    • French / Spanish: http://localhost:$PORT/fr/  ·  http://localhost:$PORT/es/
+   • AI research (My learning › Plans): add your router token to tools/local/local.env
+     (AI_ROUTER_TOKEN=…) and restart this window.
 
    Leave this window open while testing. Close it (or press Ctrl+C) to stop.
 INFO

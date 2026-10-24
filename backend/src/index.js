@@ -17,6 +17,7 @@ const surveyRoutes = require('./routes/survey');
 const resultsRoutes = require('./routes/results');
 const healthRoute = require('./routes/health');
 const adminRoutes = require('./routes/admin');
+const learnRoutes = require('./routes/learn');
 const analytics = require('./analytics/collect');
 const seo = require('./seo');
 
@@ -135,6 +136,8 @@ app.use('/api/results', resultsRoutes);
 // first-party, cookieless analytics + owner dashboard
 app.use('/api/t', analytics.router);
 app.use('/api/admin', adminRoutes);
+// My learning › Plans (AI research via the Digitradin AI router)
+app.use('/api/learn', learnRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount

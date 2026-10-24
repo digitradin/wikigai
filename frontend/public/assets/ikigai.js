@@ -228,7 +228,7 @@
     const nudge = !hasGrades()
       ? `<div class="ik-nudge">🎯 <span>${T('hub.nudge')}</span><a class="btn-primary sm" href="/ikigai/skills">${T('hub.addGrades')}</a></div>` : '';
     return pageHead('✨', T('hub.ovKicker'), T('hub.ovTitle'), T('hub.ovLead', { market: esc(regionLabel()) }))
-      + circles() + nudge
+      + circles() + nudge + regionPicker()
       + `<div class="ik-toolbar">
           <div class="ik-filters"><button class="ik-chip ${ui.domain === 'ALL' ? 'sel' : ''}" data-dom="ALL">${T('hub.all')}</button>${doms.map((d) => `<button class="ik-chip ${ui.domain === d ? 'sel' : ''}" data-dom="${d}">${area(d).icon} ${esc(areaName(d))}</button>`).join('')}</div>
           <label class="ik-sort">${T('hub.sortBy')} <select data-act="sort"><option value="match" ${ui.sort === 'match' ? 'selected' : ''}>${T('hub.sortMatch')}</option><option value="needs" ${ui.sort === 'needs' ? 'selected' : ''}>${T('hub.sortNeeds')}</option><option value="pay" ${ui.sort === 'pay' ? 'selected' : ''}>${T('hub.sortPay')}</option></select></label>
@@ -331,14 +331,11 @@
   }
   function nextLink(href, label) { return `<div class="ik-next"><a class="btn-primary" href="${href}" data-nav>${label} →</a></div>`; }
 
-  /* ── PAGE: skills ── */
-  function pageSkills() {
+  /* ── PAGE: skills (Stage 3 results first; grades editable below) ── */
+  function gradesForm() {
     const g = st.grades;
     const sysKey = GRADING[g.system] ? g.system : 'OTHER';
-    const prof = profile();
-    let h = pageHead('🎯', T('hub.skillsKicker'), T('hub.skillsTitle'), T('hub.skillsLead'), 'key');
-    h += `<div class="ik-card">
-      <h2>${T('hub.gradesTitle')} <span class="ik-opt">${T('hub.gradesOpt')}</span></h2>
+    return `<h2>${T('hub.gradesTitle')} <span class="ik-opt">${T('hub.gradesOpt')}</span></h2>
       <div class="ik-grid2">
         <label class="ik-field">${T('hub.whereStudy')}
           <select data-act="country">${['', ...COUNTRIES.map((c) => c.code)].map((c) => { const x = COUNTRIES.find((y) => y.code === c); return `<option value="${c}" ${c === (st.grades.country || '') ? 'selected' : ''}>${x ? x.flag + ' ' + esc(countryName(x.code)) : T('hub.chooseCountry')}</option>`; }).join('')}</select>
@@ -357,20 +354,36 @@
         ${Object.keys(SUBJECTS).map((k) => `<label class="ik-subject"><span>${esc(subjName(k))}</span><input type="number" step="any" inputmode="decimal" data-subj="${k}" value="${g.values[k] ?? ''}" placeholder="—"></label>`).join('')}
       </div>
       <p class="ik-note ik-err" id="ikGradeErr"></p>
-      <div class="cta-row"><button class="btn-ghost" data-act="skip">${T('hub.skip')}</button><button class="btn-primary" data-act="save-grades">${T(flow ? 'hub.saveSee' : 'hub.saveGrades')}</button></div>
-    </div>`;
-    if (prof) {
-      const subj = Object.entries(prof.pct).sort((a, b) => b[1] - a[1]);
-      h += `<div class="ik-card"><h2>${T('hub.strengthsTitle')}</h2><p class="ik-sub">${T('hub.strengthsSub', { avg: Math.round(prof.mean) })}</p>
-        ${subj.map(([k, v]) => `<div class="ik-row"><span class="ik-rlabel">${esc(subjName(k))}</span>${bar(Math.round(v), v >= prof.mean ? '#c44dff' : '#6b5bff')}<b>${Math.round(v)}</b><span class="ik-dim">${v >= prof.mean + 5 ? T('hub.strength') : v <= prof.mean - 5 ? '▼' : ''}</span></div>`).join('')}
-      </div>`;
-      const fits = Object.keys(CFG.subjectWeights || {}).map((s) => ({ s, G: goodAt(s, prof) })).sort((a, b) => b.G - a.G);
-      const mine = new Set(loveList().map((l) => l.subfield));
-      h += `<div class="ik-card"><h2>${T('hub.fitsTitle')}</h2><p class="ik-sub">${T('hub.fitsSub')}</p>
-        ${fits.slice(0, 12).map((f) => { const m = area(SUBS[f.s]?.domain); return `<div class="ik-row"><span class="ik-rlabel">${m.icon} ${esc(subName(f.s))} ${mine.has(f.s) ? '❤️' : ''}</span>${bar(f.G, m.color)}<b>${f.G}</b><span class="ik-dim">${esc(Object.keys(CFG.subjectWeights[f.s]).map((k) => subjName(k).split(/[ ,/&]/)[0]).join(' · '))}</span></div>`; }).join('')}
-      </div>` + nextLink('/ikigai', T('hub.seeMatch'));
+      <div class="cta-row"><button class="btn-ghost" data-act="skip">${T('hub.skip')}</button><button class="btn-primary" data-act="save-grades">${T(flow ? 'hub.saveSee' : 'hub.saveGrades')}</button></div>`;
+  }
+  function pageSkills() {
+    const prof = profile();
+    let h = pageHead('🎯', T('hub.skillsKicker'), T('hub.skillsTitle'), T('hub.skillsLead'), 'key');
+    if (!prof) {
+      h += `<div class="ik-card ik-s3empty"><p>${T(st.gradesSkipped ? 'hub.s3Skipped' : 'hub.s3Empty')}</p></div>`;
+      return h + `<div class="ik-card">${gradesForm()}</div>`;
     }
-    return h;
+    const subj = Object.entries(prof.pct).sort((a, b) => b[1] - a[1]);
+    h += `<div class="ik-card ik-s3sum"><h2>${T('hub.s3Title')}</h2>
+      <p class="ik-sub">${T('hub.s3Lead', { n: prof.n, avg: Math.round(prof.mean) })}</p>
+      <div class="ik-s3top"><span class="ik-dim">${T('hub.s3Top')}</span>${subj.slice(0, 3).map(([k, v]) => `<span class="ik-s3chip">${esc(subjName(k))} <b>${Math.round(v)}</b></span>`).join('')}</div></div>`;
+    h += `<div class="ik-card"><h2>${T('hub.strengthsTitle')}</h2><p class="ik-sub">${T('hub.strengthsSub', { avg: Math.round(prof.mean) })}</p>
+      ${subj.map(([k, v]) => `<div class="ik-row"><span class="ik-rlabel">${esc(subjName(k))}</span>${bar(Math.round(v), v >= prof.mean ? '#c44dff' : '#6b5bff')}<b>${Math.round(v)}</b><span class="ik-dim">${v >= prof.mean + 5 ? T('hub.strength') : v <= prof.mean - 5 ? '▼' : ''}</span></div>`).join('')}
+    </div>`;
+    const list = scored().filter((r) => r.G != null).sort((a, b) => b.match - a.match).slice(0, 15);
+    if (list.length) {
+      h += `<div class="ik-card"><h2>${T('hub.goodByProf')}</h2><p class="ik-sub">${T('hub.goodByProfSub')}</p>
+        <div class="ik-table s3"><div class="ik-tr ik-th"><span>#</span><span>${T('hub.colProfession')}</span><span>${T('hub.colGood')}</span><span>${T('hub.colLove')}</span><span>${T('hub.colMatch')}</span></div>
+        ${list.map((r, i) => `<div class="ik-tr"><span>${i + 1}</span><span><strong>${esc(C(r.career))}</strong><small>${area(r.domain).icon} ${esc(SUBS[r.subfield] ? subName(r.subfield) : areaName(r.domain))}</small></span><span class="ik-num">${bar(r.G, '#c44dff')}<b>${r.G}</b></span><span class="ik-num love">${r.L}</span><span class="ik-num"><b class="ik-matchn">${r.match}</b></span></div>`).join('')}
+        </div></div>`;
+    }
+    const fits = Object.keys(CFG.subjectWeights || {}).map((s) => ({ s, G: goodAt(s, prof) })).sort((a, b) => b.G - a.G);
+    const mine = new Set(loveList().map((l) => l.subfield));
+    h += `<div class="ik-card"><h2>${T('hub.fitsTitle')}</h2><p class="ik-sub">${T('hub.fitsSub')}</p>
+      ${fits.slice(0, 12).map((f) => { const m = area(SUBS[f.s]?.domain); return `<div class="ik-row"><span class="ik-rlabel">${m.icon} ${esc(subName(f.s))} ${mine.has(f.s) ? '❤️' : ''}</span>${bar(f.G, m.color)}<b>${f.G}</b><span class="ik-dim">${esc(Object.keys(CFG.subjectWeights[f.s]).map((k) => subjName(k).split(/[ ,/&]/)[0]).join(' · '))}</span></div>`; }).join('')}
+    </div>`;
+    h += `<details class="ik-card ik-edit"${flow ? ' open' : ''}><summary>✏️ ${T('hub.editGrades')}</summary>${gradesForm()}</details>`;
+    return h + nextLink('/ikigai', T('hub.seeMatch'));
   }
 
   /* ── PAGE: needs ── */
@@ -386,22 +399,65 @@
     return h;
   }
 
-  /* ── PAGE: pay ── */
-  function pagePay() {
-    const m = market();
-    let h = pageHead('💰', T('hub.payKicker'), T('hub.payTitle'), T('hub.payLead'), 'info');
-    h += regionPicker();
-    h += `<div class="ik-legend">
-      <div class="ik-leg">${bandChip('HIGH')}<small>${T('hub.payHigh', { median: usd(US_MEDIAN) })}</small></div>
-      <div class="ik-leg">${bandChip('MID')}<small>${T('hub.payMid')}</small></div>
-      <div class="ik-leg">${bandChip('LOW')}<small>${T('hub.payLow')}</small></div>
-      <div class="ik-leg">${bandChip('VAR')}<small>${T('hub.payVar')}</small></div>
+  /* ── PAGE: pay ranges (per geography × profession) ── */
+  const geoCode = (cc) => (cc === 'EL' ? 'GR' : cc === 'UK' ? 'GB' : cc);
+  function geoFlag(cc) { if (cc === 'EU') return '🇪🇺'; try { return String.fromCodePoint(...[...geoCode(cc)].map((ch) => 127397 + ch.charCodeAt(0))); } catch { return ''; } }
+  function geoName(cc) { if (cc === 'EU') return T('hub.euAvg'); try { return new Intl.DisplayNames([I.locale.intl || I.lang], { type: 'region' }).of(geoCode(cc)) || cc; } catch { return cc; } }
+  const payGeoOk = (g) => g === 'US' || !!(PAY && PAY.countries[g]);
+  function payGeos() {
+    if (!ui.payGeos) {
+      let saved = null; try { saved = JSON.parse(localStorage.getItem('wk_pay_geos') || 'null'); } catch { /* ignore */ }
+      const mine = (st.region.mode === 'custom' ? st.region.countries : []).filter(payGeoOk);
+      ui.payGeos = (Array.isArray(saved) && saved.filter(payGeoOk).length ? saved.filter(payGeoOk) : (mine.length ? ['EU', ...mine.filter((g) => g !== 'EU')] : ['EU', 'ES', 'FR', 'DE', 'US'])).slice(0, 8);
+    }
+    return ui.payGeos;
+  }
+  function setPayGeos(list) { ui.payGeos = list.slice(0, 8); try { localStorage.setItem('wk_pay_geos', JSON.stringify(ui.payGeos)); } catch { /* ignore */ } render(); }
+  function geoPicker() {
+    const geos = payGeos();
+    const all = ['US', 'EU', ...Object.keys(PAY ? PAY.countries : {}).filter((c) => c !== 'EU').sort((a, b) => geoName(a).localeCompare(geoName(b)))];
+    const left = all.filter((g) => !geos.includes(g));
+    return `<div class="ik-card pr-geo"><div class="pr-geo-row"><strong>${T('hub.prCompare')}</strong>
+      ${geos.map((g) => `<button class="ik-chip sel" data-act="paygeo-del" data-geo="${g}" aria-label="${esc(T('hub.prRemove', { name: geoName(g) }))}">${geoFlag(g)} ${esc(geoName(g))} <span aria-hidden="true">✕</span></button>`).join('')}
+      ${geos.length < 8 && left.length ? `<select data-act="paygeo-add" aria-label="${esc(T('hub.prAdd'))}"><option value="">${T('hub.prAdd')}</option>${left.map((g) => `<option value="${g}">${geoFlag(g)} ${esc(geoName(g))}</option>`).join('')}</select>` : ''}
+      </div></div>`;
+  }
+  function payRow(c, mine, scaleMax) {
+    const geos = payGeos();
+    const r = PAY ? PAY.range(c.career) : null;
+    const pos = (v) => Math.max(0, Math.min(100, (v / scaleMax) * 100)).toFixed(1);
+    const vals = geos.map((g) => {
+      if (g === 'US') return `<span class="pr-v us" title="${esc(T('hub.colUsMedian'))}">${geoFlag('US')} <span class="pr-vn">${esc(geoName('US'))}</span> <b>${usPay(c)}</b><small>${T('hub.prUsNote')}</small></span>`;
+      const v = PAY.value(c.career, g); const est = v.cc !== g;
+      return `<span class="pr-v">${geoFlag(g)} <span class="pr-vn">${esc(geoName(g))}</span> <b>${eur(v.eur)}${est ? '*' : ''}</b></span>`;
+    }).join('');
+    const dots = r ? geos.filter((g) => g !== 'US').map((g) => { const v = PAY.value(c.career, g); return `<span class="pr-dot" style="left:${pos(v.eur)}%" title="${esc(geoName(g))}: ${esc(eur(v.eur))}"></span>`; }).join('') : '';
+    return `<div class="pr-row ${mine ? 'mine' : ''}">
+      <div class="pr-name"><strong>${mine ? '❤️ ' : ''}${esc(C(c.career))}</strong><small>${area(c.domain).icon} ${esc(C(c.subfieldName || ''))}${r ? ' · ' + esc(T('hub.isco.' + r.group)) : ''}</small></div>
+      ${r ? `<div class="pr-range"><div class="pr-track"><i class="pr-span" style="left:${pos(r.min.eur)}%;width:${(pos(r.max.eur) - pos(r.min.eur)).toFixed(1)}%"></i>${dots}</div>
+        <div class="pr-ends"><span>${geoFlag(r.min.cc)} ${eur(r.min.eur)}</span><span class="pr-eu">${geoFlag('EU')} ${eur(r.eu)}</span><span>${geoFlag(r.max.cc)} ${eur(r.max.eur)}</span></div></div>` : '<div></div>'}
+      <div class="pr-vals">${vals}</div>
     </div>`;
-    if (m.eu && PAY) h += `<p class="ik-sub ik-eurnote">💶 ${T('hub.payEurNote', { place: placeLabel(euPlace()) })}</p>`;
-    h += exploreTable('pay');
+  }
+  function pagePay() {
+    let h = pageHead('💰', T('hub.payKicker'), T('hub.payTitle'), T('hub.payLead'), 'info');
+    if (!PAY) return h + exploreTable('pay');
+    h += geoPicker();
+    const mineMap = new Map(loveList().map((l) => [l.career, l]));
+    let rows = CAREERS.slice();
+    if (ui.exploreDomain === 'MINE' && mineMap.size) rows = rows.filter((c) => mineMap.has(c.career));
+    else if (ui.exploreDomain !== 'ALL' && ui.exploreDomain !== 'MINE') rows = rows.filter((c) => c.domain === ui.exploreDomain);
+    rows.sort((a, b) => (PAY.value(b.career, 'EU').eur - PAY.value(a.career, 'EU').eur) || (b.usMedianPay2025 || 0) - (a.usMedianPay2025 || 0));
+    const scaleMax = Math.max(1, ...rows.map((c) => PAY.range(c.career).max?.eur || 0));
+    const doms = Object.keys(AREAS);
+    const opts = `${mineMap.size ? `<option value="MINE" ${ui.exploreDomain === 'MINE' ? 'selected' : ''}>${T('hub.myShortlist', { n: mineMap.size })}</option>` : ''}<option value="ALL" ${ui.exploreDomain === 'ALL' || (ui.exploreDomain === 'MINE' && !mineMap.size) ? 'selected' : ''}>${T('hub.allProfessions', { n: CAREERS.length })}</option>${doms.map((d) => `<option value="${d}" ${ui.exploreDomain === d ? 'selected' : ''}>${area(d).icon} ${esc(areaName(d))}</option>`).join('')}`;
+    h += `<div class="ik-card"><div class="ik-toolbar"><h2>${T('hub.prTitle')}</h2><div class="ik-selects"><select data-act="explore">${opts}</select></div></div>
+      <p class="ik-sub">${T('hub.prLegend')}</p>
+      <div class="pr-list">${rows.map((c) => payRow(c, mineMap.has(c.career), scaleMax)).join('') || `<p class="ik-dim" style="padding:12px">${T('hub.noRows')}</p>`}</div>
+      <p class="ik-dim pr-foot">${T('hub.prFoot')}</p></div>`;
     h += `<div class="ik-card ik-sources"><h2>${T('hub.sourcesTitle')}</h2>
-      ${m.us ? `<h3 class="ik-src-h">🇺🇸 ${esc(countryName('US'))}</h3><ul><li>${T('hub.paySrcUS')}</li></ul>` : ''}
-      ${m.eu ? euSources() : ''}
+      <h3 class="ik-src-h">🇺🇸 ${esc(countryName('US'))}</h3><ul><li>${T('hub.paySrcUS')}</li></ul>
+      ${euSources()}
       </div>`;
     return h;
   }
@@ -499,6 +555,7 @@
       render(); save({ region: st.region }, T('hub.marketUpdated')); return;
     }
     const act = b.dataset.act;
+    if (act === 'paygeo-del') { setPayGeos(payGeos().filter((g) => g !== b.dataset.geo)); return; }
     if (act === 'region-blend') { st.region = { mode: 'blend', countries: [] }; render(); save({ region: st.region }, T('hub.marketUpdated')); }
     if (act === 'region-custom') { st.region.mode = 'custom'; render(); }
     if (act === 'skip') { window.WK?.track?.('grades_skipped'); st.gradesSkipped = true; completeStage3().then(() => go('/ikigai')); }
@@ -508,6 +565,7 @@
     const t = e.target, act = t.dataset.act;
     if (act === 'sort') { ui.sort = t.value; render(); }
     if (act === 'explore') { ui.exploreDomain = t.value; render(); }
+    if (act === 'paygeo-add' && t.value) { setPayGeos([...payGeos(), t.value]); }
     if (act === 'trendf') { ui.trendFilter = t.value; render(); }
     if (act === 'refresh') {
       const d = new Date(); d.setMonth(d.getMonth() + 6);

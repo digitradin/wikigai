@@ -191,3 +191,8 @@ a.wk-side-head:hover{background:var(--bg-glass)}
   .wk-side-open{overflow:hidden}
 }
 @media (prefers-reduced-motion:reduce){.wk-side,.wk-side-backdrop,.wk-burger span{transition:none}}
+
+.wk-side-list .lbl{flex:1}
+.wk-badge{font:700 .56rem var(--font);letter-spacing:.3px;padding:2px 6px;border-radius:8px;flex:none}
+.wk-badge.soon{background:rgba(255,140,66,.14);color:#ffb36b}
+.wk-badge.ai{background:var(--g1);color:#fff}
