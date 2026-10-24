@@ -29,7 +29,7 @@ if (location.protocol === 'file:') document.addEventListener('DOMContentLoaded',
 <nav class="top">
   <div class="inner">
     <a class="logo" href="/"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai"></a>
-    <div class="nav-links">
+    <div class="nav-links" id="navLinks">
       <a class="btn btn-ghost" href="/login" data-i18n="nav.signIn">Sign in</a>
       <a class="btn btn-primary" href="/signup" data-i18n="nav.getStarted">Get started</a>
     </div>
@@ -100,5 +100,15 @@ if (location.protocol === 'file:') document.addEventListener('DOMContentLoaded',
 <script src="/assets/app.js"></script>
 <script src="/assets/support.js"></script>
 <script>WK.i18n.onChange(() => {}); /* static page: text re-applies in place */</script>
+<script>
+/* signed-in visitors: the landing page links straight back to their dashboard (with the left menu) */
+(function () {
+  var t = null; try { t = localStorage.getItem('cps_token'); } catch (e) {}
+  var el = document.getElementById('navLinks');
+  if (!t || !el) return;
+  el.innerHTML = '<a class="btn btn-primary" href="/dashboard" data-i18n="side.dashboard">Dashboard</a>';
+  if (window.WK && WK.i18n) WK.i18n.ready.then(function () { WK.i18n.apply(el); });
+})();
+</script>
 </body>
 </html>
