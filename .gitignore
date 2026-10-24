@@ -28,3 +28,7 @@ logs/
 .vscode/
 .idea/
 *.swp
+
+# Local test runner (Test Wikigai Locally.command)
+tools/local/.data/
+tools/local/local.env

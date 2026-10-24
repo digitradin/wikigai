@@ -22,7 +22,8 @@ const seo = require('./seo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+// In Docker the site is copied to backend/public; locally it is read from frontend/public.
+const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(__dirname, '..', 'public');
 
 // Behind Traefik: use the visitor's real address (X-Forwarded-For, one proxy hop)
 // for rate limiting and anonymous analytics — otherwise every visitor looks the same.
