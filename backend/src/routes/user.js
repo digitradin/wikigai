@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../lib/db');
-const { hashEmail } = require('../lib/crypto');
+const { hashEmail, verifyPassword } = require('../lib/crypto');
 const { requireUser } = require('./auth');
 const i18n = require('../i18n');
 
@@ -102,6 +102,38 @@ router.put('/profile', async (req, res, next) => {
     if (!name || name.length > 80) return res.status(400).json({ error: 'Please enter a name (max 80 characters).', code: 'BAD_NAME' });
     await db.query('UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2', [name, user.id]);
     res.json({ ok: true, name });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/user/delete-account — permanently delete the signed-in account (Account page).
+ * Body: { email: string (must be retyped exactly), password: string (current password) }
+ * Deletes the user, their saved results, AI research and pending codes. Anonymous
+ * analytics rows contain no personal data and are not linked to the account.
+ */
+router.post('/delete-account', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+    const password = String((req.body && req.body.password) || '');
+    if (!email || email !== String(user.email || '').trim().toLowerCase()) {
+      return res.status(400).json({ error: 'The email does not match your account.', code: 'DELETE_EMAIL_MISMATCH' });
+    }
+    const row = await db.getOne('SELECT password_hash FROM users WHERE id = $1', [user.id]);
+    if (!row || !row.password_hash || !password || !verifyPassword(password, row.password_hash)) {
+      return res.status(401).json({ error: 'Incorrect password.', code: 'DELETE_BAD_PASSWORD' });
+    }
+    const emailHash = hashEmail(user.email);
+    await db.transaction(async (c) => {
+      await c.query('DELETE FROM user_results WHERE user_email = $1', [emailHash]);
+      await c.query('DELETE FROM auth_pins WHERE email_hash = $1', [emailHash]);
+      await c.query('DELETE FROM users WHERE id = $1', [user.id]); // cascades to learning_research
+    });
+    console.log('[user] account deleted');
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

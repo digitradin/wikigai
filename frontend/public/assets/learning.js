@@ -18,7 +18,7 @@
   const SECTIONS = [
     { id: 'plans', icon: '🗺️', feats: ['🧩', '✅', '🌱'] },
     { id: 'videos', icon: '🎬', feats: ['🕘', '🎤', '🔎'] },
-    { id: 'tools', icon: '🧰', feats: ['📄', '🧪', '💬'] },
+    { id: 'tools', icon: '🔧', feats: ['📄', '🧪', '💬'] },
     { id: 'schools', icon: '🎓', feats: ['🏛️', '🛠️', '💻'] },
   ];
 
@@ -26,7 +26,7 @@
   let research = null;          // current research result { id, topic, lang, result, created_at }
   let history = [];             // recent research titles
   let configured = true;        // is the AI service set up on the server?
-  let busy = false, errMsg = '', topicDraft = '';
+  let busy = false, errMsg = '', topicDraft = '', showAll = false;
 
   const current = () => { const m = location.pathname.match(/^\/learning\/(\w+)/); return SECTIONS.find((s) => s.id === (m && m[1])) || null; };
 
@@ -45,7 +45,11 @@
       strengths = Object.entries(g.values).filter(([, v]) => v !== '' && v != null && !isNaN(Number(v)))
         .map(([k, v]) => ({ k, p: (Number(v) - g.worst) / (g.best - g.worst) })).sort((a, b) => b.p - a.p).slice(0, 3).map((x) => x.k);
     }
-    return { domains, pros, kind, strengths, s1: !!ranked.length, s2: !!(s2.love && s2.love.length), s3: !!s3.completedAt };
+    // every profession kept in Stage 2 (for the research suggestions), best first, no duplicates
+    const seen = new Set();
+    const allPros = (Array.isArray(s2.love) ? s2.love.slice() : []).sort((a, b) => (b.L || 0) - (a.L || 0))
+      .map((x) => x.career).filter((c) => c && !seen.has(c) && seen.add(c));
+    return { domains, pros, allPros, kind, strengths, s1: !!ranked.length, s2: !!(s2.love && s2.love.length), s3: !!s3.completedAt };
   }
   function pathBox() {
     if (path === null) return `<div class="lr-path loading">${T('common.loading')}</div>`;
@@ -65,10 +69,10 @@
   /* ── Plans: AI research ── */
   const ytUrl = (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
   function researchForm() {
-    const chips = path && path.s1 ? [
-      ...path.domains.map((d) => ({ t: C(area(d.key).name), ico: area(d.key).icon })),
-      ...path.pros.slice(0, 3).map((p) => ({ t: C(p.name), ico: '💼' })),
-    ] : [];
+    const doms = path && path.s1 ? path.domains.map((d) => ({ t: C(area(d.key).name), ico: area(d.key).icon })) : [];
+    const pros = path && path.allPros ? path.allPros.map((n) => ({ t: C(n), ico: '💼' })) : [];
+    const chips = doms.concat(pros);
+    const FOLD = 12;
     return `<section class="ik-card lr-ask">
       <h2>${T('learn.askTitle')}</h2>
       <p class="ik-sub">${T('learn.askLead')}</p>
@@ -79,7 +83,7 @@
           <button class="btn-primary" type="submit" ${busy ? 'disabled' : ''}>${busy ? T('learn.thinking') : '✨ ' + T('learn.askBtn')}</button>
         </div>
       </form>
-      ${chips.length ? `<div class="lr-suggest"><span class="ik-dim">${T('learn.fromPath')}</span>${chips.map((c) => `<button type="button" class="lr-sug" data-topic="${esc(c.t)}" ${busy ? 'disabled' : ''}>${c.ico} ${esc(c.t)}</button>`).join('')}</div>` : ''}
+      ${chips.length ? `<div class="lr-suggest"><span class="ik-dim">${T('learn.fromPath')}</span>${chips.map((c, i) => `<button type="button" class="lr-sug${i >= FOLD && !showAll ? ' lr-more-item' : ''}" data-topic="${esc(c.t)}" ${busy ? 'disabled' : ''}>${c.ico} ${esc(c.t)}</button>`).join('')}${chips.length > FOLD && !showAll ? `<button type="button" class="lr-more" data-act="more">${T('learn.showAll', { count: chips.length - FOLD })}</button>` : ''}</div>` : ''}
       ${!configured ? `<p class="lr-warn">${T('learn.notConfigured')}</p>` : ''}
       ${errMsg ? `<p class="lr-err" role="alert">${esc(errMsg)}</p>` : ''}
       ${history.length ? `<div class="lr-history"><span class="ik-dim">${T('learn.recent')}</span>${history.map((h) => `<button type="button" class="lr-hist${research && research.id === h.id ? ' on' : ''}" data-rid="${h.id}">${esc(h.topic)}<small>${esc(I.fmt.date(h.created_at, { day: 'numeric', month: 'short' }))}</small></button>`).join('')}</div>` : ''}
@@ -148,8 +152,7 @@
       history = [{ id: research.id, topic: research.topic, created_at: research.created_at }, ...history.filter((h) => h.id !== research.id)].slice(0, 12);
       window.WK?.track?.('research_done', { cached: !!r.cached });
     } catch (err) {
-      errMsg = err.message;
-      if (err.code === 'AI_UNAVAILABLE') configured = false;
+      if (err.code === 'AI_UNAVAILABLE') { configured = false; errMsg = ''; } else errMsg = err.message;
     }
     busy = false; render(true);
   }
@@ -215,6 +218,7 @@
       return;
     }
     const act = e.target.closest && e.target.closest('[data-act]');
+    if (act && act.dataset.act === 'more') { showAll = true; render(); return; }
     if (act && act.dataset.act === 'redo' && research && !busy) { ask(research.topic, true); return; }
     if (act && act.dataset.act === 'print') { document.querySelectorAll('.lr-pane').forEach((p) => { p.hidden = false; }); window.print(); return; }
     const vid = e.target.closest && e.target.closest('.lr-vid');

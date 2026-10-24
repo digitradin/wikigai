@@ -169,6 +169,7 @@ WK.i18n.register('es', 'ui', {
     plansAiLead: "Investiga cualquier campo con IA y obtén una visión general, las habilidades clave y un plan personal a 30 días, 1 año y 3 años.",
     aiBadge: "IA",
     meanwhileAi: "Mientras tanto, investiga cualquier campo con IA",
+    showAll: "+ {count} más",
   },
 
   /* ── My account (account.html) ── */
@@ -194,6 +195,15 @@ WK.i18n.register('es', 'ui', {
     data: "Tus resultados",
     dataHelp: "Tus respuestas y resultados se guardan en tu cuenta y solo tú puedes verlos.",
     goDashboard: "Ir a mi panel",
+    deleteTitle: "Eliminar mi cuenta",
+    deleteHelp: "Elimina para siempre tu cuenta, tus respuestas, tus resultados y tus investigaciones guardadas. No se puede deshacer.",
+    deleteBtn: "Eliminar mi cuenta…",
+    deleteWarn: "⚠️ Es definitivo. Para confirmar, vuelve a escribir tu e-mail e introduce tu contraseña.",
+    deleteEmail: "Vuelve a escribir tu e-mail",
+    deletePassword: "Tu contraseña",
+    deleteCancel: "Cancelar",
+    deleteConfirm: "Eliminar definitivamente",
+    deleted: "Tu cuenta se ha eliminado. Te llevamos a la página de inicio…",
   },
 
   /* ── owner statistics (admin.html) ── */
@@ -298,6 +308,7 @@ WK.i18n.register('es', 'ui', {
     seoNext: "Siguiente paso: envía {url} en Google Search Console y Bing Webmaster Tools.",
     ev_research_done: "Investigación con IA",
     ev_video_search: "Búsqueda de vídeos",
+    ev_account_deleted: "Cuenta eliminada",
   },
 
   landing: {
@@ -442,6 +453,8 @@ WK.i18n.register('es', 'ui', {
     AI_LIMIT: "Has alcanzado el límite de investigaciones de hoy. Vuelve a intentarlo mañana.",
     AI_FAILED: "La IA no ha podido responder ahora. Inténtalo de nuevo en un momento.",
     AI_BAD_OUTPUT: "No se ha podido leer la respuesta de la IA. Inténtalo de nuevo.",
+    DELETE_EMAIL_MISMATCH: "El e-mail no coincide con tu cuenta.",
+    DELETE_BAD_PASSWORD: "Contraseña incorrecta.",
   },
 
   support: {
@@ -706,13 +719,13 @@ WK.i18n.register('es', 'ui', {
     strong: '✨ Gran afinidad',
     match: 'afinidad',
     love: '❤️ Me encanta',
-    goodAt: '🎯 Destaco',
+    goodAt: '💪 Destaco',
     addGradesLink: 'añadir notas',
     usMedian: 'Mediana EE. UU. {pay}',
     noPaySeries: 'sin serie salarial oficial',
     euEstimate: 'Estimación para Europa',
     dayInJob: 'Un día en esta profesión',
-    loveBreakdown: 'Me encanta = {d} % ámbito · {s} % especialidad · {c} % duelos. Fuente de las perspectivas: {src}.',
+    loveBreakdown: "Tu puntuación de pasión se ha calculado de forma científica a partir de tus áreas, subáreas y profesiones preferidas, según tus respuestas y elecciones personales. Fuente de las perspectivas: {src}.",
     refreshTitle: 'Mantén tu mapa al día',
     refreshText: 'Los intereses, las notas, las perspectivas de empleo y los salarios cambian. Podemos recordarte que actualices tu Wikigai cada 6 meses.',
     refreshCheck: 'Recuérdamelo la próxima primavera (hacia {date}) y después cada 6 meses.',
@@ -736,15 +749,15 @@ WK.i18n.register('es', 'ui', {
     kept: 'seleccionado',
     loveEmpty2: 'Siguiente paso: la etapa 2 profundiza en los ámbitos que has elegido; unos 15 minutos.',
     subsTitle: 'Tus especialidades favoritas',
-    subsSub: 'A partir de 12 parejas rápidas por ámbito. Son las que pasaron a los duelos de profesiones.',
+    subsSub: "Las subáreas que preferiste dentro de tus áreas favoritas.",
     shortTitle: 'Tu selección de profesiones',
-    shortSub: 'Puntuación «Me encanta» = 40 % afinidad con el ámbito + 35 % afinidad con la especialidad + 25 % duelos ganados.',
+    shortSub: "Hemos tenido en cuenta de forma científica tus áreas, subáreas y profesiones preferidas, a partir de tus respuestas y elecciones personales.",
     colProfession: 'Profesión',
     colLove: 'Me encanta',
     colDomain: 'Ámbito',
     colSubfield: 'Especialidad',
     colDuels: 'Duelos',
-    nextSkills: '🎯 Siguiente: En lo que destaco',
+    nextSkills: '💪 Siguiente: En lo que destaco',
     skillsKicker: 'Círculo 2 · En lo que destaco',
     skillsTitle: 'Aquello en lo que <span class="grad">destacas</span>',
     skillsLead: "Tus resultados de la etapa 3: lo que tus notas del curso pasado dicen de tus fortalezas y cómo encajan con las profesiones que te encantan. También comparamos cada asignatura con <em>tu propia</em> media, para que un centro exigente o un mal año no oculten un talento real.",
@@ -840,6 +853,7 @@ WK.i18n.register('es', 'ui', {
     prLegend: "Barra: del país europeo que menos paga al que más para el grupo ocupacional, con la media de la UE en medio. Puntos: los lugares europeos elegidos. Las profesiones del mismo grupo ocupacional comparten las cifras europeas; la mediana de EE. UU. es propia de cada puesto.",
     prFoot: "Europa: salario bruto anual medio por empleado y grupo ocupacional (Eurostat SES 2022, EUR). * sin dato nacional para ese grupo: se muestra la media de la UE. EE. UU.: salario anual mediano del puesto (BLS, USD).",
     prUsNote: "mediana",
+    colDomainSub: "Área y subárea",
   },
 
   widget: {

@@ -247,3 +247,11 @@ details.ik-edit[open]>summary::after{transform:rotate(180deg)}
 .pr-v small{margin-left:4px;color:var(--t3);font-size:.68rem}
 .pr-foot{margin-top:14px;font-size:.76rem}
 @media (max-width:640px){.pr-row{grid-template-columns:1fr}.pr-vn{display:none}}
+
+/* ── Passions: shortlist with domain & subfield descriptions ── */
+.ik-table.lovetab .ik-tr{grid-template-columns:36px minmax(140px,1fr) minmax(220px,2.2fr) 64px;align-items:start}
+.ik-table.lovetab .ik-tr>span:first-child,.ik-table.lovetab .ik-num{padding-top:2px}
+.ik-ds b{display:block;font-size:.82rem;font-weight:600}
+.ik-ds small{display:block;color:var(--t3);font-size:.75rem;line-height:1.4;margin-bottom:4px}
+.ik-ds .ik-ds-sub{margin-top:2px;color:var(--t2)}
+@media (max-width:640px){.ik-table.lovetab .ik-tr{grid-template-columns:24px 1fr 46px}.ik-table.lovetab .ik-tr>span:nth-child(3){grid-column:2/4;grid-row:2}.ik-table.lovetab .ik-tr>span:nth-child(4){display:block;grid-column:3;grid-row:1}}

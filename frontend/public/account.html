@@ -53,6 +53,22 @@
           <button class="ac-btn danger" type="button" id="acSignOut" data-i18n="account.signOut">Sign out</button>
         </div>
       </section>
+      <section class="ik-card ac-danger">
+        <h2 data-i18n="account.deleteTitle">Delete my account</h2>
+        <div class="ac-row">
+          <div><small data-i18n="account.deleteHelp">Permanently deletes your account, your answers, results and saved research. This cannot be undone.</small></div>
+          <button class="ac-btn danger" type="button" id="acDeleteOpen" data-i18n="account.deleteBtn">Delete my account…</button>
+        </div>
+        <form id="acDeleteForm" class="ac-delform" hidden autocomplete="off">
+          <p class="ac-warn" data-i18n="account.deleteWarn">⚠️ This is permanent. To confirm, retype your email and enter your password.</p>
+          <label for="acDelEmail" data-i18n="account.deleteEmail">Retype your email</label>
+          <input id="acDelEmail" type="email" autocomplete="off" spellcheck="false" required>
+          <label for="acDelPass" data-i18n="account.deletePassword">Your password</label>
+          <input id="acDelPass" type="password" autocomplete="current-password" required>
+          <div class="ac-msg" id="acDelMsg" role="alert"></div>
+          <div class="ac-delbtns"><button class="ac-btn" type="button" id="acDeleteCancel" data-i18n="account.deleteCancel">Cancel</button><button class="ac-btn danger solid" type="submit" id="acDeleteGo" disabled data-i18n="account.deleteConfirm">Delete permanently</button></div>
+        </form>
+      </section>
       <section class="ik-card">
         <h2 data-i18n="account.data">Your results</h2>
         <div class="ac-row">
@@ -97,6 +113,29 @@
   });
   $('acPassword').addEventListener('click', () => { try { sessionStorage.setItem('wk_forgot_email', user?.email || ''); } catch {} });
   $('acSignOut').addEventListener('click', () => { if (window.CPS.logout) window.CPS.logout(); else { Store.clear(); location.href = '/login'; } });
+  // ── delete account: retype email + password ──
+  const delForm = $('acDeleteForm'), delGo = $('acDeleteGo'), delMsg = $('acDelMsg');
+  const delReady = () => { delGo.disabled = !(user && $('acDelEmail').value.trim().toLowerCase() === String(user.email || '').toLowerCase() && $('acDelPass').value.length > 0); };
+  $('acDeleteOpen').addEventListener('click', () => { delForm.hidden = false; $('acDeleteOpen').hidden = true; $('acDelEmail').focus(); });
+  $('acDeleteCancel').addEventListener('click', () => { delForm.hidden = true; $('acDeleteOpen').hidden = false; delForm.reset(); delMsg.textContent = ''; delReady(); });
+  $('acDelEmail').addEventListener('input', delReady);
+  $('acDelPass').addEventListener('input', delReady);
+  delForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (delGo.disabled) return;
+    delGo.disabled = true; delMsg.className = 'ac-msg'; delMsg.textContent = '';
+    try {
+      await api('/api/user/delete-account', { method: 'POST', body: { email: $('acDelEmail').value.trim(), password: $('acDelPass').value } });
+      window.WK?.track?.('account_deleted');
+      Store.clear();
+      try { sessionStorage.clear(); } catch {}
+      delForm.innerHTML = `<p class="ac-msg ok">${T('account.deleted')}</p>`;
+      setTimeout(() => { location.href = '/'; }, 2500);
+    } catch (err) {
+      delMsg.className = 'ac-msg err'; delMsg.textContent = err.message;
+      $('acDelPass').value = ''; delReady();
+    }
+  });
   I.ready.then(load);
   I.onChange(paint);
 })();

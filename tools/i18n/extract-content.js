@@ -25,7 +25,7 @@ function extract() {
   // domains, subfields, subjects
   Object.values(S1.ui || {}).forEach((s) => add('stage1', s));
   Object.values(S1.areas).forEach((a) => { add('taxonomy', a.name); add('taxonomy', a.desc); });
-  Object.values(S2.subfields).forEach((s) => add('taxonomy', s.name));
+  Object.values(S2.subfields).forEach((s) => { add('taxonomy', s.name); if (s.desc) add('taxonomy', s.desc); });
   Object.values(S2.config.subjectClusters || {}).forEach((s) => add('taxonomy', s));
   // careers (Stage 1 example lists + Stage 2 professions)
   Object.values(S1.careers).forEach((l) => l.forEach((c) => add('careers', c)));

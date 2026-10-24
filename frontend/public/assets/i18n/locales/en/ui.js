@@ -174,6 +174,7 @@ WK.i18n.register('en', 'ui', {
     plansAiLead: "Research any field with AI and get an outlook, the key skills and a personal 30-day, 1-year and 3-year plan.",
     aiBadge: "AI",
     meanwhileAi: "Meanwhile, research any field with AI",
+    showAll: "+ {count} more",
   },
 
   /* ── My account (account.html) ── */
@@ -199,6 +200,15 @@ WK.i18n.register('en', 'ui', {
     data: "Your results",
     dataHelp: "Your answers and results are saved to your account and only visible to you.",
     goDashboard: "Go to my dashboard",
+    deleteTitle: "Delete my account",
+    deleteHelp: "Permanently deletes your account, your answers, results and saved research. This cannot be undone.",
+    deleteBtn: "Delete my account…",
+    deleteWarn: "⚠️ This is permanent. To confirm, retype your email and enter your password.",
+    deleteEmail: "Retype your email",
+    deletePassword: "Your password",
+    deleteCancel: "Cancel",
+    deleteConfirm: "Delete permanently",
+    deleted: "Your account has been deleted. Taking you to the home page…",
   },
 
   /* ── owner statistics (admin.html) ── */
@@ -303,6 +313,7 @@ WK.i18n.register('en', 'ui', {
     seoNext: "Next step: submit {url} in Google Search Console and Bing Webmaster Tools.",
     ev_research_done: "AI research",
     ev_video_search: "Video search",
+    ev_account_deleted: "Account deleted",
   },
 
   /* ── landing (index.html) ── */
@@ -450,6 +461,8 @@ WK.i18n.register('en', 'ui', {
     AI_LIMIT: "You reached today’s research limit. Please try again tomorrow.",
     AI_FAILED: "The AI could not answer right now. Please try again in a moment.",
     AI_BAD_OUTPUT: "The AI answer could not be read. Please try again.",
+    DELETE_EMAIL_MISMATCH: "The email doesn’t match your account.",
+    DELETE_BAD_PASSWORD: "Incorrect password.",
   },
 
   /* ── shared support / share box ── */
@@ -722,13 +735,13 @@ WK.i18n.register('en', 'ui', {
     strong: '✨ Strong match',
     match: 'match',
     love: '❤️ Love',
-    goodAt: '🎯 Good at',
+    goodAt: '💪 Good at',
     addGradesLink: 'add grades',
     usMedian: 'US median {pay}',
     noPaySeries: 'no official pay series',
     euEstimate: 'Europe estimate',
     dayInJob: 'A day in this job',
-    loveBreakdown: 'Love = {d}% domain · {s}% subfield · {c}% duels. Outlook source: {src}.',
+    loveBreakdown: "Your love score was built scientifically from your preferred domains, subfields and professions, based on your individual responses and choices. Outlook source: {src}.",
     /* refresh */
     refreshTitle: 'Keep your map fresh',
     refreshText: 'Interests, grades, job outlooks and pay all change. We can remind you to refresh your Wikigai every 6 months.',
@@ -754,15 +767,15 @@ WK.i18n.register('en', 'ui', {
     kept: 'kept',
     loveEmpty2: 'Next: Stage 2 zooms into your kept domains — about 15 minutes.',
     subsTitle: 'Your favourite subfields',
-    subsSub: 'From 12 quick pairs per domain. These went into the profession duels.',
+    subsSub: "The subfields you preferred within your favourite domains.",
     shortTitle: 'Your profession shortlist',
-    shortSub: 'Love score = 40% domain fit + 35% subfield fit + 25% duel wins.',
+    shortSub: "We scientifically considered your preferred domains, subfields and professions, based on your individual responses and choices.",
     colProfession: 'Profession',
     colLove: 'Love',
     colDomain: 'Domain',
     colSubfield: 'Subfield',
     colDuels: 'Duels',
-    nextSkills: '🎯 Next: What I’m good at',
+    nextSkills: '💪 Next: What I’m good at',
     /* skills */
     skillsKicker: 'Circle 2 · What I’m good at',
     skillsTitle: 'What you’re <span class="grad">good at</span>',
@@ -862,6 +875,7 @@ WK.i18n.register('en', 'ui', {
     prLegend: "Bar: lowest → highest country in Europe for the profession’s occupation group, with the EU average in the middle. Dots: the European places you picked. Professions in the same occupation group share the same European figures; the US median is per job.",
     prFoot: "Europe: mean gross annual pay per employee by occupation group (Eurostat SES 2022, EUR). * no national figure for that group — EU average shown. US: median annual pay for the job (BLS, USD).",
     prUsNote: "median",
+    colDomainSub: "Domain & subfield",
   },
 
   /* ── legacy demo widget (/widget) ── */

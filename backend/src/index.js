@@ -97,6 +97,7 @@ const authLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
+app.use('/api/user/delete-account', authLimiter); // password check: same brute-force limit as sign-in
 
 // ── SEO: robots, sitemap, localized public pages (/, /fr/, /es/…), noindex on private areas ──
 seo.mount(app, PUBLIC_DIR);

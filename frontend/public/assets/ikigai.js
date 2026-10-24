@@ -3,7 +3,7 @@
    Menu pages:
      /ikigai          My Wikigai — match = Love × Good at, C/D as info
      /ikigai/love     ❤️ What I love      (key)  Stage 1 + Stage 2
-     /ikigai/skills   🎯 What I'm good at (key)  last year's grades
+     /ikigai/skills   💪 What I'm good at (key)  last year's grades
      /ikigai/needs    🌍 What the world needs (info) 2025–35 outlook
      /ikigai/pay      💰 What pays (info)        official pay bands
    Saves to /api/user/results stage 3: grades, region, refresh, top.
@@ -226,7 +226,7 @@
     const doms = [...new Set(list.map((r) => r.domain))];
     const shown = list.filter((r) => ui.domain === 'ALL' || r.domain === ui.domain).sort(sorters[ui.sort]).slice(0, 20);
     const nudge = !hasGrades()
-      ? `<div class="ik-nudge">🎯 <span>${T('hub.nudge')}</span><a class="btn-primary sm" href="/ikigai/skills">${T('hub.addGrades')}</a></div>` : '';
+      ? `<div class="ik-nudge">💪 <span>${T('hub.nudge')}</span><a class="btn-primary sm" href="/ikigai/skills">${T('hub.addGrades')}</a></div>` : '';
     return pageHead('✨', T('hub.ovKicker'), T('hub.ovTitle'), T('hub.ovLead', { market: esc(regionLabel()) }))
       + circles() + nudge + regionPicker()
       + `<div class="ik-toolbar">
@@ -248,7 +248,7 @@
     const hi = top.filter((r) => r.band === 'HIGH').length;
     const c = [
       { k: 'love', ico: '❤️', t: T('hub.cLove'), v: s2Done() ? esc(C(top[0]?.career || '')) : (s1Done() ? T('hub.s2Todo') : T('hub.notStarted')), s: s2Done() ? T('hub.onShortlist', { count: list.length }) : T('hub.stages12'), href: '/ikigai/love', key: true, done: s2Done() },
-      { k: 'skills', ico: '🎯', t: T('hub.cSkills'), v: prof ? esc(subjName(bestSubj[0])) : T('hub.addGrades'), s: prof ? T('hub.strongestOf', { count: prof.n }) : T('hub.optional2'), href: '/ikigai/skills', key: true, done: !!prof },
+      { k: 'skills', ico: '💪', t: T('hub.cSkills'), v: prof ? esc(subjName(bestSubj[0])) : T('hub.addGrades'), s: prof ? T('hub.strongestOf', { count: prof.n }) : T('hub.optional2'), href: '/ikigai/skills', key: true, done: !!prof },
       { k: 'needs', ico: '🌍', t: T('hub.cNeeds'), v: s2Done() ? T('hub.xOfTop', { x: up, n: top.length }) : '—', s: T('hub.trendingUp'), href: '/ikigai/needs', key: false, done: true },
       { k: 'pay', ico: '💰', t: T('hub.cPay'), v: s2Done() ? T('hub.xOfTop', { x: hi, n: top.length }) : '—', s: T('hub.highBand'), href: '/ikigai/pay', key: false, done: true },
     ];
@@ -320,8 +320,11 @@
     </div>`;
     const love = loveList().slice(0, 20);
     h += `<div class="ik-card"><h2>${T('hub.shortTitle')}</h2><p class="ik-sub">${T('hub.shortSub')}</p>
-      <div class="ik-table"><div class="ik-tr ik-th"><span>#</span><span>${T('hub.colProfession')}</span><span>${T('hub.colLove')}</span><span>${T('hub.colDomain')}</span><span>${T('hub.colSubfield')}</span><span>${T('hub.colDuels')}</span></div>
-      ${love.map((l, i) => `<div class="ik-tr"><span>${i + 1}</span><span><strong>${esc(C(l.career))}</strong><small>${esc(SUBS[l.subfield] ? subName(l.subfield) : '')}</small></span><span class="ik-num love">${l.L}</span><span>${l.D}%</span><span>${l.S}%</span><span>${l.C}%</span></div>`).join('')}
+      <div class="ik-table lovetab"><div class="ik-tr ik-th"><span>#</span><span>${T('hub.colProfession')}</span><span>${T('hub.colDomainSub')}</span><span>${T('hub.colLove')}</span></div>
+      ${love.map((l, i) => { const m = area(l.domain || SUBS[l.subfield]?.domain); const sf = SUBS[l.subfield];
+        return `<div class="ik-tr"><span>${i + 1}</span><span><strong>${esc(C(l.career))}</strong></span>
+        <span class="ik-ds"><b>${m.icon} ${esc(areaName(l.domain || sf?.domain))}</b><small>${esc(C(m.desc || ''))}</small>${sf ? `<b class="ik-ds-sub">↳ ${esc(subName(l.subfield))}</b><small>${esc(C(sf.desc || ''))}</small>` : ''}</span>
+        <span class="ik-num love">${l.L}</span></div>`; }).join('')}
       </div></div>`;
     return h + nextLink('/ikigai/skills', T('hub.nextSkills'));
   }
@@ -358,7 +361,7 @@
   }
   function pageSkills() {
     const prof = profile();
-    let h = pageHead('🎯', T('hub.skillsKicker'), T('hub.skillsTitle'), T('hub.skillsLead'), 'key');
+    let h = pageHead('💪', T('hub.skillsKicker'), T('hub.skillsTitle'), T('hub.skillsLead'), 'key');
     if (!prof) {
       h += `<div class="ik-card ik-s3empty"><p>${T(st.gradesSkipped ? 'hub.s3Skipped' : 'hub.s3Empty')}</p></div>`;
       return h + `<div class="ik-card">${gradesForm()}</div>`;

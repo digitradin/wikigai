@@ -16,14 +16,14 @@
   const MENU = [
     { id: 'path', icon: '🧭', label: 'side.myPath', href: '/ikigai', items: [
       { href: '/ikigai/love', icon: '❤️', label: 'side.passions' },
-      { href: '/ikigai/skills', icon: '🎯', label: 'side.strengths' },
+      { href: '/ikigai/skills', icon: '💪', label: 'side.strengths' },
       { href: '/ikigai/needs', icon: '🌍', label: 'side.demand' },
       { href: '/ikigai/pay', icon: '💰', label: 'side.payRanges' },
     ] },
     { id: 'learn', icon: '📚', label: 'side.myLearning', href: '/learning', items: [
       { href: '/learning/plans', icon: '🗺️', label: 'side.plans', badge: 'ai' },
       { href: '/learning/videos', icon: '🎬', label: 'side.videos', badge: 'soon' },
-      { href: '/learning/tools', icon: '🧰', label: 'side.tools', badge: 'soon' },
+      { href: '/learning/tools', icon: '🔧', label: 'side.tools', badge: 'soon' },
       { href: '/learning/schools', icon: '🎓', label: 'side.schools', badge: 'soon' },
     ] },
     { id: 'profile', icon: '👤', label: 'side.myProfile', items: [

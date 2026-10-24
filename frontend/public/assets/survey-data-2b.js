@@ -13,131 +13,131 @@ window.STAGE_DATA_2B = {
  "subfields": {
   "SCIENCE_TECH.SW": {
    "domain": "SCIENCE_TECH",
-   "name": "Software, Cloud & Security"
+   "name": "Software, Cloud & Security", "desc": "Building the apps, cloud systems and security that run the digital world."
   },
   "SCIENCE_TECH.DATA": {
    "domain": "SCIENCE_TECH",
-   "name": "Data, AI & Quant"
+   "name": "Data, AI & Quant", "desc": "Turning data into insight with statistics, AI and quantitative models."
   },
   "SCIENCE_TECH.HW": {
    "domain": "SCIENCE_TECH",
-   "name": "Hardware & Robotics"
+   "name": "Hardware & Robotics", "desc": "Designing electronics, devices and robots that sense and act in the real world."
   },
   "SCIENCE_TECH.SCI": {
    "domain": "SCIENCE_TECH",
-   "name": "Research Science"
+   "name": "Research Science", "desc": "Discovering how nature works through experiments in physics, chemistry and biology."
   },
   "CREATIVE.VIS": {
    "domain": "CREATIVE",
-   "name": "Visual & Brand Design"
+   "name": "Visual & Brand Design", "desc": "Creating logos, images and visual identities that make brands recognisable."
   },
   "CREATIVE.DIG": {
    "domain": "CREATIVE",
-   "name": "Digital & Interactive Design"
+   "name": "Digital & Interactive Design", "desc": "Designing websites, apps and games that are easy and enjoyable to use."
   },
   "CREATIVE.FILM": {
    "domain": "CREATIVE",
-   "name": "Film, Animation & Motion"
+   "name": "Film, Animation & Motion", "desc": "Telling stories with film, animation, video and motion graphics."
   },
   "CREATIVE.WORD": {
    "domain": "CREATIVE",
-   "name": "Words & Media"
+   "name": "Words & Media", "desc": "Writing, editing and producing content for books, press, radio and online media."
   },
   "BUSINESS.FIN": {
    "domain": "BUSINESS",
-   "name": "Finance, Accounting & Risk"
+   "name": "Finance, Accounting & Risk", "desc": "Managing money, numbers and risk for companies, banks and investors."
   },
   "BUSINESS.STRAT": {
    "domain": "BUSINESS",
-   "name": "Strategy & Entrepreneurship"
+   "name": "Strategy & Entrepreneurship", "desc": "Starting businesses and deciding where organisations should go next."
   },
   "BUSINESS.MKT": {
    "domain": "BUSINESS",
-   "name": "Marketing & People"
+   "name": "Marketing & People", "desc": "Understanding customers and teams: marketing, sales, communication and HR."
   },
   "BUSINESS.OPS": {
    "domain": "BUSINESS",
-   "name": "Operations & Supply Chain"
+   "name": "Operations & Supply Chain", "desc": "Making products and services flow efficiently from supplier to customer."
   },
   "HEALTH.MED": {
    "domain": "HEALTH",
-   "name": "Medicine, Pharmacy & Public Health"
+   "name": "Medicine, Pharmacy & Public Health", "desc": "Diagnosing and treating illness, developing medicines and protecting public health."
   },
   "HEALTH.NURSE": {
    "domain": "HEALTH",
-   "name": "Nursing, Emergency & Diagnostics"
+   "name": "Nursing, Emergency & Diagnostics", "desc": "Caring for patients day to day, in emergencies and with medical tests and imaging."
   },
   "HEALTH.REHAB": {
    "domain": "HEALTH",
-   "name": "Therapy & Rehabilitation"
+   "name": "Therapy & Rehabilitation", "desc": "Helping people recover movement, speech and independence after illness or injury."
   },
   "HEALTH.MIND": {
    "domain": "HEALTH",
-   "name": "Mental Health"
+   "name": "Mental Health", "desc": "Supporting people’s emotional wellbeing through psychology and counselling."
   },
   "SOCIAL.TEACH": {
    "domain": "SOCIAL",
-   "name": "Teaching"
+   "name": "Teaching", "desc": "Helping children and young people learn, at school and beyond."
   },
   "SOCIAL.LEARN": {
    "domain": "SOCIAL",
-   "name": "Learning Design & EdTech"
+   "name": "Learning Design & EdTech", "desc": "Designing courses, training and digital tools that help people learn."
   },
   "SOCIAL.CARE": {
    "domain": "SOCIAL",
-   "name": "Care & Support"
+   "name": "Care & Support", "desc": "Supporting children, families and people in difficult situations."
   },
   "SOCIAL.IMPACT": {
    "domain": "SOCIAL",
-   "name": "Nonprofit & Community Impact"
+   "name": "Nonprofit & Community Impact", "desc": "Running charities and community projects that change lives."
   },
   "LAW_GOV.LEGAL": {
    "domain": "LAW_GOV",
-   "name": "Legal Practice"
+   "name": "Legal Practice", "desc": "Advising and defending people and companies under the law."
   },
   "LAW_GOV.POLICY": {
    "domain": "LAW_GOV",
-   "name": "Policy & Government"
+   "name": "Policy & Government", "desc": "Shaping public policy and running public services."
   },
   "LAW_GOV.INTL": {
    "domain": "LAW_GOV",
-   "name": "International Affairs"
+   "name": "International Affairs", "desc": "Working across borders in diplomacy, international organisations and development."
   },
   "LAW_GOV.JUSTICE": {
    "domain": "LAW_GOV",
-   "name": "Justice & Security"
+   "name": "Justice & Security", "desc": "Keeping people safe through policing, investigation and the justice system."
   },
   "BUILT_ENV.ARCH": {
    "domain": "BUILT_ENV",
-   "name": "Architecture & Spatial Design"
+   "name": "Architecture & Spatial Design", "desc": "Designing buildings, interiors and the spaces where people live and work."
   },
   "BUILT_ENV.CIVIL": {
    "domain": "BUILT_ENV",
-   "name": "Civil Engineering & Planning"
+   "name": "Civil Engineering & Planning", "desc": "Planning and engineering roads, bridges, water systems and cities."
   },
   "BUILT_ENV.MECH": {
    "domain": "BUILT_ENV",
-   "name": "Mechanical, Aerospace & Energy"
+   "name": "Mechanical, Aerospace & Energy", "desc": "Engineering machines, vehicles, aircraft and energy systems."
   },
   "BUILT_ENV.BUILD": {
    "domain": "BUILT_ENV",
-   "name": "Construction & Property"
+   "name": "Construction & Property", "desc": "Building, managing and valuing homes and other property."
   },
   "NATURE.ECO": {
    "domain": "NATURE",
-   "name": "Ecology & Conservation"
+   "name": "Ecology & Conservation", "desc": "Studying and protecting wildlife, forests and natural habitats."
   },
   "NATURE.EARTH": {
    "domain": "NATURE",
-   "name": "Ocean & Earth Science"
+   "name": "Ocean & Earth Science", "desc": "Exploring oceans, rocks, weather and the forces that shape the planet."
   },
   "NATURE.FOOD": {
    "domain": "NATURE",
-   "name": "Food, Farming & Animals"
+   "name": "Food, Farming & Animals", "desc": "Growing food, caring for animals and making farming sustainable."
   },
   "NATURE.CLIMATE": {
    "domain": "NATURE",
-   "name": "Climate & Sustainability Business"
+   "name": "Climate & Sustainability Business", "desc": "Helping companies and cities cut emissions and adapt to climate change."
   }
  },
  "partA": [

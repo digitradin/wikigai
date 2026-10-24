@@ -124,3 +124,16 @@
   .lr-vid{color:#000!important;background:none!important;border:1px solid #999}
 }
 #lrResult{scroll-margin-top:84px}
+.lr-more-item{display:none}
+.lr-more{font:600 .78rem var(--font);color:#d98bff;background:none;border:1px dashed rgba(196,77,255,.45);border-radius:16px;padding:6px 12px;cursor:pointer}
+.ac-danger{border-color:rgba(239,68,68,.25)}
+.ac-danger h2{color:#fca5a5}
+.ac-delform{display:flex;flex-direction:column;gap:6px;max-width:420px;margin-top:10px;padding-top:14px;border-top:1px solid var(--border-glass)}
+.ac-delform label{font-weight:700;font-size:.85rem;margin-top:6px}
+.ac-delform input{font:500 .92rem var(--font);color:var(--text);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px 12px}
+.ac-delform input:focus{outline:none;border-color:rgba(239,68,68,.6)}
+.ac-warn{margin:0 0 4px;font-size:.84rem;color:#fecaca}
+.ac-delbtns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.ac-btn.danger.solid{background:#dc2626;border-color:#dc2626;color:#fff}
+.ac-btn:disabled{opacity:.45;cursor:not-allowed}
+.ac-btn[hidden],.ac-delform[hidden]{display:none}

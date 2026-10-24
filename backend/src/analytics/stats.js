@@ -91,7 +91,7 @@ async function buildStats(daysParam) {
 
   const events = await rows(`
     SELECT name, coalesce(props->>'channel', props->>'to', '') AS detail, count(*) AS n
-    FROM analytics_events WHERE type='event' AND day BETWEEN $1 AND $2 AND name IN ('share_click','lang_change','donate_click','retake','refresh_optin','research_done','video_search')
+    FROM analytics_events WHERE type='event' AND day BETWEEN $1 AND $2 AND name IN ('share_click','lang_change','donate_click','retake','refresh_optin','research_done','video_search','account_deleted')
     GROUP BY 1,2 ORDER BY 3 DESC`, [R.start, R.end]);
 
   const accounts = await one(`

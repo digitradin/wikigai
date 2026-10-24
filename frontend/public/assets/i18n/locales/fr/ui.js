@@ -169,6 +169,7 @@ WK.i18n.register('fr', 'ui', {
     plansAiLead: "Explorez n’importe quel domaine avec l’IA : vue d’ensemble, compétences clés et plan personnel à 30 jours, 1 an et 3 ans.",
     aiBadge: "IA",
     meanwhileAi: "En attendant, explorez n’importe quel domaine avec l’IA",
+    showAll: "+ {count} de plus",
   },
 
   /* ── My account (account.html) ── */
@@ -194,6 +195,15 @@ WK.i18n.register('fr', 'ui', {
     data: "Vos résultats",
     dataHelp: "Vos réponses et résultats sont enregistrés dans votre compte et visibles uniquement par vous.",
     goDashboard: "Aller à mon tableau de bord",
+    deleteTitle: "Supprimer mon compte",
+    deleteHelp: "Supprime définitivement votre compte, vos réponses, vos résultats et vos recherches enregistrées. Cette action est irréversible.",
+    deleteBtn: "Supprimer mon compte…",
+    deleteWarn: "⚠️ C’est définitif. Pour confirmer, saisissez à nouveau votre e-mail et votre mot de passe.",
+    deleteEmail: "Saisissez à nouveau votre e-mail",
+    deletePassword: "Votre mot de passe",
+    deleteCancel: "Annuler",
+    deleteConfirm: "Supprimer définitivement",
+    deleted: "Votre compte a été supprimé. Retour à l’accueil…",
   },
 
   /* ── owner statistics (admin.html) ── */
@@ -298,6 +308,7 @@ WK.i18n.register('fr', 'ui', {
     seoNext: "Étape suivante : soumettez {url} dans Google Search Console et Bing Webmaster Tools.",
     ev_research_done: "Recherche IA",
     ev_video_search: "Recherche de vidéos",
+    ev_account_deleted: "Compte supprimé",
   },
 
   landing: {
@@ -442,6 +453,8 @@ WK.i18n.register('fr', 'ui', {
     AI_LIMIT: "Vous avez atteint la limite de recherches du jour. Réessayez demain.",
     AI_FAILED: "L’IA n’a pas pu répondre pour le moment. Réessayez dans un instant.",
     AI_BAD_OUTPUT: "La réponse de l’IA est illisible. Veuillez réessayer.",
+    DELETE_EMAIL_MISMATCH: "L’e-mail ne correspond pas à votre compte.",
+    DELETE_BAD_PASSWORD: "Mot de passe incorrect.",
   },
 
   support: {
@@ -706,13 +719,13 @@ WK.i18n.register('fr', 'ui', {
     strong: '✨ Forte correspondance',
     match: 'correspondance',
     love: '❤️ J’aime',
-    goodAt: '🎯 Doué',
+    goodAt: '💪 Doué',
     addGradesLink: 'ajouter mes notes',
     usMedian: 'Médiane US {pay}',
     noPaySeries: 'pas de série salariale officielle',
     euEstimate: 'Estimation Europe',
     dayInJob: 'Une journée dans ce métier',
-    loveBreakdown: 'J’aime = {d} % domaine · {s} % spécialité · {c} % duels. Source des perspectives : {src}.',
+    loveBreakdown: "Votre score de passion a été calculé de façon scientifique à partir de vos domaines, sous-domaines et métiers préférés, selon vos réponses et vos choix personnels. Source des perspectives : {src}.",
     refreshTitle: 'Gardez votre carte à jour',
     refreshText: 'Vos centres d’intérêt, vos notes, les perspectives d’emploi et les salaires évoluent. Nous pouvons vous rappeler de mettre à jour votre Wikigai tous les 6 mois.',
     refreshCheck: 'Me le rappeler au printemps prochain (vers {date}), puis tous les 6 mois.',
@@ -736,15 +749,15 @@ WK.i18n.register('fr', 'ui', {
     kept: 'retenu',
     loveEmpty2: 'Ensuite : l’étape 2 zoome sur les domaines retenus — environ 15 minutes.',
     subsTitle: 'Vos spécialités préférées',
-    subsSub: 'Issues de 12 paires rapides par domaine. Elles ont alimenté les duels de métiers.',
+    subsSub: "Les sous-domaines que vous avez préférés dans vos domaines favoris.",
     shortTitle: 'Votre sélection de métiers',
-    shortSub: 'Score « J’aime » = 40 % affinité domaine + 35 % affinité spécialité + 25 % duels gagnés.',
+    shortSub: "Nous avons pris en compte de façon scientifique vos domaines, sous-domaines et métiers préférés, à partir de vos réponses et de vos choix personnels.",
     colProfession: 'Métier',
     colLove: 'J’aime',
     colDomain: 'Domaine',
     colSubfield: 'Spécialité',
     colDuels: 'Duels',
-    nextSkills: '🎯 Suite : Ce en quoi je suis doué',
+    nextSkills: '💪 Suite : Ce en quoi je suis doué',
     skillsKicker: 'Cercle 2 · Ce en quoi je suis doué',
     skillsTitle: 'Ce en quoi vous êtes <span class="grad">doué</span>',
     skillsLead: "Vos résultats de l’étape 3 : ce que vos notes de l’an dernier disent de vos talents, et comment ils correspondent aux métiers que vous aimez. Nous comparons aussi chaque matière à <em>votre propre</em> moyenne, pour qu’une école exigeante ou une année difficile ne cache pas un vrai talent.",
@@ -840,6 +853,7 @@ WK.i18n.register('fr', 'ui', {
     prLegend: "Barre : du pays européen le moins payé au mieux payé pour le groupe de métiers, avec la moyenne de l’UE au milieu. Points : les lieux européens choisis. Les métiers d’un même groupe partagent les mêmes chiffres européens ; la médiane américaine est propre à chaque métier.",
     prFoot: "Europe : salaire annuel brut moyen par salarié et par groupe de métiers (Eurostat SES 2022, EUR). * pas de chiffre national pour ce groupe — moyenne de l’UE affichée. États-Unis : salaire annuel médian du métier (BLS, USD).",
     prUsNote: "médiane",
+    colDomainSub: "Domaine et sous-domaine",
   },
 
   widget: {
