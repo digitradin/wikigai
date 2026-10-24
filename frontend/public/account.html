@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="meta.account">My account — Wikigai</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/survey.css">
+<link rel="stylesheet" href="/assets/ikigai.css">
+<link rel="stylesheet" href="/assets/wk.css">
+<link rel="stylesheet" href="/assets/learning.css">
+<script src="/assets/i18n/i18n.js"></script>
+<script src="/assets/track.js" defer></script>
+</head>
+<body class="survey-body ik-body">
+<div id="wkNav"></div>
+<main class="ik-main" style="padding-top:90px">
+  <div class="results-wrap lr-wrap">
+    <header class="ik-head">
+      <div class="ik-kicker" data-i18n="account.kicker">👤 My profile</div>
+      <h1 data-i18n-html="account.title">My <span class="grad">account</span></h1>
+      <p data-i18n="account.lead">Your details, language and sign-in settings.</p>
+    </header>
+    <div class="ac-grid">
+      <section class="ik-card">
+        <h2 data-i18n="account.details">Your details</h2>
+        <div class="ac-row">
+          <div><label for="acName" data-i18n="account.name">Name</label></div>
+          <div style="flex:1 1 260px;max-width:420px">
+            <form class="ac-name" id="acNameForm"><input id="acName" maxlength="80" autocomplete="name" data-i18n-attr="placeholder:account.namePh"><button class="ac-btn primary" type="submit" data-i18n="account.save">Save</button></form>
+            <div class="ac-msg" id="acNameMsg" role="status"></div>
+          </div>
+        </div>
+        <div class="ac-row">
+          <div><span class="ac-k" data-i18n="account.email">Email</span></div>
+          <div class="ac-v"><span id="acEmail">—</span><span class="ac-badge" id="acVerified" hidden></span></div>
+        </div>
+        <div class="ac-row">
+          <div><span class="ac-k" data-i18n="account.language">Language</span><small data-i18n="account.languageHelp">Wikigai and our emails will use this language.</small></div>
+          <div data-wk-lang></div>
+        </div>
+      </section>
+      <section class="ik-card">
+        <h2 data-i18n="account.security">Password &amp; sign-in</h2>
+        <div class="ac-row">
+          <div><small data-i18n="account.passwordHelp">We’ll email you a 6-digit code to choose a new password.</small></div>
+          <a class="ac-btn" id="acPassword" href="/forgot" data-i18n="account.changePassword">Change password</a>
+        </div>
+        <div class="ac-row">
+          <div><small data-i18n="account.signOutHelp">Sign out of Wikigai on this device.</small></div>
+          <button class="ac-btn danger" type="button" id="acSignOut" data-i18n="account.signOut">Sign out</button>
+        </div>
+      </section>
+      <section class="ik-card">
+        <h2 data-i18n="account.data">Your results</h2>
+        <div class="ac-row">
+          <div><small data-i18n="account.dataHelp">Your answers and results are saved to your account and only visible to you.</small></div>
+          <a class="ac-btn" href="/dashboard" data-i18n="account.goDashboard">Go to my dashboard</a>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="/assets/app.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function () {
+  const { api, Store } = window.CPS;
+  if (!Store.token) { location.href = '/login'; return; }
+  const I = WK.i18n, T = (k, v) => I.t(k, v), $ = (id) => document.getElementById(id);
+  let user = null;
+  function paint() {
+    if (!user) return;
+    $('acEmail').textContent = user.email || '—';
+    const v = $('acVerified'); v.hidden = false; v.className = 'ac-badge' + (user.verified ? '' : ' no');
+    v.textContent = T(user.verified ? 'account.verified' : 'account.notVerified');
+  }
+  async function load() {
+    try { user = (await api('/api/user/profile')).user; }
+    catch (err) { if (err.status === 401) { Store.clear(); location.href = '/login'; } return; }
+    Store.user = user;
+    $('acName').value = user.name || '';
+    paint();
+  }
+  $('acNameForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = $('acNameMsg'), name = $('acName').value.trim();
+    msg.className = 'ac-msg'; msg.textContent = '';
+    try {
+      await api('/api/user/profile', { method: 'PUT', body: { name } });
+      user.name = name; Store.user = user;
+      msg.className = 'ac-msg ok'; msg.textContent = T('account.saved');
+      if (window.WikiNav) window.WikiNav.render();
+    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
+  });
+  $('acPassword').addEventListener('click', () => { try { sessionStorage.setItem('wk_forgot_email', user?.email || ''); } catch {} });
+  $('acSignOut').addEventListener('click', () => { if (window.CPS.logout) window.CPS.logout(); else { Store.clear(); location.href = '/login'; } });
+  I.ready.then(load);
+  I.onChange(paint);
+})();
+</script>
+</body>
+</html>

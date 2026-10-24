@@ -91,6 +91,23 @@ router.put('/locale', async (req, res, next) => {
 });
 
 /**
+ * PUT /api/user/profile — update the display name (Account page).
+ * Body: { name: string (1–80 chars) }
+ */
+router.put('/profile', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const name = String((req.body && req.body.name) || '').replace(/[\u0000-\u001f<>]/g, '').trim();
+    if (!name || name.length > 80) return res.status(400).json({ error: 'Please enter a name (max 80 characters).', code: 'BAD_NAME' });
+    await db.query('UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2', [name, user.id]);
+    res.json({ ok: true, name });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /api/user/results — save results for a stage (jsonb merge per stage).
  * Body: { stage: number, results: object }
  */

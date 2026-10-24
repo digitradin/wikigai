@@ -138,12 +138,14 @@ app.use('/api/admin', adminRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount
-const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/admin': 'admin.html', '/dashboard': 'dashboard/index.html' };
+const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/admin': 'admin.html', '/account': 'account.html', '/learning': 'learning.html', '/dashboard': 'dashboard/index.html' };
 const sendPrivate = (file) => (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderPrivate(file));
 for (const [route, file] of Object.entries(privatePages)) app.get(route, sendPrivate(file));
 app.get('/dashboard/*', sendPrivate('dashboard/index.html'));
 // Ikigai hub menu pages (client-side routed): /ikigai/love|skills|needs|pay
 app.get('/ikigai/*', sendPrivate('ikigai.html'));
+// My learning (client-side routed): /learning/plans|videos|tools|schools
+app.get('/learning/*', sendPrivate('learning.html'));
 
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'assets', 'brand', 'favicon.png')));
 

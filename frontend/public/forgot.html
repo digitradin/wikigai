@@ -46,6 +46,8 @@
   const T = (k, v) => WK.i18n.t(k, v);
   WK.i18n.onChange(() => {}); // static text re-applies itself; keep typed input
 
+  // prefill from the Account page (kept out of the URL on purpose)
+  try { const q = sessionStorage.getItem('wk_forgot_email'); if (q) { document.getElementById('email').value = q; sessionStorage.removeItem('wk_forgot_email'); } } catch {}
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert(alertEl);
