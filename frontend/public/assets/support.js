@@ -8,25 +8,27 @@
   const cfg = () => (cfgP = cfgP || (window.CPS?.api ? window.CPS.api('/api/config', { auth: false }).catch(() => ({})) : Promise.resolve({})));
   const PUBLIC_SITE = 'https://wikigai.digitradin.cloud';
   // Share the public site, never the address of a preview or test copy.
-  const shareUrl = () => {
+  // channel → UTM tags, so the admin dashboard shows which share channel brings visitors
+  const shareUrl = (channel) => {
     const h = location.hostname;
     const base = /(^|\.)digitradin\.cloud$|(^|\.)wikigai\.com$/.test(h) ? location.origin : PUBLIC_SITE;
-    return `${base}/?ref=share`;
+    const ch = channel || 'link';
+    return `${base}/?ref=share&utm_source=${encodeURIComponent(ch)}&utm_medium=share&utm_campaign=user_share`;
   };
   const T = (k, v) => (window.WK && WK.i18n ? WK.i18n.t(k, v) : k);
 
   function shareRow() {
-    const url = shareUrl();
-    const u = encodeURIComponent(url), t = encodeURIComponent(T('support.shareText'));
+    const url = shareUrl('link');
+    const u = (ch) => encodeURIComponent(shareUrl(ch)), t = encodeURIComponent(T('support.shareText'));
     const subject = encodeURIComponent(T('support.mailSubject'));
-    const body = encodeURIComponent(T('support.mailBody', { url }));
+    const body = encodeURIComponent(T('support.mailBody', { url: shareUrl('email') }));
     return `<div class="ws-share"><span class="ws-share-l">${T('support.shareLead')}</span>
       <div class="ws-share-b">
-        <a class="ws-btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?text=${t}${u}">WhatsApp</a>
-        <a class="ws-btn" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${u}">LinkedIn</a>
-        <a class="ws-btn" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${t}&url=${u}">X</a>
-        <a class="ws-btn" href="mailto:?subject=${subject}&body=${body}">${T('support.email')}</a>
-        <button type="button" class="ws-btn" data-ws="copy">${T('support.copy')}</button>
+        <a class="ws-btn" data-ws-ch="whatsapp" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?text=${t}${u('whatsapp')}">WhatsApp</a>
+        <a class="ws-btn" data-ws-ch="linkedin" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${u('linkedin')}">LinkedIn</a>
+        <a class="ws-btn" data-ws-ch="x" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${t}&url=${u('x')}">X</a>
+        <a class="ws-btn" data-ws-ch="email" href="mailto:?subject=${subject}&body=${body}">${T('support.email')}</a>
+        <button type="button" class="ws-btn" data-ws="copy" data-ws-ch="copy">${T('support.copy')}</button>
       </div>
       <input class="ws-link" type="text" readonly value="${esc(url)}" aria-label="${esc(T('support.linkLabel'))}" hidden>
     </div>`;
@@ -43,23 +45,28 @@
         <div class="ws-copy"><strong>${T('support.boxTitle')}</strong>
           ${T('support.boxText')}
           <a href="/support" class="ws-more">${T('support.boxMore')}</a></div>
-        ${url ? `<a class="ws-donate" href="${esc(url)}" target="_blank" rel="noopener">${T('support.donate')}</a>` : `<span class="ws-soon">${T('support.soon')}</span>`}
+        ${url ? `<a class="ws-donate" data-ws-donate="1" href="${esc(url)}" target="_blank" rel="noopener">${T('support.donate')}</a>` : `<span class="ws-soon">${T('support.soon')}</span>`}
       </div>
       ${o.share === false ? '' : shareRow()}
     </div>`;
   }
 
   document.addEventListener('click', async (e) => {
+    const tr = e.target.closest && e.target.closest('[data-ws-ch],[data-ws-donate]');
+    if (tr) {
+      if (tr.dataset.wsDonate) window.WK?.track?.('donate_click');
+      else window.WK?.track?.('share_click', { channel: tr.dataset.wsCh });
+    }
     const b = e.target.closest && e.target.closest('[data-ws]');
     if (!b) return;
     if (b.dataset.ws === 'copy') {
       const box = b.closest('.ws-share');
       const field = box && box.querySelector('.ws-link');
       let ok = false;
-      try { await navigator.clipboard.writeText(shareUrl()); ok = true; } catch { ok = false; }
+      try { await navigator.clipboard.writeText(shareUrl('copy')); ok = true; } catch { ok = false; }
       if (!ok && field) {
         // clipboard blocked: show the link selected so it can be copied by hand
-        field.hidden = false; field.focus(); field.select();
+        field.value = shareUrl('copy'); field.hidden = false; field.focus(); field.select();
         try { ok = document.execCommand('copy'); } catch { ok = false; }
       }
       b.textContent = T(ok ? 'support.copied' : 'support.copyManual');

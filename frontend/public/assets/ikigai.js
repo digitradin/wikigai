@@ -501,7 +501,7 @@
     const act = b.dataset.act;
     if (act === 'region-blend') { st.region = { mode: 'blend', countries: [] }; render(); save({ region: st.region }, T('hub.marketUpdated')); }
     if (act === 'region-custom') { st.region.mode = 'custom'; render(); }
-    if (act === 'skip') { st.gradesSkipped = true; completeStage3().then(() => go('/ikigai')); }
+    if (act === 'skip') { window.WK?.track?.('grades_skipped'); st.gradesSkipped = true; completeStage3().then(() => go('/ikigai')); }
     if (act === 'save-grades') saveGrades();
   });
   document.addEventListener('change', (e) => {
@@ -511,6 +511,7 @@
     if (act === 'trendf') { ui.trendFilter = t.value; render(); }
     if (act === 'refresh') {
       const d = new Date(); d.setMonth(d.getMonth() + 6);
+      if (t.checked) window.WK?.track?.('refresh_optin');
       st.refresh = t.checked ? { optIn: true, cadenceMonths: 6, nextDue: d.toISOString().slice(0, 10) } : { optIn: false };
       save({ refresh: st.refresh }, T(t.checked ? 'hub.refreshOn' : 'hub.refreshOff'));
     }
@@ -543,6 +544,7 @@
     const filled = Object.values(g.values).filter((v) => v !== '' && v != null).length;
     if (!filled) { err.textContent = T('hub.errNone'); return; }
     st.gradesSkipped = false;
+    window.WK?.track?.('grades_saved', { subjects: filled });
     completeStage3().then(() => { if (flow) go('/ikigai'); else render(); });
   }
 

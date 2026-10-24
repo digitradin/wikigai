@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="meta.admin">Statistics — Wikigai</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/survey.css">
+<link rel="stylesheet" href="/assets/ikigai.css">
+<link rel="stylesheet" href="/assets/wk.css">
+<link rel="stylesheet" href="/assets/admin.css">
+<script src="/assets/i18n/i18n.js"></script>
+<!-- no track.js here: the owner's own visits to the dashboard are not counted -->
+</head>
+<body class="survey-body ik-body">
+<div id="wkNav"></div>
+<main class="ik-main" style="padding-top:90px">
+  <div class="results-wrap ad-wrap">
+    <header class="ik-head ad-head">
+      <div>
+        <div class="ik-kicker" data-i18n="admin.kicker">Owner dashboard</div>
+        <h1 data-i18n-html="admin.title">Wikigai <span class="grad">statistics</span></h1>
+        <p data-i18n="admin.lead">Anonymous, cookieless figures — no personal data is shown or stored.</p>
+      </div>
+      <div class="ad-tools">
+        <div class="ad-seg" role="group" id="adPeriod" data-i18n-attr="aria-label:admin.period">
+          <button type="button" data-days="7"></button><button type="button" data-days="21"></button><button type="button" data-days="30"></button><button type="button" data-days="90"></button>
+        </div>
+        <button type="button" class="ad-btn" id="adRefresh" data-i18n="admin.refresh">Refresh</button>
+        <button type="button" class="ad-btn" id="adCsv" data-i18n="admin.exportCsv">Export CSV</button>
+      </div>
+    </header>
+    <div id="adMsg" class="ad-msg" data-i18n="admin.loading">Loading statistics…</div>
+    <div id="adBody" hidden>
+      <section class="ad-kpis" id="adKpis"></section>
+      <section class="ik-card"><h2 data-i18n="admin.chartTitle">Daily visits and sign-ups</h2><div id="adChart" class="ad-chart"></div></section>
+      <div class="ad-grid">
+        <section class="ik-card"><h2 data-i18n="admin.funnelTitle">Conversion funnel</h2><p class="ad-sub" data-i18n="admin.funnelLead"></p><div id="adFunnel"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.referrers">Where visitors come from</h2><div id="adRefs"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.pages">Top pages</h2><div id="adPages"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.campaigns">Campaigns (UTM links)</h2><div id="adCamp"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.languages">Languages</h2><div id="adLang"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.countries">Countries</h2><div id="adCountry"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.devices">Devices</h2><div id="adDev"></div><h2 class="ad-h2b" data-i18n="admin.browsers">Browsers</h2><div id="adBrowser"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.eventsTitle">Engagement</h2><div id="adEvents"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.accountsTitle">Accounts (all time)</h2><div id="adAccounts"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.progressTitle">Progress (all time)</h2><div id="adProgress"></div></section>
+      </div>
+      <section class="ik-card" id="adUtm">
+        <h2 data-i18n="admin.utmTitle">Campaign link builder</h2>
+        <p class="ad-sub" data-i18n="admin.utmLead"></p>
+        <div class="ad-form">
+          <label><span data-i18n="admin.utmPage">Page</span><select id="utmPage"><option value="/">/</option><option value="/signup">/signup</option><option value="/support">/support</option><option value="/fr/">/fr/</option><option value="/es/">/es/</option><option value="/fr/signup">/fr/signup</option><option value="/es/signup">/es/signup</option></select></label>
+          <label><span data-i18n="admin.utmSource">Source</span><input id="utmSource" data-i18n-attr="placeholder:admin.utmSourcePh" value="instagram"></label>
+          <label><span data-i18n="admin.utmMedium">Medium</span><input id="utmMedium" data-i18n-attr="placeholder:admin.utmMediumPh" value="social"></label>
+          <label><span data-i18n="admin.utmCampaign">Campaign</span><input id="utmCampaign" data-i18n-attr="placeholder:admin.utmCampaignPh" value=""></label>
+        </div>
+        <div class="ad-linkrow"><input id="utmOut" readonly data-i18n-attr="aria-label:admin.utmLink"><button type="button" class="ad-btn primary" id="utmCopy" data-i18n="admin.utmCopy">Copy link</button></div>
+      </section>
+      <section class="ik-card" id="adSeo">
+        <div class="ad-seohead"><div><h2 data-i18n="admin.seoTitle">SEO health</h2><p class="ad-sub" data-i18n="admin.seoLead"></p></div>
+          <button type="button" class="ad-btn primary" id="seoRun" data-i18n="admin.seoRun">Run SEO check</button></div>
+        <div id="seoOut"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="/assets/app.js"></script>
+<script src="/assets/site.js"></script>
+<script src="/assets/admin.js"></script>
+</body>
+</html>

@@ -11,13 +11,14 @@
 <link rel="icon" href="/assets/brand/favicon.png">
 <link rel="stylesheet" href="/assets/brand.css">
 <script src="/assets/i18n/i18n.js"></script>
+<script src="/assets/track.js" defer></script>
 </head>
 <body>
 <div class="auth-shell">
   <div class="narrow auth-card">
     <div class="auth-head">
       <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
-      <h2 data-i18n="auth.login.title">Welcome back</h2>
+      <h1 data-i18n="auth.login.title">Welcome back</h1>
       <p data-i18n="auth.login.sub">Sign in to continue your Wikigai</p>
     </div>
 
@@ -97,6 +98,7 @@
       const res = await api('/api/auth/login', { method: 'POST', auth: false, body: { email, password, captcha_id: Captcha.id, captcha_answer: Captcha.answer() } });
       Store.token = res.token;
       Store.user = res.user;
+      window.WK?.track?.('login_done');
       window.location.href = '/dashboard';
     } catch (err) {
       if (err.code === 'EMAIL_NOT_VERIFIED') {

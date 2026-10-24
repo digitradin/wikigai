@@ -16,10 +16,17 @@ const userRoutes = require('./routes/user');
 const surveyRoutes = require('./routes/survey');
 const resultsRoutes = require('./routes/results');
 const healthRoute = require('./routes/health');
+const adminRoutes = require('./routes/admin');
+const analytics = require('./analytics/collect');
+const seo = require('./seo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+
+// Behind Traefik: use the visitor's real address (X-Forwarded-For, one proxy hop)
+// for rate limiting and anonymous analytics — otherwise every visitor looks the same.
+app.set('trust proxy', parseInt(process.env.TRUST_PROXY_HOPS || '1', 10));
 
 // ── Security headers ──────────────────────────────────────────────
 app.use(helmet({
@@ -89,8 +96,11 @@ const authLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
 
+// ── SEO: robots, sitemap, localized public pages (/, /fr/, /es/…), noindex on private areas ──
+seo.mount(app, PUBLIC_DIR);
+
 // ── Static frontend ───────────────────────────────────────────────
-app.use(express.static(PUBLIC_DIR, { maxAge: '5m', etag: true }));
+app.use(express.static(PUBLIC_DIR, { maxAge: '5m', etag: true, index: false }));
 app.use('/dashboard', express.static(path.join(PUBLIC_DIR, 'dashboard'), { maxAge: '5m' }));
 app.use('/widget', express.static(path.join(PUBLIC_DIR, 'widget'), { maxAge: '5m' }));
 
@@ -121,19 +131,18 @@ app.use('/api/captcha', captchaRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/survey', surveyRoutes);
 app.use('/api/results', resultsRoutes);
+// first-party, cookieless analytics + owner dashboard
+app.use('/api/t', analytics.router);
+app.use('/api/admin', adminRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
-const pages = { '/': 'index.html', '/login': 'login.html', '/signup': 'signup.html', '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/support': 'support.html' };
-for (const [route, file] of Object.entries(pages)) {
-  app.get(route, (req, res) => res.sendFile(path.join(PUBLIC_DIR, file)));
-}
-app.get('/dashboard/*', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'dashboard', 'index.html')));
+// public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount
+const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/admin': 'admin.html', '/dashboard': 'dashboard/index.html' };
+const sendPrivate = (file) => (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderPrivate(file));
+for (const [route, file] of Object.entries(privatePages)) app.get(route, sendPrivate(file));
+app.get('/dashboard/*', sendPrivate('dashboard/index.html'));
 // Ikigai hub menu pages (client-side routed): /ikigai/love|skills|needs|pay
-app.get('/ikigai/*', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'ikigai.html')));
-
-app.get('/robots.txt', (req, res) => {
-  res.type('text/plain').send('User-agent: *\nDisallow: /dashboard\nDisallow: /api\n');
-});
+app.get('/ikigai/*', sendPrivate('ikigai.html'));
 
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'assets', 'brand', 'favicon.png')));
 
@@ -146,6 +155,7 @@ async function start() {
   } catch (e) {
     console.error('[startup] migrations failed:', e.message);
   }
+  analytics.startRetention();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[cps-backend] Running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
   });

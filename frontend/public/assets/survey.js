@@ -366,6 +366,7 @@
     }
     applyDomainFilter();
     showFilterNotice();
+    window.WK?.track?.(stage === 2 ? 'stage2_start' : 'stage1_start');
     showScreen('survey');
     $('navCounter').style.display = 'block';
     renderQ();
@@ -496,7 +497,7 @@
     if (stage === 2) return finishStage2();
     const ranked = rankScores();
     const max = Math.max(1, ...ranked.map((r) => r.score));
-    if (stage === 1) domainPrefs = prefsFromRanking(ranked, max);
+    if (stage === 1) { domainPrefs = prefsFromRanking(ranked, max); window.WK?.track?.('stage1_done'); }
     view = () => renderResults(ranked, max, { readonly: false });
     view();
     showScreen('results');
@@ -598,6 +599,7 @@
     if (s2phase === 'A') {
       computeSubPct();
       subPrefs = defaultSubPrefs();
+      window.WK?.track?.('stage2_parta_done');
       view = () => renderSubfieldTuner(false);
       view();
       showScreen('results');
@@ -605,6 +607,7 @@
       return;
     }
     s2phase = 'done';
+    window.WK?.track?.('stage2_done');
     const love = computeLove();
     view = () => renderLoveShortlist(love, false);
     view();
@@ -807,7 +810,7 @@
     on('beginBtn', 'click', () => window.startSurvey());
     on('backBtn', 'click', () => { window.location.href = '/dashboard'; });
     on('goDashBtn', 'click', () => { window.location.href = '/dashboard'; });
-    on('retakeBtn', 'click', () => { if (reviewMode) window.location.href = `/survey?stage=${stage}`; else window.startSurvey(); });
+    on('retakeBtn', 'click', () => { window.WK?.track?.('retake', { stage }); if (reviewMode) window.location.href = `/survey?stage=${stage}`; else window.startSurvey(); });
     on('nextBtn', 'click', () => {
       if (stage === 2 && s2phase === 'A' && stageComplete) {
         persist2({ partial: true, phase: 'A-done', subPrefs });

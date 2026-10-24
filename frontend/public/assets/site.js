@@ -22,6 +22,7 @@
       ${signedIn ? `<a href="/dashboard" class="${is('/dashboard') ? 'active' : ''}">${T('nav.dashboard')}</a>
       <a href="/ikigai" class="${is('/ikigai') ? 'active' : ''}">${T('nav.myWikigai')}</a>` : ''}
       <a href="/support" class="wk-opt ${is('/support') ? 'active' : ''}">${T('nav.support')}</a>
+      ${signedIn && user?.isAdmin ? `<a href="/admin" class="wk-opt ${is('/admin') ? 'active' : ''}">${T('nav.stats')}</a>` : ''}
     </div>
     <div class="wk-right">
     <div data-wk-lang></div>
@@ -33,6 +34,7 @@
         <a href="/dashboard" role="menuitem">${T('nav.dashboard')}</a>
         <a href="/ikigai" role="menuitem">${T('nav.myWikigai')}</a>
         <a href="/support" role="menuitem">${T('nav.support')}</a>
+        ${user?.isAdmin ? `<a href="/admin" role="menuitem">${T('nav.stats')}</a>` : ''}
         <button id="wkLogout" role="menuitem">${T('nav.signOut')}</button>
       </div>
     </div>` : `<a class="wk-signin" href="/login">${T('nav.signIn')}</a>`}

@@ -48,7 +48,20 @@
   const known = (c) => LOCALES.some((l) => l.code === c);
   const norm = (c) => String(c || '').toLowerCase().slice(0, 2);
 
+  /* /fr/… and /es/… are the indexable language versions of public pages */
+  function pathLang() {
+    const m = location.pathname.match(/^\/([a-z]{2})(\/|$)/);
+    return m && known(m[1]) && m[1] !== DEFAULT ? m[1] : null;
+  }
+  /* the page's own language versions, from <link rel="alternate" hreflang> */
+  function alternateUrl(code) {
+    const el = document.querySelector(`link[rel="alternate"][hreflang="${code}"]`);
+    if (!el) return null;
+    try { const u = new URL(el.getAttribute('href'), location.href); return u.pathname + location.search + location.hash; } catch { return null; }
+  }
   function detect() {
+    const pl = pathLang();
+    if (pl) return pl;
     let q = null;
     try { q = new URLSearchParams(window.__WK_Q__ || location.search).get('lang'); } catch { /* ignore */ }
     const legacy = ls.get('ikigai_lang'); // older pages stored EN/FR/ES here
@@ -219,6 +232,10 @@
     code = norm(code);
     if (!known(code) || code === lang) return;
     ls.set(STORAGE_KEY, code);
+    if (window.WK && WK.track) WK.track('lang_change', { from: lang, to: code });
+    // public pages have a URL per language: go there so the address matches the content
+    const alt = alternateUrl(code);
+    if (alt && alt.split('?')[0] !== location.pathname) { location.href = alt; return; }
     switching = loadLang(code);
     await switching;
     lang = code;
@@ -245,13 +262,20 @@
   const reveal = () => document.documentElement.classList.remove('wk-i18n-pending');
   const failsafe = setTimeout(reveal, 2500);
   ls.set(STORAGE_KEY, lang);
+  /* on a public page, show the address of the visitor's language (/fr/, /es/…) */
+  let leaving = false; // true while we redirect to the visitor's language address
+  if (!pathLang() && lang !== DEFAULT) {
+    const alt = alternateUrl(lang);
+    if (alt && alt.split('?')[0] !== location.pathname) { leaving = true; location.replace(alt.replace(/([?&])lang=[a-z]{2}&?/, '$1').replace(/[?&]$/, '')); }
+  }
   const ready = loadLang(lang).then(() => new Promise((res) => {
-    const go = () => { ensureSwitcher(); apply(); clearTimeout(failsafe); reveal(); res(lang); };
+    const go = () => { if (leaving || !document.body) return res(lang); ensureSwitcher(); apply(); clearTimeout(failsafe); reveal(); res(lang); };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
   }));
 
   const api = {
     get lang() { return lang; },
+    get leaving() { return leaving; },
     get locale() { return info(); },
     locales: LOCALES.slice(),
     contentDomains: CONTENT_DOMAINS.slice(),

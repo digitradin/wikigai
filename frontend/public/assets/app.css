@@ -238,7 +238,7 @@ nav.top .inner {
 .auth-shell { display: grid; place-items: center; min-height: 100vh; padding: 40px 0 60px; }
 .auth-card { width: 100%; max-width: 460px; }
 .auth-head { text-align: center; margin-bottom: 24px; }
-.auth-head h2 { font-size: 26px; letter-spacing: -0.02em; margin-bottom: 6px; }
+.auth-head h1, .auth-head h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
 .auth-head p { color: var(--muted); font-size: 14.5px; }
 .switch-line { text-align: center; font-size: 14px; color: var(--muted); margin-top: 20px; }
 .progress-steps { display: flex; gap: 8px; justify-content: center; margin-bottom: 22px; }

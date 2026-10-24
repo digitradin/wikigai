@@ -11,6 +11,7 @@
 <link rel="icon" href="/assets/brand/favicon.png">
 <link rel="stylesheet" href="/assets/brand.css">
 <script src="/assets/i18n/i18n.js"></script>
+<script src="/assets/track.js" defer></script>
 </head>
 <body>
 <div class="auth-shell">
@@ -18,7 +19,7 @@
     <div class="auth-head">
       <div class="logo" style="justify-content:center;margin-bottom:16px"><img class="brand-logo" src="/assets/brand/wikigai-logo.png" alt="Wikigai" style="height:44px"></div>
       <div class="progress-steps"><span class="step-dot active"></span><span class="step-dot"></span></div>
-      <h2 data-i18n="auth.signup.title">Create your account</h2>
+      <h1 data-i18n="auth.signup.title">Create your account</h1>
       <p data-i18n="auth.signup.sub">Step 1 of 2 — confirm your email</p>
     </div>
 
@@ -139,6 +140,7 @@
       });
       sessionStorage.setItem('cps_pending_email', email);
       if (res.dev_pin) sessionStorage.setItem('cps_dev_pin', res.dev_pin);
+      window.WK?.track?.('signup_submit');
       window.location.href = '/verify';
     } catch (err) {
       showAlert(alertEl, err.message, 'err');

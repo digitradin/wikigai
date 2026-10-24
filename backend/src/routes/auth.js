@@ -182,7 +182,7 @@ router.post('/verify', async (req, res, next) => {
     res.json({
       ok: true,
       token,
-      user: { id: user.id, email, name: user.name, locale: user.locale, verified: true },
+      user: { id: user.id, email, name: user.name, locale: user.locale, verified: true, isAdmin: require('./admin').isAdminEmail(email) },
     });
   } catch (err) {
     next(err);
@@ -294,7 +294,7 @@ router.post('/login', async (req, res, next) => {
     res.json({
       ok: true,
       token,
-      user: { id: user.id, email, name: user.name, locale: user.locale, verified: true },
+      user: { id: user.id, email, name: user.name, locale: user.locale, verified: true, isAdmin: require('./admin').isAdminEmail(email) },
     });
   } catch (err) {
     next(err);
