@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wikigai statistics</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ── base (same palette as the Wikigai site) ── */
+:root{--bg:#0a0a1a;--bg-glass:rgba(255,255,255,.05);--border-glass:rgba(255,255,255,.07);--c1:#ff6b9d;--c2:#c44dff;--c3:#6b5bff;--c4:#4dc9f6;--orange:#ff8c42;--green:#22c55e;--red:#ef4444;--text:#f1f5f9;--t2:#94a3b8;--t3:#64748b;--g1:linear-gradient(135deg,var(--c2),var(--c1));--font:'Inter',-apple-system,'Segoe UI',sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh;
+  background-image:radial-gradient(circle at 15% 10%,rgba(196,77,255,.10),transparent 45%),radial-gradient(circle at 85% 85%,rgba(77,201,246,.08),transparent 45%);background-attachment:fixed}
+a{color:var(--c4)}
+.st-top{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px;background:rgba(18,18,42,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-glass)}
+.st-brand{font-weight:700;display:flex;gap:8px;align-items:center}
+.st-brand b{background:var(--g1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.st-lang{display:inline-flex;border:1px solid var(--border-glass);border-radius:18px;overflow:hidden}
+.st-lang button{font:700 .72rem var(--mono);color:var(--t2);background:none;border:0;padding:6px 10px;cursor:pointer}
+.st-lang button.on{background:var(--g1);color:#fff}
+.st-main{padding:28px 16px 70px}
+.results-wrap{max-width:1120px;margin:0 auto}
+.ik-card{background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:18px;padding:24px;margin-bottom:16px}
+.ik-card h2{font-size:1.1rem;font-weight:800;margin-bottom:6px}
+.ik-head{margin:6px 0 22px}
+.ik-kicker{font-family:var(--mono);font-size:.74rem;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.ik-head h1{font-size:clamp(1.6rem,4vw,2.3rem);font-weight:800;line-height:1.15;margin-bottom:10px}
+.ik-head h1 .grad{background:var(--g1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ik-head p{color:var(--t2);font-size:.95rem;max-width:720px}
+.st-conn form{display:grid;grid-template-columns:1fr 1.4fr auto auto;gap:10px;align-items:end;margin-top:10px}
+.st-conn label{display:flex;flex-direction:column;gap:4px;font-size:.74rem;color:var(--t3)}
+.st-conn input{font:500 .88rem var(--font);color:var(--text);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:9px 11px;min-width:0}
+.st-conn small{display:block;color:var(--t3);font-size:.76rem;margin-top:8px}
+.st-conn.ok{padding:12px 20px}
+.st-conn.ok form,.st-conn.ok small{display:none}
+.st-conn-sum{display:none;font-size:.82rem;color:var(--t2);gap:10px;align-items:center;justify-content:space-between}
+.st-conn.ok .st-conn-sum{display:flex}
+.st-foot{color:var(--t3);font-size:.74rem;text-align:center;margin-top:24px}
+@media (max-width:760px){.st-conn form{grid-template-columns:1fr}}
+/* ── statistics page ── */
+__STATS_CSS__
+</style>
+</head>
+<body>
+<header class="st-top"><div class="st-brand">📊 <b data-i18n="page.title">Wikigai statistics</b></div>
+  <div class="st-lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="es">ES</button></div></header>
+<main class="st-main">
+  <div class="results-wrap">
+    <section class="ik-card st-conn" id="stConn">
+      <h2 data-i18n="page.settings">Connection</h2>
+      <div class="st-conn-sum"><span id="stConnSum"></span><button type="button" class="ad-btn" id="stEdit">✎</button></div>
+      <form id="stConnForm" autocomplete="off">
+        <label><span data-i18n="page.site">Wikigai site</span><input id="stSite" type="url" spellcheck="false"></label>
+        <label><span data-i18n="page.token">Statistics token</span><input id="stToken" type="password" spellcheck="false" autocomplete="off"></label>
+        <button class="ad-btn primary" type="submit" data-i18n="page.connect">Connect</button>
+        <button class="ad-btn" type="button" id="stForget" data-i18n="page.forget">Forget token</button>
+      </form>
+      <small data-i18n="page.tokenHelp">The STATS_API_TOKEN value from the Wikigai server settings.</small>
+    </section>
+  </div>
+__MAIN__
+<p class="st-foot" data-i18n="page.poweredBy">Data from the Wikigai site</p>
+</main>
+<script>
+/* Stand-alone runtime: i18n (EN/FR/ES) + token-authenticated API client for the Wikigai stats API. */
+(function () {
+  'use strict';
+  const DICT = __DICT__;
+  const LS = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* private mode */ } } };
+  const INTL = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
+  let lang = LS.get('wkstats_lang') || (navigator.language || 'en').slice(0, 2);
+  if (!DICT[lang]) lang = 'en';
+  const dig = (o, k) => String(k).split('.').reduce((a, x) => (a && typeof a === 'object' ? a[x] : undefined), o);
+  const fmtN = (n, o) => { try { return new Intl.NumberFormat(INTL[lang], o).format(n); } catch { return String(n); } };
+  const fmtD = (d, o) => { try { return new Date(d).toLocaleDateString(INTL[lang], o); } catch { return String(d); } };
+  function t(key, vars) {
+    let v = dig(DICT[lang], key); if (v == null) v = dig(DICT.en, key); if (v == null) return key;
+    if (typeof v === 'object') { const n = vars && typeof vars.count === 'number' ? vars.count : 0; let f = 'other'; try { f = new Intl.PluralRules(INTL[lang]).select(n); } catch { /* */ } v = v[f] != null ? v[f] : v.other; }
+    return String(v).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] != null ? (typeof vars[k] === 'number' ? fmtN(vars[k]) : vars[k]) : m));
+  }
+  function apply(root) {
+    const r = root || document;
+    r.querySelectorAll('[data-i18n]').forEach((e) => { e.textContent = t(e.dataset.i18n); });
+    r.querySelectorAll('[data-i18n-html]').forEach((e) => { e.innerHTML = t(e.dataset.i18nHtml); });
+    r.querySelectorAll('[data-i18n-attr]').forEach((e) => e.dataset.i18nAttr.split(';').forEach((p) => { const [a, k] = p.split(':'); if (a && k) e.setAttribute(a.trim(), t(k.trim())); }));
+  }
+  const listeners = [];
+  function paintLang() { document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang)); document.documentElement.lang = lang; document.title = t('page.title'); }
+  window.WK = { i18n: { t, apply, get lang() { return lang; }, get locale() { return { intl: INTL[lang] }; }, fmt: { number: fmtN, date: fmtD }, ready: Promise.resolve(lang), onChange(f) { listeners.push(f); } } };
+  document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-lang]'); if (!b) return; lang = b.dataset.lang; LS.set('wkstats_lang', lang); apply(document); paintLang(); listeners.forEach((f) => f(lang)); });
+
+  /* connection: which Wikigai site + the statistics token (kept in this browser only) */
+  const DEFAULT_SITE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : 'https://wikigai.digitradin.cloud';
+  const site = () => (LS.get('wkstats_site') || DEFAULT_SITE).replace(/\/+$/, '');
+  const token = () => LS.get('wkstats_token') || '';
+  async function api(p) {
+    let r;
+    try { r = await fetch(site() + p, { headers: { Authorization: 'Bearer ' + token() }, credentials: 'omit', cache: 'no-store' }); }
+    catch { const err = new Error(t('page.unreachable', { site: site() })); err.status = 0; throw err; }
+    let d = {}; try { d = await r.json(); } catch { /* */ }
+    if (!r.ok) { const err = new Error(r.status === 401 ? t('page.badToken') : r.status === 503 ? t('page.statsOff') : (d.error || 'HTTP ' + r.status)); err.status = r.status; err.code = d.code; throw err; }
+    return d;
+  }
+  window.CPS = { api, Store: { get token() { return token(); }, clear() { /* token is managed in the connection panel */ } } };
+  window.__statsBase = site;
+  const $ = (id) => document.getElementById(id);
+  function conn(open) {
+    $('stSite').value = site(); $('stToken').value = token();
+    $('stConnSum').textContent = site() + ' · ••••' + token().slice(-4);
+    $('stConn').classList.toggle('ok', !open && !!token());
+  }
+  window.__statsOpenConn = () => conn(true);
+  window.__statsConnected = () => conn(false);
+  (function init() { // the page markup is already above this script
+    apply(document); paintLang(); conn(!token());
+    $('stConnForm').addEventListener('submit', (e) => { e.preventDefault(); LS.set('wkstats_site', $('stSite').value.trim() || null); LS.set('wkstats_token', $('stToken').value.trim() || null); conn(false); if (window.__statsReload) window.__statsReload(); });
+    $('stForget').addEventListener('click', () => { LS.set('wkstats_token', null); conn(true); location.reload(); });
+    $('stEdit').addEventListener('click', () => conn(true));
+  })();
+})();
+</script>
+<script>
+__STATS_JS__
+</script>
+</body>
+</html>

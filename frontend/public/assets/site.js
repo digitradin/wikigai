@@ -29,7 +29,6 @@
     { id: 'profile', icon: '👤', label: 'side.myProfile', items: [
       { href: '/dashboard', icon: '🏠', label: 'side.dashboard' },
       { href: '/account', icon: '⚙️', label: 'side.account' },
-      { href: '/admin', icon: '📊', label: 'side.stats', admin: true },
     ] },
   ];
 
@@ -54,7 +53,7 @@
     const shut = collapsed();
     side.setAttribute('aria-label', T('side.label'));
     side.innerHTML = `<nav class="wk-side-nav">${MENU.map((g) => {
-      const items = g.items.filter((i) => !i.admin || user?.isAdmin);
+      const items = g.items;
       const open = groupActive(g) || !shut.includes(g.id);
       const head = g.href
         ? `<a class="wk-side-head${path() === g.href ? ' active' : ''}" href="${g.href}"><span class="ico">${g.icon}</span><span class="lbl">${T(g.label)}${g.soon ? `<span class="wk-soon">${T('side.soon')}</span>` : ''}</span></a>`

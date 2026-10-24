@@ -5,10 +5,10 @@
   (signup, verify, login, stage 1/2/3, shares per channel, donate, language change, retake).
   No cookies, no IP stored, daily-rotating anonymous id, bots filtered, honours DNT/GPC.
   Rows are deleted after `ANALYTICS_RETENTION_DAYS` (default 395).
-- **Owner dashboard** at `/admin` (EN/FR/ES): KPIs vs previous period, daily chart, funnel,
-  referrers, pages, UTM campaigns, languages, countries, devices, engagement, accounts,
-  progress, CSV export, UTM link builder, SEO health check. A "Stats" link appears in the
-  navbar for admins.
+- **Owner statistics** (EN/FR/ES): KPIs vs previous period, daily chart, funnel, referrers, pages,
+  UTM campaigns, languages, countries, devices, engagement, accounts, progress, CSV export, UTM link
+  builder, SEO health check. Since v20261024d this is a stand-alone page for dashboard.digitradin.cloud
+  (`deploy/dashboard/wikigai-stats.html`, see `deploy/dashboard/README.md`) — not part of the site.
 - **SEO**: server-rendered public pages per language (`/`, `/fr/`, `/es/`, `/signup`, `/fr/signup`…),
   canonical + hreflang, Open Graph/Twitter cards with per-language share images, JSON-LD,
   `sitemap.xml` with language alternates, `robots.txt`, noindex on private pages.
@@ -17,7 +17,8 @@
 
 ## Add to /opt/cps/.env.production on the server (before deploying)
 ```
-ADMIN_EMAILS=your-login-email@example.com
+STATS_API_TOKEN=<openssl rand -hex 24>
+STATS_ALLOWED_ORIGINS=https://dashboard.digitradin.cloud
 PUBLIC_URL=https://wikigai.digitradin.cloud
 GOOGLE_SITE_VERIFICATION=
 BING_SITE_VERIFICATION=
@@ -27,10 +28,10 @@ ANALYTICS_RETENTION_DAYS=395
 ANALYTICS_SELF_HOSTS=
 TRUST_PROXY_HOPS=1
 ```
-Only `ADMIN_EMAILS` is required; the rest have these defaults.
+`STATS_API_TOKEN` switches the statistics API on; the rest have these defaults.
 
 ## After deploy
-1. Sign out/in once, open `/admin` → "Run SEO check" (expect ~100).
+1. Open the stats page on the dashboard, paste the token → "Run SEO check" (expect ~100).
 2. Google Search Console: add the property, paste the code into `GOOGLE_SITE_VERIFICATION`,
    redeploy, then submit `https://wikigai.digitradin.cloud/sitemap.xml`. Same for Bing.
 3. From the Mac: `BASE_URL=https://wikigai.digitradin.cloud node tools/seo/audit.js`

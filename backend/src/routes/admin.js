@@ -1,31 +1,42 @@
-/* Wikigai admin — statistics and SEO health (owner only).
-   Access: signed-in users whose email is listed in ADMIN_EMAILS (comma-separated)
-   in the server environment. Everyone else gets 403. */
+/* Wikigai owner statistics API — used by the stand-alone stats page on
+   dashboard.digitradin.cloud (deploy/dashboard/wikigai-stats.html). It is NOT part of
+   the Wikigai site: there is no stats page or menu for site users.
+
+   Access: Authorization: Bearer <STATS_API_TOKEN>  (server env, 24+ random characters).
+   Without STATS_API_TOKEN the API is switched off (503). Wrong token → 401.
+   Cross-site calls are allowed only from the dashboard origin(s) (see CORS in index.js).
+     GET /api/admin/stats?days=7|21|30|90   aggregates only, no personal data
+     GET /api/admin/seo                      SEO audit of the public pages */
 'use strict';
 const express = require('express');
 const http = require('http');
-const { requireUser } = require('./auth');
+const crypto = require('crypto');
 const { buildStats } = require('../analytics/stats');
 const { audit } = require('../seo/audit');
 const seo = require('../seo');
 
 const router = express.Router();
-const admins = () => (process.env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
-const isAdminEmail = (email) => !!email && admins().includes(String(email).toLowerCase());
 
-async function requireAdmin(req, res) {
-  const user = await requireUser(req, res);
-  if (!user) return null;
-  if (!isAdminEmail(user.email)) {
-    res.status(403).json({ error: 'Admin access required', code: 'NOT_ADMIN' });
-    return null;
+function requireStatsToken(req, res) {
+  const expected = process.env.STATS_API_TOKEN || '';
+  if (expected.length < 24) {
+    res.status(503).json({ error: 'Statistics API is not configured.', code: 'STATS_DISABLED' });
+    return false;
   }
-  return user;
+  const auth = req.get('authorization') || '';
+  const given = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const a = crypto.createHash('sha256').update(given).digest();
+  const b = crypto.createHash('sha256').update(expected).digest();
+  if (!given || !crypto.timingSafeEqual(a, b)) {
+    res.status(401).json({ error: 'Invalid statistics token.', code: 'BAD_STATS_TOKEN' });
+    return false;
+  }
+  return true;
 }
 
 router.get('/stats', async (req, res, next) => {
   try {
-    if (!(await requireAdmin(req, res))) return;
+    if (!requireStatsToken(req, res)) return;
     res.set('Cache-Control', 'no-store').json({ ok: true, ...(await buildStats(req.query.days)) });
   } catch (err) { next(err); }
 });
@@ -46,10 +57,9 @@ function selfFetch(p) {
 }
 router.get('/seo', async (req, res, next) => {
   try {
-    if (!(await requireAdmin(req, res))) return;
+    if (!requireStatsToken(req, res)) return;
     res.set('Cache-Control', 'no-store').json({ ok: true, ...(await audit(selfFetch)) });
   } catch (err) { next(err); }
 });
 
 module.exports = router;
-module.exports.isAdminEmail = isAdminEmail;

@@ -29,13 +29,15 @@ if [ ! -f "$LOCAL/local.env" ]; then
   R() { node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"; }
   cat > "$LOCAL/local.env" <<CONF
 # Local test settings — only used by "Test Wikigai Locally.command".
-# Emails allowed to open /admin locally (sign up with one of them).
-ADMIN_EMAILS=admin@wikigai.local,digitradin@gmail.com
 SURVEY_HASH_SALT=$(R)
 SURVEY_DB_ENCRYPTION_KEY=$(R)
 SURVEY_JWT_SECRET=$(R)
 SESSION_SECRET=$(R)
 CONF
+fi
+# Owner statistics token (stand-alone stats page) — added once to older local.env files too
+if ! grep -q '^STATS_API_TOKEN=' "$LOCAL/local.env"; then
+  printf '\n# Owner statistics page (http://localhost:%s/__stats) — paste this token there.\nSTATS_API_TOKEN=%s\n' "$PORT" "$(node -e "console.log(require('crypto').randomBytes(24).toString('hex'))")" >> "$LOCAL/local.env"
 fi
 # AI research (My learning › Plans) — added once to older local.env files too
 if ! grep -q '^AI_ROUTER_TOKEN=' "$LOCAL/local.env"; then
@@ -72,8 +74,8 @@ if curl -s -o /dev/null "http://localhost:$PORT/health"; then
 ✅ Wikigai is running locally:  http://localhost:$PORT
    • Sign-up/login codes are shown on screen (no real emails are sent;
      copies are saved in tools/local/.data/outbox).
-   • Owner stats: sign up with admin@wikigai.local (or an email listed in
-     tools/local/local.env), then open http://localhost:$PORT/admin
+   • Owner statistics (not part of the site): http://localhost:$PORT/__stats
+     — paste the STATS_API_TOKEN from tools/local/local.env
    • Your local data stays in tools/local/.data (delete that folder to reset).
    • French / Spanish: http://localhost:$PORT/fr/  ·  http://localhost:$PORT/es/
    • AI research (My learning › Plans): add your router token to tools/local/local.env

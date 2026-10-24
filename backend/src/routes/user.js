@@ -27,7 +27,7 @@ router.get('/profile', async (req, res, next) => {
 
     res.json({
       ok: true,
-      user: { ...user, isAdmin: require('./admin').isAdminEmail(user.email) },
+      user,
       progress: results
         ? {
             stage: results.stage,

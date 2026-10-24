@@ -1,7 +1,7 @@
 /* Wikigai SEO audit — checks every public page in every language plus the
    sitemap, robots.txt and the noindex on private pages.
    Used by: tools/seo/audit.js (command line, against any URL) and
-            GET /api/admin/seo (admin dashboard, against the running server).
+            GET /api/admin/seo (owner stats page on the Digitradin dashboard).
    audit(fetchPage) where fetchPage(path) → { status, headers: {name: value}, body } */
 'use strict';
 const seo = require('./index');
@@ -74,7 +74,7 @@ async function audit(fetchPage, opts = {}) {
   } catch (e) { add('/robots.txt', 'robots reachable', false, e.message); }
 
   // private pages must be noindex
-  for (const p of ['/survey', '/dashboard', '/ikigai', '/verify', '/reset', '/admin']) {
+  for (const p of ['/survey', '/dashboard', '/ikigai', '/learning', '/account', '/verify', '/reset']) {
     try {
       const r = await fetchPage(p);
       const no = /noindex/i.test((r.headers['x-robots-tag'] || '') + (attr(r.body || '', /<meta name="robots" content="([^"]*)"/i) || ''));

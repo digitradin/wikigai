@@ -30,4 +30,4 @@ Without `AI_ROUTER_TOKEN` the page still works but shows "AI research isn't swit
 - Answers are capped in size and stripped of anything outside the expected JSON shape.
 
 ## Analytics
-`research_start`, `research_done` and `video_search` events appear under Engagement in `/admin`.
+`research_start`, `research_done` and `video_search` events appear under Engagement on the owner statistics page (dashboard.digitradin.cloud).

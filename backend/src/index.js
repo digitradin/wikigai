@@ -58,6 +58,8 @@ const allowedOrigins = [
   'https://ikigai.digitradin.cloud',
   /^https:\/\/preprod(-api)?\.survey\.digitradin\.cloud$/,
   /^https:\/\/[\w-]+\.gohighlevel\.com$/,
+  // owner statistics page (stand-alone, on the Digitradin dashboard)
+  ...(process.env.STATS_ALLOWED_ORIGINS || 'https://dashboard.digitradin.cloud').split(',').map((s) => s.trim()).filter(Boolean),
 ];
 // In preprod/testing mode, also allow localhost and any tunnel origin so the
 // flow can be exercised before DNS/certs are in place.
@@ -98,6 +100,7 @@ const authLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/user/delete-account', authLimiter); // password check: same brute-force limit as sign-in
+app.use('/api/admin/', authLimiter);               // statistics token: same brute-force limit
 
 // ── SEO: robots, sitemap, localized public pages (/, /fr/, /es/…), noindex on private areas ──
 seo.mount(app, PUBLIC_DIR);
@@ -134,15 +137,20 @@ app.use('/api/captcha', captchaRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/survey', surveyRoutes);
 app.use('/api/results', resultsRoutes);
-// first-party, cookieless analytics + owner dashboard
+// first-party, cookieless analytics
 app.use('/api/t', analytics.router);
+// owner statistics API (token-protected; the page lives on dashboard.digitradin.cloud, not on this site)
 app.use('/api/admin', adminRoutes);
+// local testing only: serve the stand-alone stats page at /__stats (never in production)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/__stats', (req, res) => res.sendFile(path.join(__dirname, '..', '..', 'deploy', 'dashboard', 'wikigai-stats.html')));
+}
 // My learning › Plans (AI research via the Digitradin AI router)
 app.use('/api/learn', learnRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount
-const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/admin': 'admin.html', '/account': 'account.html', '/learning': 'learning.html', '/dashboard': 'dashboard/index.html' };
+const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/account': 'account.html', '/learning': 'learning.html', '/dashboard': 'dashboard/index.html' };
 const sendPrivate = (file) => (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderPrivate(file));
 for (const [route, file] of Object.entries(privatePages)) app.get(route, sendPrivate(file));
 app.get('/dashboard/*', sendPrivate('dashboard/index.html'));

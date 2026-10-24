@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wikigai statistics</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ── base (same palette as the Wikigai site) ── */
+:root{--bg:#0a0a1a;--bg-glass:rgba(255,255,255,.05);--border-glass:rgba(255,255,255,.07);--c1:#ff6b9d;--c2:#c44dff;--c3:#6b5bff;--c4:#4dc9f6;--orange:#ff8c42;--green:#22c55e;--red:#ef4444;--text:#f1f5f9;--t2:#94a3b8;--t3:#64748b;--g1:linear-gradient(135deg,var(--c2),var(--c1));--font:'Inter',-apple-system,'Segoe UI',sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh;
+  background-image:radial-gradient(circle at 15% 10%,rgba(196,77,255,.10),transparent 45%),radial-gradient(circle at 85% 85%,rgba(77,201,246,.08),transparent 45%);background-attachment:fixed}
+a{color:var(--c4)}
+.st-top{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px;background:rgba(18,18,42,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-glass)}
+.st-brand{font-weight:700;display:flex;gap:8px;align-items:center}
+.st-brand b{background:var(--g1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.st-lang{display:inline-flex;border:1px solid var(--border-glass);border-radius:18px;overflow:hidden}
+.st-lang button{font:700 .72rem var(--mono);color:var(--t2);background:none;border:0;padding:6px 10px;cursor:pointer}
+.st-lang button.on{background:var(--g1);color:#fff}
+.st-main{padding:28px 16px 70px}
+.results-wrap{max-width:1120px;margin:0 auto}
+.ik-card{background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:18px;padding:24px;margin-bottom:16px}
+.ik-card h2{font-size:1.1rem;font-weight:800;margin-bottom:6px}
+.ik-head{margin:6px 0 22px}
+.ik-kicker{font-family:var(--mono);font-size:.74rem;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.ik-head h1{font-size:clamp(1.6rem,4vw,2.3rem);font-weight:800;line-height:1.15;margin-bottom:10px}
+.ik-head h1 .grad{background:var(--g1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ik-head p{color:var(--t2);font-size:.95rem;max-width:720px}
+.st-conn form{display:grid;grid-template-columns:1fr 1.4fr auto auto;gap:10px;align-items:end;margin-top:10px}
+.st-conn label{display:flex;flex-direction:column;gap:4px;font-size:.74rem;color:var(--t3)}
+.st-conn input{font:500 .88rem var(--font);color:var(--text);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:9px 11px;min-width:0}
+.st-conn small{display:block;color:var(--t3);font-size:.76rem;margin-top:8px}
+.st-conn.ok{padding:12px 20px}
+.st-conn.ok form,.st-conn.ok small{display:none}
+.st-conn-sum{display:none;font-size:.82rem;color:var(--t2);gap:10px;align-items:center;justify-content:space-between}
+.st-conn.ok .st-conn-sum{display:flex}
+.st-foot{color:var(--t3);font-size:.74rem;text-align:center;margin-top:24px}
+@media (max-width:760px){.st-conn form{grid-template-columns:1fr}}
+/* ── statistics page ── */
+/* Wikigai owner dashboard — same palette as the Wikigai hub (survey.css / ikigai.css) */
+.ad-wrap{max-width:1120px}
+.ad-head{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.ad-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ad-seg{display:inline-flex;border:1px solid var(--border-glass);border-radius:22px;overflow:hidden;background:var(--bg-glass)}
+.ad-seg button{font:600 .8rem var(--font);color:var(--t2);background:none;border:0;padding:8px 13px;cursor:pointer}
+.ad-seg button.on{background:var(--g1);color:#fff}
+.ad-btn{font:600 .8rem var(--font);color:var(--text);background:var(--bg-glass);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:8px 15px;cursor:pointer;white-space:nowrap}
+.ad-btn:hover{border-color:rgba(196,77,255,.6)}
+.ad-btn.primary{background:var(--g1);border-color:transparent;color:#fff}
+.ad-btn:disabled{opacity:.6;cursor:wait}
+.ad-msg{margin:0 0 16px;padding:12px 16px;border-radius:12px;background:var(--bg-glass);border:1px solid var(--border-glass);color:var(--t2);font-size:.88rem}
+.ad-msg.info{border-color:rgba(77,201,246,.3);background:rgba(77,201,246,.06)}
+.ad-msg.err{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:#fecaca}
+.ad-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.ad-kpi{background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.ad-kpi span{font-size:.74rem;color:var(--t3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px}
+.ad-kpi b{font-size:1.6rem;font-weight:800;line-height:1.15}
+.ad-kpi small{font-size:.7rem;color:var(--t3)}
+.ad-d{font-size:.78rem;font-weight:700}
+.ad-d.up{color:var(--green)}.ad-d.down{color:var(--red)}.ad-d.flat{color:var(--t3)}
+.ad-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ad-grid .ik-card{margin-bottom:0}
+.ad-grid + .ik-card{margin-top:16px}
+.ad-sub{color:var(--t2);font-size:.84rem;margin:2px 0 10px}
+.ad-h2b{margin-top:18px}
+.ad-empty{color:var(--t3);font-size:.85rem;padding:8px 0}
+.ad-chart{margin-top:8px}
+.ad-svg{width:100%;height:auto;display:block}
+.ad-svg .g{stroke:rgba(255,255,255,.07)}
+.ad-svg .ax{fill:var(--t3);font:10px var(--font)}
+.ad-svg path.lv{fill:none;stroke:#c44dff;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.ad-svg .dv{fill:#0a0a1a;stroke:#c44dff;stroke-width:2}
+.ad-svg .bs{fill:#ff8c42;opacity:.85}
+.ad-legend{display:flex;gap:16px;font-size:.78rem;color:var(--t2)}
+.ad-legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.ad-legend .lv::before{background:#c44dff}.ad-legend .ls::before{background:#ff8c42}
+.ad-t{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:6px}
+.ad-t th{font:600 .7rem var(--mono);color:var(--t3);text-transform:uppercase;letter-spacing:.4px;text-align:left;padding:6px 6px;border-bottom:1px solid var(--border-glass)}
+.ad-t td{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;overflow-wrap:anywhere}
+.ad-t .n{text-align:right;white-space:nowrap;position:relative;width:1%}
+.ad-t td.n{min-width:84px}
+.ad-t td.n i{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:18px;border-radius:5px;background:rgba(196,77,255,.18);max-width:calc(100% - 12px)}
+.ad-t td.n b{position:relative;font-weight:700}
+.ad-t code{font-family:var(--mono);font-size:.8rem;color:var(--c4)}
+.ad-cm{display:block;color:var(--t3);font-size:.72rem}
+.ad-funnel{display:flex;flex-direction:column;gap:8px}
+.ad-fs{display:grid;grid-template-columns:minmax(110px,150px) 1fr auto 42px;gap:10px;align-items:center;font-size:.82rem}
+.ad-fs span{color:var(--t2)}
+.ad-fb{height:14px;background:rgba(255,255,255,.04);border-radius:7px;overflow:hidden}
+.ad-fb i{display:block;height:100%;background:var(--g1);border-radius:7px}
+.ad-fs small{color:var(--t3);font-size:.72rem;text-align:right}
+.ad-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.ad-stats div{background:rgba(255,255,255,.03);border:1px solid var(--border-glass);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.ad-stats span{font-size:.72rem;color:var(--t3)}
+.ad-stats b{font-size:1.15rem;font-weight:800}
+.ad-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ad-form label{display:flex;flex-direction:column;gap:4px;font-size:.74rem;color:var(--t3)}
+.ad-form input,.ad-form select,.ad-linkrow input{font:500 .86rem var(--font);color:var(--text);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:9px 10px;min-width:0}
+.ad-form select option{background:#12122a}
+.ad-linkrow{display:flex;gap:8px;margin-top:12px}
+.ad-linkrow input{flex:1;font-family:var(--mono);font-size:.8rem}
+.ad-seohead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.ad-seosum{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:8px 0 6px}
+.ad-score{width:76px;height:76px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid}
+.ad-score b{font-size:1.5rem;font-weight:800;line-height:1}
+.ad-score span{font-size:.62rem;color:var(--t3);text-transform:uppercase}
+.ad-score.ok{border-color:var(--green)}.ad-score.mid{border-color:var(--orange)}.ad-score.low{border-color:var(--red)}
+.ad-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:.75rem;font-weight:700;padding:5px 11px;border-radius:14px;border:1px solid}
+.pill.err{color:#fca5a5;border-color:rgba(239,68,68,.4)}.pill.warn{color:#fdba74;border-color:rgba(255,140,66,.4)}.pill.ok{color:#86efac;border-color:rgba(34,197,94,.4)}
+.ad-chk{font-size:.8rem;color:var(--t2);display:flex;gap:6px;align-items:center;cursor:pointer}
+.ad-seot td{font-size:.8rem}
+.ad-seot .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green)}
+.ad-seot tr.error .dot{background:var(--red)}.ad-seot tr.warn .dot{background:var(--orange)}
+.ad-seot .det{color:var(--t3)}
+@media (max-width:820px){.ad-grid{grid-template-columns:1fr}.ad-form{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.ad-kpis{grid-template-columns:1fr 1fr}.ad-form{grid-template-columns:1fr}.ad-fs{grid-template-columns:96px 1fr auto}.ad-fs small{display:none}.ad-linkrow{flex-direction:column}.ad-kpi b{font-size:1.3rem}}
+.ad-seot{table-layout:fixed}
+.ad-seot td:first-child{width:18px}
+.ad-seot code{word-break:break-all}
+#seoOut .ad-sub code{word-break:break-all}
+@media (max-width:520px){.ad-seot td{display:block;border:0;padding:2px 6px}.ad-seot tr{display:block;border-bottom:1px solid rgba(255,255,255,.06);padding:6px 0}.ad-seot td:first-child{display:none}}
+
+</style>
+</head>
+<body>
+<header class="st-top"><div class="st-brand">📊 <b data-i18n="page.title">Wikigai statistics</b></div>
+  <div class="st-lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="es">ES</button></div></header>
+<main class="st-main">
+  <div class="results-wrap">
+    <section class="ik-card st-conn" id="stConn">
+      <h2 data-i18n="page.settings">Connection</h2>
+      <div class="st-conn-sum"><span id="stConnSum"></span><button type="button" class="ad-btn" id="stEdit">✎</button></div>
+      <form id="stConnForm" autocomplete="off">
+        <label><span data-i18n="page.site">Wikigai site</span><input id="stSite" type="url" spellcheck="false"></label>
+        <label><span data-i18n="page.token">Statistics token</span><input id="stToken" type="password" spellcheck="false" autocomplete="off"></label>
+        <button class="ad-btn primary" type="submit" data-i18n="page.connect">Connect</button>
+        <button class="ad-btn" type="button" id="stForget" data-i18n="page.forget">Forget token</button>
+      </form>
+      <small data-i18n="page.tokenHelp">The STATS_API_TOKEN value from the Wikigai server settings.</small>
+    </section>
+  </div>
+  <div class="results-wrap ad-wrap">
+    <header class="ik-head ad-head">
+      <div>
+        <div class="ik-kicker" data-i18n="admin.kicker">Owner dashboard</div>
+        <h1 data-i18n-html="admin.title">Wikigai <span class="grad">statistics</span></h1>
+        <p data-i18n="admin.lead">Anonymous, cookieless figures — no personal data is shown or stored.</p>
+      </div>
+      <div class="ad-tools">
+        <div class="ad-seg" role="group" id="adPeriod" data-i18n-attr="aria-label:admin.period">
+          <button type="button" data-days="7"></button><button type="button" data-days="21"></button><button type="button" data-days="30"></button><button type="button" data-days="90"></button>
+        </div>
+        <button type="button" class="ad-btn" id="adRefresh" data-i18n="admin.refresh">Refresh</button>
+        <button type="button" class="ad-btn" id="adCsv" data-i18n="admin.exportCsv">Export CSV</button>
+      </div>
+    </header>
+    <div id="adMsg" class="ad-msg" role="status"></div>
+    <div id="adBody" hidden>
+      <section class="ad-kpis" id="adKpis"></section>
+      <section class="ik-card"><h2 data-i18n="admin.chartTitle">Daily visits and sign-ups</h2><div id="adChart" class="ad-chart"></div></section>
+      <div class="ad-grid">
+        <section class="ik-card"><h2 data-i18n="admin.funnelTitle">Conversion funnel</h2><p class="ad-sub" data-i18n="admin.funnelLead"></p><div id="adFunnel"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.referrers">Where visitors come from</h2><div id="adRefs"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.pages">Top pages</h2><div id="adPages"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.campaigns">Campaigns (UTM links)</h2><div id="adCamp"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.languages">Languages</h2><div id="adLang"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.countries">Countries</h2><div id="adCountry"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.devices">Devices</h2><div id="adDev"></div><h2 class="ad-h2b" data-i18n="admin.browsers">Browsers</h2><div id="adBrowser"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.eventsTitle">Engagement</h2><div id="adEvents"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.accountsTitle">Accounts (all time)</h2><div id="adAccounts"></div></section>
+        <section class="ik-card"><h2 data-i18n="admin.progressTitle">Progress (all time)</h2><div id="adProgress"></div></section>
+      </div>
+      <section class="ik-card" id="adUtm">
+        <h2 data-i18n="admin.utmTitle">Campaign link builder</h2>
+        <p class="ad-sub" data-i18n="admin.utmLead"></p>
+        <div class="ad-form">
+          <label><span data-i18n="admin.utmPage">Page</span><select id="utmPage"><option value="/">/</option><option value="/signup">/signup</option><option value="/support">/support</option><option value="/fr/">/fr/</option><option value="/es/">/es/</option><option value="/fr/signup">/fr/signup</option><option value="/es/signup">/es/signup</option></select></label>
+          <label><span data-i18n="admin.utmSource">Source</span><input id="utmSource" data-i18n-attr="placeholder:admin.utmSourcePh" value="instagram"></label>
+          <label><span data-i18n="admin.utmMedium">Medium</span><input id="utmMedium" data-i18n-attr="placeholder:admin.utmMediumPh" value="social"></label>
+          <label><span data-i18n="admin.utmCampaign">Campaign</span><input id="utmCampaign" data-i18n-attr="placeholder:admin.utmCampaignPh" value=""></label>
+        </div>
+        <div class="ad-linkrow"><input id="utmOut" readonly data-i18n-attr="aria-label:admin.utmLink"><button type="button" class="ad-btn primary" id="utmCopy" data-i18n="admin.utmCopy">Copy link</button></div>
+      </section>
+      <section class="ik-card" id="adSeo">
+        <div class="ad-seohead"><div><h2 data-i18n="admin.seoTitle">SEO health</h2><p class="ad-sub" data-i18n="admin.seoLead"></p></div>
+          <button type="button" class="ad-btn primary" id="seoRun" data-i18n="admin.seoRun">Run SEO check</button></div>
+        <div id="seoOut"></div>
+      </section>
+    </div>
+  </div>
+
+<p class="st-foot" data-i18n="page.poweredBy">Data from the Wikigai site</p>
+</main>
+<script>
+/* Stand-alone runtime: i18n (EN/FR/ES) + token-authenticated API client for the Wikigai stats API. */
+(function () {
+  'use strict';
+  const DICT = {"en":{"admin":{"kicker":"Owner dashboard","title":"Wikigai <span class=\"grad\">statistics</span>","lead":"Anonymous, cookieless figures — no personal data is shown or stored. A visit is one visitor on one day.","period":"Period","days":"{n} days","refresh":"Refresh","exportCsv":"Export CSV","loading":"Loading statistics…","denied":"This page is only for the Wikigai owner. Add your email to ADMIN_EMAILS on the server to get access.","error":"Could not load statistics: {msg}","trackingSince":"Visit tracking since {date}. Account figures cover all time.","noTracking":"No visits recorded yet — tracking starts as soon as this version is live. Account figures below already work.","vsPrev":"vs previous {n} days","isNew":"new","kVisits":"Visits","kPageviews":"Page views","kPpv":"Pages / visit","kBounce":"Bounce rate","kSignups":"Sign-ups","kVerified":"Verified sign-ups","kConversion":"Visit → verified","kStage1":"Finished stage 1","kStage2":"Finished stage 2","kStage3":"Finished stage 3","kShares":"Share clicks","chartTitle":"Daily visits and sign-ups","legendVisits":"Visits","legendSignups":"Sign-ups","funnelTitle":"Conversion funnel","funnelLead":"Unique visitors per day reaching each step.","fVisited":"Visited the site","fSignupPage":"Opened sign-up","fSubmit":"Submitted sign-up","fVerified":"Verified email","fStage1":"Finished stage 1","fStage2":"Finished stage 2","fStage3":"Finished stage 3","pages":"Top pages","referrers":"Where visitors come from","direct":"Direct / unknown","campaigns":"Campaigns (UTM links)","languages":"Languages","countries":"Countries (from browser language)","devices":"Devices","browsers":"Browsers","os":"Operating systems","colPage":"Page","colSource":"Source","colMedium":"Medium","colCampaign":"Campaign","colVisits":"Visits","colViews":"Views","colSignups":"Sign-ups","colName":"Action","colDetail":"Detail","colCount":"Count","unknown":"Unknown","noData":"No data for this period yet.","eventsTitle":"Engagement","ev_share_click":"Share","ev_lang_change":"Language change","ev_donate_click":"Donate click","ev_retake":"Survey retake","ev_refresh_optin":"Refresh opt-in","accountsTitle":"Accounts (all time)","aTotal":"Accounts","aVerified":"Verified","aActive":"Signed in this period","aFirst":"First sign-up","aLocales":"Account languages","progressTitle":"Progress (all time)","pResults":"With saved results","pStage1":"Stage 1 done","pStage2":"Stage 2 done","pStage3":"Stage 3 done","pRefresh":"Refresh opt-in","utmTitle":"Campaign link builder","utmLead":"Tag every link you post (Instagram, school newsletter, LinkedIn…) to see which channel brings people in.","utmPage":"Page","utmSource":"Source","utmMedium":"Medium","utmCampaign":"Campaign","utmSourcePh":"e.g. instagram","utmMediumPh":"e.g. social","utmCampaignPh":"e.g. back_to_school","utmLink":"Your link","utmCopy":"Copy link","utmCopied":"Copied ✓","seoTitle":"SEO health","seoLead":"Checks every public page in every language the way search engines read it.","seoRun":"Run SEO check","seoRunning":"Checking…","seoScore":"Score","seoErrors":{"one":"{count} error","other":"{count} errors"},"seoWarnings":{"one":"{count} warning","other":"{count} warnings"},"seoPassed":"{count} passed","seoAll":"Show all checks","seoNext":"Next step: submit {url} in Google Search Console and Bing Webmaster Tools.","ev_research_done":"AI research","ev_video_search":"Video search","ev_account_deleted":"Account deleted"},"page":{"title":"Wikigai statistics","settings":"Connection","site":"Wikigai site","token":"Statistics token","tokenHelp":"The STATS_API_TOKEN value from the Wikigai server settings. It stays in this browser only.","connect":"Connect","forget":"Forget token","badToken":"The token was not accepted. Check it and try again.","statsOff":"The statistics API is switched off on this server (STATS_API_TOKEN is not set).","needToken":"Enter your statistics token to load the figures.","unreachable":"Could not reach {site}. Check the address and that the server allows this page (STATS_ALLOWED_ORIGINS).","poweredBy":"Data from the Wikigai site · anonymous, cookieless analytics"}},"fr":{"admin":{"kicker":"Tableau de bord propriétaire","title":"Statistiques <span class=\"grad\">Wikigai</span>","lead":"Chiffres anonymes, sans cookies — aucune donnée personnelle n’est affichée ni stockée. Une visite = un visiteur sur une journée.","period":"Période","days":"{n} jours","refresh":"Actualiser","exportCsv":"Exporter en CSV","loading":"Chargement des statistiques…","denied":"Cette page est réservée au propriétaire de Wikigai. Ajoutez votre e-mail à ADMIN_EMAILS sur le serveur pour y accéder.","error":"Impossible de charger les statistiques : {msg}","trackingSince":"Suivi des visites depuis le {date}. Les chiffres des comptes couvrent toute la période.","noTracking":"Aucune visite enregistrée pour l’instant — le suivi démarre dès que cette version est en ligne. Les chiffres des comptes ci-dessous fonctionnent déjà.","vsPrev":"vs les {n} jours précédents","isNew":"nouveau","kVisits":"Visites","kPageviews":"Pages vues","kPpv":"Pages / visite","kBounce":"Taux de rebond","kSignups":"Inscriptions","kVerified":"Inscriptions vérifiées","kConversion":"Visite → vérifié","kStage1":"Étape 1 terminée","kStage2":"Étape 2 terminée","kStage3":"Étape 3 terminée","kShares":"Clics de partage","chartTitle":"Visites et inscriptions par jour","legendVisits":"Visites","legendSignups":"Inscriptions","funnelTitle":"Entonnoir de conversion","funnelLead":"Visiteurs uniques par jour atteignant chaque étape.","fVisited":"Ont visité le site","fSignupPage":"Ont ouvert l’inscription","fSubmit":"Ont envoyé l’inscription","fVerified":"E-mail vérifié","fStage1":"Étape 1 terminée","fStage2":"Étape 2 terminée","fStage3":"Étape 3 terminée","pages":"Pages les plus vues","referrers":"Provenance des visiteurs","direct":"Direct / inconnu","campaigns":"Campagnes (liens UTM)","languages":"Langues","countries":"Pays (selon la langue du navigateur)","devices":"Appareils","browsers":"Navigateurs","os":"Systèmes d’exploitation","colPage":"Page","colSource":"Source","colMedium":"Support","colCampaign":"Campagne","colVisits":"Visites","colViews":"Vues","colSignups":"Inscriptions","colName":"Action","colDetail":"Détail","colCount":"Nombre","unknown":"Inconnu","noData":"Pas encore de données pour cette période.","eventsTitle":"Engagement","ev_share_click":"Partage","ev_lang_change":"Changement de langue","ev_donate_click":"Clic sur « Faire un don »","ev_retake":"Questionnaire refait","ev_refresh_optin":"Mise à jour activée","accountsTitle":"Comptes (depuis le début)","aTotal":"Comptes","aVerified":"Vérifiés","aActive":"Connectés sur la période","aFirst":"Première inscription","aLocales":"Langues des comptes","progressTitle":"Progression (depuis le début)","pResults":"Avec résultats enregistrés","pStage1":"Étape 1 terminée","pStage2":"Étape 2 terminée","pStage3":"Étape 3 terminée","pRefresh":"Mise à jour activée","utmTitle":"Générateur de liens de campagne","utmLead":"Marquez chaque lien que vous publiez (Instagram, lettre d’information de l’école, LinkedIn…) pour savoir quel canal attire du monde.","utmPage":"Page","utmSource":"Source","utmMedium":"Support","utmCampaign":"Campagne","utmSourcePh":"ex. instagram","utmMediumPh":"ex. social","utmCampaignPh":"ex. rentree","utmLink":"Votre lien","utmCopy":"Copier le lien","utmCopied":"Copié ✓","seoTitle":"Santé SEO","seoLead":"Vérifie chaque page publique, dans chaque langue, comme la lisent les moteurs de recherche.","seoRun":"Lancer la vérification SEO","seoRunning":"Vérification…","seoScore":"Score","seoErrors":{"one":"{count} erreur","other":"{count} erreurs"},"seoWarnings":{"one":"{count} avertissement","other":"{count} avertissements"},"seoPassed":"{count} réussis","seoAll":"Afficher tous les contrôles","seoNext":"Étape suivante : soumettez {url} dans Google Search Console et Bing Webmaster Tools.","ev_research_done":"Recherche IA","ev_video_search":"Recherche de vidéos","ev_account_deleted":"Compte supprimé"},"page":{"title":"Statistiques Wikigai","settings":"Connexion","site":"Site Wikigai","token":"Jeton des statistiques","tokenHelp":"La valeur STATS_API_TOKEN des réglages du serveur Wikigai. Elle reste uniquement dans ce navigateur.","connect":"Se connecter","forget":"Oublier le jeton","badToken":"Le jeton a été refusé. Vérifiez-le et réessayez.","statsOff":"L’API des statistiques est désactivée sur ce serveur (STATS_API_TOKEN non défini).","needToken":"Saisissez votre jeton pour charger les chiffres.","unreachable":"Impossible de joindre {site}. Vérifiez l’adresse et que le serveur autorise cette page (STATS_ALLOWED_ORIGINS).","poweredBy":"Données du site Wikigai · statistiques anonymes, sans cookies"}},"es":{"admin":{"kicker":"Panel del propietario","title":"Estadísticas de <span class=\"grad\">Wikigai</span>","lead":"Cifras anónimas y sin cookies: no se muestra ni se guarda ningún dato personal. Una visita = un visitante en un día.","period":"Periodo","days":"{n} días","refresh":"Actualizar","exportCsv":"Exportar CSV","loading":"Cargando estadísticas…","denied":"Esta página es solo para el propietario de Wikigai. Añade tu e-mail a ADMIN_EMAILS en el servidor para acceder.","error":"No se pudieron cargar las estadísticas: {msg}","trackingSince":"Seguimiento de visitas desde el {date}. Las cifras de cuentas cubren todo el historial.","noTracking":"Aún no hay visitas registradas: el seguimiento empieza en cuanto esta versión esté publicada. Las cifras de cuentas de abajo ya funcionan.","vsPrev":"vs los {n} días anteriores","isNew":"nuevo","kVisits":"Visitas","kPageviews":"Páginas vistas","kPpv":"Páginas / visita","kBounce":"Tasa de rebote","kSignups":"Registros","kVerified":"Registros verificados","kConversion":"Visita → verificado","kStage1":"Etapa 1 terminada","kStage2":"Etapa 2 terminada","kStage3":"Etapa 3 terminada","kShares":"Clics en compartir","chartTitle":"Visitas y registros por día","legendVisits":"Visitas","legendSignups":"Registros","funnelTitle":"Embudo de conversión","funnelLead":"Visitantes únicos por día que llegan a cada paso.","fVisited":"Visitaron el sitio","fSignupPage":"Abrieron el registro","fSubmit":"Enviaron el registro","fVerified":"E-mail verificado","fStage1":"Etapa 1 terminada","fStage2":"Etapa 2 terminada","fStage3":"Etapa 3 terminada","pages":"Páginas más vistas","referrers":"De dónde vienen los visitantes","direct":"Directo / desconocido","campaigns":"Campañas (enlaces UTM)","languages":"Idiomas","countries":"Países (según el idioma del navegador)","devices":"Dispositivos","browsers":"Navegadores","os":"Sistemas operativos","colPage":"Página","colSource":"Fuente","colMedium":"Medio","colCampaign":"Campaña","colVisits":"Visitas","colViews":"Vistas","colSignups":"Registros","colName":"Acción","colDetail":"Detalle","colCount":"Total","unknown":"Desconocido","noData":"Todavía no hay datos para este periodo.","eventsTitle":"Interacción","ev_share_click":"Compartir","ev_lang_change":"Cambio de idioma","ev_donate_click":"Clic en donar","ev_retake":"Cuestionario repetido","ev_refresh_optin":"Actualización activada","accountsTitle":"Cuentas (todo el historial)","aTotal":"Cuentas","aVerified":"Verificadas","aActive":"Iniciaron sesión en el periodo","aFirst":"Primer registro","aLocales":"Idiomas de las cuentas","progressTitle":"Progreso (todo el historial)","pResults":"Con resultados guardados","pStage1":"Etapa 1 terminada","pStage2":"Etapa 2 terminada","pStage3":"Etapa 3 terminada","pRefresh":"Actualización activada","utmTitle":"Generador de enlaces de campaña","utmLead":"Etiqueta cada enlace que publiques (Instagram, boletín del colegio, LinkedIn…) para ver qué canal atrae a la gente.","utmPage":"Página","utmSource":"Fuente","utmMedium":"Medio","utmCampaign":"Campaña","utmSourcePh":"p. ej. instagram","utmMediumPh":"p. ej. social","utmCampaignPh":"p. ej. vuelta_al_cole","utmLink":"Tu enlace","utmCopy":"Copiar enlace","utmCopied":"Copiado ✓","seoTitle":"Salud SEO","seoLead":"Comprueba cada página pública, en cada idioma, tal como la leen los buscadores.","seoRun":"Ejecutar comprobación SEO","seoRunning":"Comprobando…","seoScore":"Puntuación","seoErrors":{"one":"{count} error","other":"{count} errores"},"seoWarnings":{"one":"{count} aviso","other":"{count} avisos"},"seoPassed":"{count} correctos","seoAll":"Mostrar todas las comprobaciones","seoNext":"Siguiente paso: envía {url} en Google Search Console y Bing Webmaster Tools.","ev_research_done":"Investigación con IA","ev_video_search":"Búsqueda de vídeos","ev_account_deleted":"Cuenta eliminada"},"page":{"title":"Estadísticas de Wikigai","settings":"Conexión","site":"Sitio de Wikigai","token":"Token de estadísticas","tokenHelp":"El valor STATS_API_TOKEN de la configuración del servidor de Wikigai. Solo se guarda en este navegador.","connect":"Conectar","forget":"Olvidar el token","badToken":"El token no se ha aceptado. Revísalo e inténtalo de nuevo.","statsOff":"La API de estadísticas está desactivada en este servidor (STATS_API_TOKEN no definido).","needToken":"Introduce tu token de estadísticas para cargar las cifras.","unreachable":"No se ha podido conectar con {site}. Revisa la dirección y que el servidor permita esta página (STATS_ALLOWED_ORIGINS).","poweredBy":"Datos del sitio Wikigai · analítica anónima y sin cookies"}}};
+  const LS = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* private mode */ } } };
+  const INTL = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
+  let lang = LS.get('wkstats_lang') || (navigator.language || 'en').slice(0, 2);
+  if (!DICT[lang]) lang = 'en';
+  const dig = (o, k) => String(k).split('.').reduce((a, x) => (a && typeof a === 'object' ? a[x] : undefined), o);
+  const fmtN = (n, o) => { try { return new Intl.NumberFormat(INTL[lang], o).format(n); } catch { return String(n); } };
+  const fmtD = (d, o) => { try { return new Date(d).toLocaleDateString(INTL[lang], o); } catch { return String(d); } };
+  function t(key, vars) {
+    let v = dig(DICT[lang], key); if (v == null) v = dig(DICT.en, key); if (v == null) return key;
+    if (typeof v === 'object') { const n = vars && typeof vars.count === 'number' ? vars.count : 0; let f = 'other'; try { f = new Intl.PluralRules(INTL[lang]).select(n); } catch { /* */ } v = v[f] != null ? v[f] : v.other; }
+    return String(v).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] != null ? (typeof vars[k] === 'number' ? fmtN(vars[k]) : vars[k]) : m));
+  }
+  function apply(root) {
+    const r = root || document;
+    r.querySelectorAll('[data-i18n]').forEach((e) => { e.textContent = t(e.dataset.i18n); });
+    r.querySelectorAll('[data-i18n-html]').forEach((e) => { e.innerHTML = t(e.dataset.i18nHtml); });
+    r.querySelectorAll('[data-i18n-attr]').forEach((e) => e.dataset.i18nAttr.split(';').forEach((p) => { const [a, k] = p.split(':'); if (a && k) e.setAttribute(a.trim(), t(k.trim())); }));
+  }
+  const listeners = [];
+  function paintLang() { document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang)); document.documentElement.lang = lang; document.title = t('page.title'); }
+  window.WK = { i18n: { t, apply, get lang() { return lang; }, get locale() { return { intl: INTL[lang] }; }, fmt: { number: fmtN, date: fmtD }, ready: Promise.resolve(lang), onChange(f) { listeners.push(f); } } };
+  document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-lang]'); if (!b) return; lang = b.dataset.lang; LS.set('wkstats_lang', lang); apply(document); paintLang(); listeners.forEach((f) => f(lang)); });
+
+  /* connection: which Wikigai site + the statistics token (kept in this browser only) */
+  const DEFAULT_SITE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : 'https://wikigai.digitradin.cloud';
+  const site = () => (LS.get('wkstats_site') || DEFAULT_SITE).replace(/\/+$/, '');
+  const token = () => LS.get('wkstats_token') || '';
+  async function api(p) {
+    let r;
+    try { r = await fetch(site() + p, { headers: { Authorization: 'Bearer ' + token() }, credentials: 'omit', cache: 'no-store' }); }
+    catch { const err = new Error(t('page.unreachable', { site: site() })); err.status = 0; throw err; }
+    let d = {}; try { d = await r.json(); } catch { /* */ }
+    if (!r.ok) { const err = new Error(r.status === 401 ? t('page.badToken') : r.status === 503 ? t('page.statsOff') : (d.error || 'HTTP ' + r.status)); err.status = r.status; err.code = d.code; throw err; }
+    return d;
+  }
+  window.CPS = { api, Store: { get token() { return token(); }, clear() { /* token is managed in the connection panel */ } } };
+  window.__statsBase = site;
+  const $ = (id) => document.getElementById(id);
+  function conn(open) {
+    $('stSite').value = site(); $('stToken').value = token();
+    $('stConnSum').textContent = site() + ' · ••••' + token().slice(-4);
+    $('stConn').classList.toggle('ok', !open && !!token());
+  }
+  window.__statsOpenConn = () => conn(true);
+  window.__statsConnected = () => conn(false);
+  (function init() { // the page markup is already above this script
+    apply(document); paintLang(); conn(!token());
+    $('stConnForm').addEventListener('submit', (e) => { e.preventDefault(); LS.set('wkstats_site', $('stSite').value.trim() || null); LS.set('wkstats_token', $('stToken').value.trim() || null); conn(false); if (window.__statsReload) window.__statsReload(); });
+    $('stForget').addEventListener('click', () => { LS.set('wkstats_token', null); conn(true); location.reload(); });
+    $('stEdit').addEventListener('click', () => conn(true));
+  })();
+})();
+</script>
+<script>
+/* Wikigai owner dashboard (admin.html).
+   Data: GET /api/admin/stats?days=N and GET /api/admin/seo — aggregates only.
+   All labels come from the i18n dictionary (admin.*); re-renders on language change. */
+(function () {
+  'use strict';
+  const { api, Store } = window.CPS;
+  const I = window.WK.i18n;
+  const T = (k, v) => I.t(k, v);
+  const N = (n, o) => I.fmt.number(n, o);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const PERIODS = [7, 21, 30, 90];
+  let days = 21;
+  try { const q = parseInt(new URLSearchParams(location.search).get('days'), 10); if (PERIODS.includes(q)) days = q; } catch { /* default */ }
+  let data = null, seo = null, seoAll = false;
+
+
+  /* ── loading ── */
+  async function load() {
+    $('adMsg').hidden = false; $('adMsg').className = 'ad-msg'; $('adMsg').textContent = T('admin.loading');
+    try {
+      data = await api('/api/admin/stats?days=' + days);
+      if (window.__statsConnected) window.__statsConnected();
+      paint();
+    } catch (err) {
+      if (err.status === 401 || err.status === 503 || err.status === 0) { if (window.__statsOpenConn) window.__statsOpenConn(); }
+      $('adBody').hidden = true;
+      $('adMsg').className = 'ad-msg err';
+      $('adMsg').textContent = err.status === 403 ? T('admin.denied') : T('admin.error', { msg: err.message });
+    }
+  }
+
+  /* ── helpers ── */
+  function delta(cur, prev, invert) {
+    if (!prev && !cur) return '<span class="ad-d flat">—</span>';
+    if (!prev) return `<span class="ad-d up">${T('admin.isNew')}</span>`;
+    const d = ((cur - prev) / prev) * 100;
+    const good = invert ? d < 0 : d > 0;
+    const cls = Math.abs(d) < 0.5 ? 'flat' : good ? 'up' : 'down';
+    return `<span class="ad-d ${cls}">${d > 0 ? '▲' : d < 0 ? '▼' : '■'} ${N(Math.abs(d), { maximumFractionDigits: 0 })}%</span>`;
+  }
+  function table(rows, cols, empty) {
+    if (!rows || !rows.length) return `<p class="ad-empty">${T(empty || 'admin.noData')}</p>`;
+    const max = Math.max(1, ...rows.map((r) => Number(r[cols[1].key]) || 0));
+    return `<table class="ad-t"><thead><tr>${cols.map((c) => `<th class="${c.num ? 'n' : ''}">${T(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${cols.map((c, i) => {
+      const v = r[c.key];
+      if (!c.num) return `<td>${c.fmt ? c.fmt(v, r) : esc(v || T('admin.unknown'))}</td>`;
+      const bar = i === 1 ? `<i style="width:${Math.max(2, (Number(v) / max) * 100)}%"></i>` : '';
+      return `<td class="n">${bar}<b>${N(Number(v) || 0)}</b></td>`;
+    }).join('')}</tr>`).join('')}</tbody></table>`;
+  }
+  const dimCols = (label, fmt) => [{ key: 'key', label, fmt }, { key: 'visits', label: 'admin.colVisits', num: true }, { key: 'views', label: 'admin.colViews', num: true }];
+  const langName = (code) => { try { return new Intl.DisplayNames([I.locale.intl || I.lang], { type: 'language' }).of(code) || code; } catch { return code; } };
+  const countryName = (code) => { try { return new Intl.DisplayNames([I.locale.intl || I.lang], { type: 'region' }).of(code) || code; } catch { return code; } };
+
+  /* ── chart (inline SVG: visits line + sign-up bars) ── */
+  function chart(series) {
+    const W = 760, H = 220, P = { l: 36, r: 36, t: 14, b: 26 };
+    const n = series.length;
+    if (!n) return `<p class="ad-empty">${T('admin.noData')}</p>`;
+    const maxV = Math.max(4, ...series.map((d) => d.visits));
+    const maxS = Math.max(2, ...series.map((d) => d.signups));
+    const x = (i) => P.l + (n === 1 ? (W - P.l - P.r) / 2 : (i * (W - P.l - P.r)) / (n - 1));
+    const yV = (v) => H - P.b - (v / maxV) * (H - P.t - P.b);
+    const yS = (v) => H - P.b - (v / maxS) * (H - P.t - P.b) * 0.6;
+    const bw = Math.max(3, Math.min(18, ((W - P.l - P.r) / n) * 0.5));
+    const line = series.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${yV(d.visits).toFixed(1)}`).join(' ');
+    const area = `${line} L${x(n - 1).toFixed(1)},${H - P.b} L${x(0).toFixed(1)},${H - P.b} Z`;
+    const step = Math.ceil(n / 8);
+    const fmtDay = (s) => I.fmt.date(s + 'T12:00:00Z', { day: 'numeric', month: 'short' });
+    const grid = [0, 0.5, 1].map((f) => { const v = Math.round(maxV * f); const y = yV(v); return `<line x1="${P.l}" x2="${W - P.r}" y1="${y}" y2="${y}" class="g"/><text x="${P.l - 6}" y="${y + 4}" class="ax" text-anchor="end">${N(v)}</text>`; }).join('');
+    return `<div class="ad-legend"><span class="lv">${T('admin.legendVisits')}</span><span class="ls">${T('admin.legendSignups')}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" class="ad-svg" role="img" aria-label="${esc(T('admin.chartTitle'))}">
+      <defs><linearGradient id="adFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c44dff" stop-opacity=".35"/><stop offset="1" stop-color="#c44dff" stop-opacity="0"/></linearGradient></defs>
+      ${grid}
+      ${series.map((d, i) => d.signups ? `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${yS(d.signups).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - P.b - yS(d.signups)).toFixed(1)}" rx="2" class="bs"><title>${fmtDay(d.day)} · ${T('admin.legendSignups')}: ${d.signups}</title></rect>` : '').join('')}
+      <path d="${area}" fill="url(#adFill)"/>
+      <path d="${line}" class="lv"/>
+      ${series.map((d, i) => `<circle cx="${x(i).toFixed(1)}" cy="${yV(d.visits).toFixed(1)}" r="${n > 45 ? 0 : 3}" class="dv"><title>${fmtDay(d.day)} · ${T('admin.legendVisits')}: ${d.visits}</title></circle>`).join('')}
+      ${series.map((d, i) => (i % step === 0 || i === n - 1) ? `<text x="${x(i).toFixed(1)}" y="${H - 6}" class="ax" text-anchor="middle">${fmtDay(d.day)}</text>` : '').join('')}
+    </svg>`;
+  }
+
+  function funnel(f) {
+    const steps = [['visited', 'fVisited'], ['signup_page', 'fSignupPage'], ['signup_submit', 'fSubmit'], ['verified', 'fVerified'], ['stage1', 'fStage1'], ['stage2', 'fStage2'], ['stage3', 'fStage3']];
+    const top = Math.max(1, f.visited || 0);
+    return `<div class="ad-funnel">${steps.map(([k, l], i) => {
+      const v = f[k] || 0, prev = i ? f[steps[i - 1][0]] || 0 : v;
+      const rate = i && prev ? `<small>${N((v / prev) * 100, { maximumFractionDigits: 0 })}%</small>` : '';
+      return `<div class="ad-fs"><span>${T('admin.' + l)}</span><div class="ad-fb"><i style="width:${Math.max(1.5, (v / top) * 100)}%"></i></div><b>${N(v)}</b>${rate}</div>`;
+    }).join('')}</div>`;
+  }
+
+  function stats(list) {
+    return `<div class="ad-stats">${list.map(([l, v]) => `<div><span>${T(l)}</span><b>${v}</b></div>`).join('')}</div>`;
+  }
+
+  /* ── paint ── */
+  function paint() {
+    if (!data) return;
+    $('adMsg').hidden = false;
+    $('adMsg').className = 'ad-msg info';
+    $('adMsg').textContent = data.trackingSince ? T('admin.trackingSince', { date: I.fmt.date(data.trackingSince + 'T12:00:00Z', { day: 'numeric', month: 'long', year: 'numeric' }) }) : T('admin.noTracking');
+    $('adBody').hidden = false;
+    document.querySelectorAll('#adPeriod button').forEach((b) => { const d = +b.dataset.days; b.textContent = T('admin.days', { n: d }); b.classList.toggle('on', d === days); b.setAttribute('aria-pressed', String(d === days)); });
+
+    const k = data.kpis, p = data.previous;
+    const tiles = [
+      ['kVisits', N(k.visits), delta(k.visits, p.visits)],
+      ['kPageviews', N(k.pageviews), delta(k.pageviews, p.pageviews)],
+      ['kPpv', N(k.pagesPerVisit, { maximumFractionDigits: 2 }), delta(k.pagesPerVisit, p.pagesPerVisit)],
+      ['kBounce', N(k.bounceRate) + '%', delta(k.bounceRate, p.bounceRate, true)],
+      ['kSignups', N(k.signups), delta(k.signups, p.signups)],
+      ['kVerified', N(k.verified), delta(k.verified, p.verified)],
+      ['kConversion', N(k.conversion, { maximumFractionDigits: 1 }) + '%', delta(k.conversion, p.conversion)],
+      ['kStage1', N(k.stage1), delta(k.stage1, p.stage1)],
+      ['kStage2', N(k.stage2), delta(k.stage2, p.stage2)],
+      ['kStage3', N(k.stage3), delta(k.stage3, p.stage3)],
+      ['kShares', N(k.shares), delta(k.shares, p.shares)],
+    ];
+    $('adKpis').innerHTML = tiles.map(([l, v, d]) => `<div class="ad-kpi"><span>${T('admin.' + l)}</span><b>${v}</b>${d}<small>${T('admin.vsPrev', { n: data.range.days })}</small></div>`).join('');
+    $('adChart').innerHTML = chart(data.series);
+    $('adFunnel').innerHTML = funnel(data.funnel);
+    $('adRefs').innerHTML = table(data.referrers, dimCols('admin.colSource', (v) => (v ? esc(v) : `<em>${T('admin.direct')}</em>`)));
+    $('adPages').innerHTML = table(data.pages, dimCols('admin.colPage', (v) => `<code>${esc(v)}</code>`));
+    $('adCamp').innerHTML = table(data.campaigns, [
+      { key: 'source', label: 'admin.colSource', fmt: (v, r) => `${esc(v || '—')}<small class="ad-cm">${esc([r.medium, r.campaign].filter(Boolean).join(' · '))}</small>` },
+      { key: 'visits', label: 'admin.colVisits', num: true }, { key: 'signups', label: 'admin.colSignups', num: true }]);
+    $('adLang').innerHTML = table(data.languages, dimCols('admin.languages', (v) => esc(v ? langName(v) : T('admin.unknown'))));
+    $('adCountry').innerHTML = table(data.countries, dimCols('admin.countries', (v) => esc(v ? countryName(v) : T('admin.unknown'))));
+    $('adDev').innerHTML = table(data.devices, dimCols('admin.devices'));
+    $('adBrowser').innerHTML = table(data.browsers, dimCols('admin.browsers', (v, r) => esc(v || T('admin.unknown'))));
+    $('adEvents').innerHTML = table(data.events, [
+      { key: 'name', label: 'admin.colName', fmt: (v, r) => `${esc(T('admin.ev_' + v))}${r.detail ? `<small class="ad-cm">${esc(r.detail)}</small>` : ''}` },
+      { key: 'n', label: 'admin.colCount', num: true }]);
+    const a = data.accounts, g = data.progress;
+    $('adAccounts').innerHTML = stats([
+      ['admin.aTotal', N(a.total)], ['admin.aVerified', N(a.verified)], ['admin.aActive', N(a.active)],
+      ['admin.aFirst', a.firstSignup ? I.fmt.date(a.firstSignup + 'T12:00:00Z', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'],
+    ]) + `<p class="ad-sub" style="margin-top:12px">${T('admin.aLocales')}: ${(a.locales || []).map((l) => `${esc(langName(l.key || 'en'))} ${N(l.n)}`).join(' · ') || '—'}</p>`;
+    $('adProgress').innerHTML = stats([
+      ['admin.pResults', N(g.with_results)], ['admin.pStage1', N(g.stage1)], ['admin.pStage2', N(g.stage2)], ['admin.pStage3', N(g.stage3)], ['admin.pRefresh', N(g.refresh_optin)],
+    ]);
+    utm();
+    paintSeo();
+  }
+
+  /* ── CSV export (daily series + KPIs) ── */
+  function csv() {
+    if (!data) return;
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [['day', 'visits', 'pageviews', 'signups', 'verified'].join(',')];
+    data.series.forEach((d) => lines.push([d.day, d.visits, d.pageviews, d.signups, d.verified].join(',')));
+    lines.push('', 'metric,current,previous');
+    Object.keys(data.kpis).forEach((k) => lines.push([q(k), data.kpis[k], data.previous[k]].join(',')));
+    lines.push('', 'section,key,visits,views');
+    ['pages', 'referrers', 'languages', 'countries', 'devices', 'browsers', 'os'].forEach((s) => (data[s] || []).forEach((r) => lines.push([s, q(r.key), r.visits, r.views].join(','))));
+    lines.push('', 'source,medium,campaign,visits,signups');
+    (data.campaigns || []).forEach((r) => lines.push([q(r.source), q(r.medium), q(r.campaign), r.visits, r.signups].join(',')));
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `wikigai-stats-${data.range.start}_${data.range.end}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ── UTM link builder ── */
+  const slug = (s) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  function utm() {
+    const base = window.__statsBase().replace(/\/\/(preprod|staging)\./, '//');
+    const q = new URLSearchParams();
+    const s = slug($('utmSource').value), m = slug($('utmMedium').value), c = slug($('utmCampaign').value);
+    if (s) q.set('utm_source', s); if (m) q.set('utm_medium', m); if (c) q.set('utm_campaign', c);
+    $('utmOut').value = base + $('utmPage').value + (q.toString() ? '?' + q : '');
+  }
+  async function copyUtm() {
+    const out = $('utmOut'); let ok = false;
+    try { await navigator.clipboard.writeText(out.value); ok = true; } catch { out.select(); try { ok = document.execCommand('copy'); } catch { ok = false; } }
+    if (ok) { $('utmCopy').textContent = T('admin.utmCopied'); setTimeout(() => { $('utmCopy').textContent = T('admin.utmCopy'); }, 2000); }
+  }
+
+  /* ── SEO health ── */
+  async function runSeo() {
+    const b = $('seoRun'); b.disabled = true; b.textContent = T('admin.seoRunning');
+    try { seo = await api('/api/admin/seo'); } catch (err) { seo = { failed: err.message }; }
+    b.disabled = false; b.textContent = T('admin.seoRun');
+    paintSeo();
+  }
+  function paintSeo() {
+    const out = $('seoOut');
+    if (!seo) { out.innerHTML = ''; return; }
+    if (seo.failed) { out.innerHTML = `<p class="ad-msg err">${esc(seo.failed)}</p>`; return; }
+    const bad = seo.checks.filter((c) => !c.ok);
+    const list = seoAll ? seo.checks : bad;
+    const col = seo.score >= 90 ? 'ok' : seo.score >= 70 ? 'mid' : 'low';
+    out.innerHTML = `<div class="ad-seosum"><div class="ad-score ${col}"><b>${seo.score}</b><span>${T('admin.seoScore')}</span></div>
+      <div class="ad-pills"><span class="pill err">${T('admin.seoErrors', { count: seo.errors })}</span><span class="pill warn">${T('admin.seoWarnings', { count: seo.warnings })}</span><span class="pill ok">${T('admin.seoPassed', { count: seo.passed })}</span></div>
+      <label class="ad-chk"><input type="checkbox" id="seoAll" ${seoAll ? 'checked' : ''}> ${T('admin.seoAll')}</label></div>
+      ${list.length ? `<table class="ad-t ad-seot"><tbody>${list.map((c) => `<tr class="${c.level}"><td><i class="dot"></i></td><td><code>${esc(c.page)}</code></td><td>${esc(c.check)}</td><td class="det">${esc(c.detail)}</td></tr>`).join('')}</tbody></table>` : ''}
+      <p class="ad-sub" style="margin-top:12px">${T('admin.seoNext', { url: `<code>${esc(seo.base)}/sitemap.xml</code>` })}</p>`;
+    const cb = $('seoAll'); if (cb) cb.addEventListener('change', () => { seoAll = cb.checked; paintSeo(); });
+  }
+
+  /* ── wiring ── */
+  $('adPeriod').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-days]'); if (!b) return;
+    days = +b.dataset.days;
+    try { history.replaceState(null, '', location.pathname + '?days=' + days); } catch { /* ignore */ }
+    load();
+  });
+  $('adRefresh').addEventListener('click', load);
+  $('adCsv').addEventListener('click', csv);
+  ['utmPage', 'utmSource', 'utmMedium', 'utmCampaign'].forEach((id) => $(id).addEventListener('input', utm));
+  $('utmPage').addEventListener('change', utm);
+  $('utmCopy').addEventListener('click', copyUtm);
+  $('seoRun').addEventListener('click', runSeo);
+
+  window.__statsReload = load;
+  I.ready.then(() => { if (Store.token) load(); else { $('adMsg').className = 'ad-msg info'; $('adMsg').textContent = T('page.needToken'); } });
+  I.onChange(() => { I.apply(document.body); paint(); });
+})();
+
+</script>
+</body>
+</html>

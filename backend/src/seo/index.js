@@ -25,7 +25,7 @@ const PAGES = {
   '/login': { file: 'login.html', title: 'meta.login', desc: 'meta.loginDesc', priority: '0.3', changefreq: 'yearly' },
 };
 /* never indexed */
-const PRIVATE_PREFIXES = ['/survey', '/dashboard', '/ikigai', '/learning', '/account', '/verify', '/forgot', '/reset', '/admin', '/widget'];
+const PRIVATE_PREFIXES = ['/survey', '/dashboard', '/ikigai', '/learning', '/account', '/verify', '/forgot', '/reset', '/widget'];
 
 let PUBLIC_DIR = null;
 let LOCALES = ['en'];
