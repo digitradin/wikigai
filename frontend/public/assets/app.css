@@ -282,3 +282,4 @@ nav.top .inner {
   .stat-grid { grid-template-columns: 1fr; }
   .pin-input { width: 42px; height: 52px; font-size: 21px; }
 }
+input[type=date].input{color-scheme:dark}

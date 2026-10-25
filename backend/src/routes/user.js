@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../lib/db');
 const { hashEmail, verifyPassword } = require('../lib/crypto');
+const { parseBirthDate } = require('../lib/birthdate');
 const { requireUser } = require('./auth');
 const i18n = require('../i18n');
 
@@ -91,17 +92,28 @@ router.put('/locale', async (req, res, next) => {
 });
 
 /**
- * PUT /api/user/profile — update the display name (Account page).
- * Body: { name: string (1–80 chars) }
+ * PUT /api/user/profile — update the Account page fields. Send only what changes.
+ * Body: { name?: string (1–80 chars), birthDate?: 'YYYY-MM-DD' | '' | null (optional, '' clears) }
  */
 router.put('/profile', async (req, res, next) => {
   try {
     const user = await requireUser(req, res);
     if (!user) return;
-    const name = String((req.body && req.body.name) || '').replace(/[\u0000-\u001f<>]/g, '').trim();
-    if (!name || name.length > 80) return res.status(400).json({ error: 'Please enter a name (max 80 characters).', code: 'BAD_NAME' });
-    await db.query('UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2', [name, user.id]);
-    res.json({ ok: true, name });
+    const b = req.body || {};
+    const sets = [], vals = [user.id], out = {};
+    if (Object.prototype.hasOwnProperty.call(b, 'name')) {
+      const name = String(b.name || '').replace(/[\u0000-\u001f<>]/g, '').trim();
+      if (!name || name.length > 80) return res.status(400).json({ error: 'Please enter a name (max 80 characters).', code: 'BAD_NAME' });
+      vals.push(name); sets.push(`name = $${vals.length}`); out.name = name;
+    }
+    if (Object.prototype.hasOwnProperty.call(b, 'birthDate')) {
+      const birth = parseBirthDate(b.birthDate);
+      if (!birth.ok) return res.status(400).json({ error: 'Please enter a valid birthday (or leave it empty).', code: 'BAD_BIRTHDATE' });
+      vals.push(birth.value); sets.push(`birth_date = $${vals.length}::date`); out.birthDate = birth.value;
+    }
+    if (!sets.length) return res.status(400).json({ error: 'Nothing to update.', code: 'NOTHING_TO_UPDATE' });
+    await db.query(`UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $1`, vals);
+    res.json({ ok: true, ...out });
   } catch (err) {
     next(err);
   }

@@ -40,6 +40,12 @@
           <label for="name"><span data-i18n="auth.nameLabel">Name</span> <span style="color:var(--muted-2);font-weight:500" data-i18n="common.optional">(optional)</span></label>
           <input class="input" type="text" id="name" placeholder="How should we call you?" data-i18n-attr="placeholder:auth.namePh" autocomplete="name" maxlength="80">
         </div>
+        <div class="field" id="fBirth">
+          <label for="birth"><span data-i18n="auth.birthLabel">Birthday</span> <span style="color:var(--muted-2);font-weight:500" data-i18n="common.optional">(optional)</span></label>
+          <input class="input" type="date" id="birth" autocomplete="bday" min="1926-01-01">
+          <div class="hint" data-i18n="auth.birthHelp">Helps us adapt your learning plans to your age. Only you can see it.</div>
+          <div class="err-msg" id="eBirth"></div>
+        </div>
 
         <div class="field" id="fPassword">
           <label for="password" data-i18n="auth.passwordLabel">Password</label>
@@ -136,7 +142,7 @@
     try {
       const res = await api('/api/auth/signup', {
         method: 'POST', auth: false,
-        body: { email, email2, password, password2, name, locale: WK.i18n.lang, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
+        body: { email, email2, password, password2, name, birth_date: document.getElementById('birth').value || '', locale: WK.i18n.lang, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
       });
       sessionStorage.setItem('cps_pending_email', email);
       if (res.dev_pin) sessionStorage.setItem('cps_dev_pin', res.dev_pin);
@@ -148,6 +154,10 @@
       btn.disabled = false; btn.textContent = T('auth.signup.submit');
     }
   });
+</script>
+<script>
+/* birthday picker: no future dates, minimum age 8 */
+(function () { var el = document.getElementById('birth'); if (!el) return; var d = new Date(); d.setFullYear(d.getFullYear() - 8); el.max = d.toISOString().slice(0, 10); })();
 </script>
 </body>
 </html>

@@ -10,12 +10,14 @@
      AI_DAILY_LIMIT    research requests per user per day (default 10)
      AI_TIMEOUT_MS     default 90000
 
-   Privacy: only the topic and the user's Wikigai results summary (areas, professions,
-   strongest subjects) are sent — never name, email or ids. */
+   Privacy: only the topic, the user's Wikigai results summary (areas, professions,
+   strongest subjects) and — if they gave a birthday — their age in years are sent;
+   never name, email, birth date or ids. */
 'use strict';
 const express = require('express');
 const db = require('../lib/db');
 const { requireUser } = require('./auth');
+const { ageOn } = require('../lib/birthdate');
 
 const router = express.Router();
 const LANGS = { en: 'English', fr: 'French', es: 'Spanish' };
@@ -55,9 +57,21 @@ JSON shape (keep the keys in English exactly as written):
   ].filter(Boolean).join(' ');
   const user = `I want to learn about: ${topic}.
 ${about ? 'About me (from my Wikigai results): ' + about : 'I have not finished my Wikigai results yet.'}
-I am a student or early in my career. Tailor the outlook, the key skills and the plans to me.`;
+${lifeStage(ctx.age)} Tailor the outlook, the key skills, the learning resources and the pace of the plans to my age and stage.`;
   return [{ role: 'system', content: system }, { role: 'user', content: user }];
 }
+
+/* the user's age (from their optional birthday) → how to pitch the plan */
+function lifeStage(age) {
+  if (age == null) return 'I am a student or early in my career.';
+  if (age < 12) return `I am ${age} years old, in primary school: keep it playful, safe, short and suitable for a child, with a parent or teacher involved.`;
+  if (age < 16) return `I am ${age} years old, in lower secondary school: suggest school subjects, clubs, safe free resources and small projects; plans must fit around school, and anything involving money, travel or the internet should involve a parent.`;
+  if (age < 19) return `I am ${age} years old, in upper secondary school: help me choose subjects, upcoming studies or vocational routes, and first projects; plans must fit around school and exams.`;
+  if (age < 25) return `I am ${age} years old, a student or at the very start of my career: cover study routes, internships, first jobs and portfolio building.`;
+  if (age < 40) return `I am ${age} years old and may be changing careers: build on transferable experience, part-time or online learning that fits around work, and a realistic transition path.`;
+  return `I am ${age} years old and considering a career change or a new field: value my experience, suggest flexible part-time learning, certifications and a realistic transition.`;
+}
+const ageBand = (age) => (age == null ? 'na' : age < 12 ? 'c' : age < 16 ? 'ls' : age < 19 ? 'us' : age < 25 ? 'ya' : age < 40 ? 'a' : 'm');
 
 /* tolerant JSON extraction: strips code fences / text around the object */
 function parseJson(text) {
@@ -115,7 +129,8 @@ router.post('/research', async (req, res, next) => {
     const topic = clip(b.topic, 120);
     if (topic.length < 2) return fail(res, 400, 'BAD_TOPIC', 'Please tell us what you want to learn about.');
     const lang = LANGS[b.lang] ? b.lang : 'en';
-    const key = topic.toLowerCase();
+    const age = user.birthDate ? ageOn(user.birthDate) : null;
+    const key = topic.toLowerCase() + '|age:' + ageBand(age); // a plan for a 14-year-old differs from one for a 30-year-old
     if (!b.force) {
       const hit = await db.getOne(`SELECT id, topic, lang, result, created_at FROM learning_research
         WHERE user_id = $1 AND topic_key = $2 AND lang = $3 AND created_at > NOW() - INTERVAL '7 days' ORDER BY created_at DESC LIMIT 1`, [user.id, key, lang]);
@@ -125,7 +140,7 @@ router.post('/research', async (req, res, next) => {
     const used = await db.getOne(`SELECT count(*)::int AS n FROM learning_research WHERE user_id = $1 AND created_at > NOW() - INTERVAL '1 day'`, [user.id]);
     if ((used && used.n) >= c.limit) return fail(res, 429, 'AI_LIMIT', 'You reached today’s research limit. Please try again tomorrow.');
     const ctx = b.context || {};
-    const messages = prompts(topic, lang, { domains: list(ctx.domains, 5, 80), professions: list(ctx.professions, 6, 80), strengths: list(ctx.strengths, 4, 60) });
+    const messages = prompts(topic, lang, { domains: list(ctx.domains, 5, 80), professions: list(ctx.professions, 6, 80), strengths: list(ctx.strengths, 4, 60), age });
     let out = null, model = c.model;
     try {
       let r = await callAI(messages, c);
@@ -170,4 +185,4 @@ router.get('/research/:id', async (req, res, next) => {
 });
 
 module.exports = router;
-module.exports._test = { parseJson, normalize, prompts };
+module.exports._test = { parseJson, normalize, prompts, lifeStage };

@@ -13,6 +13,7 @@ const {
 const { createSessionToken, verifySessionToken } = require('../lib/session');
 const { sendMail } = require('../lib/mailer');
 const i18n = require('../i18n');
+const { parseBirthDate, toIso } = require('../lib/birthdate');
 
 /* language for emails: the account's saved locale, else the request's */
 function userLang(user, req) { return i18n.normalize(user && user.locale) || i18n.fromRequest(req); }
@@ -80,6 +81,7 @@ router.post('/signup', async (req, res, next) => {
     const name = typeof req.body.name === 'string' ? req.body.name.trim().slice(0, 80) : '';
     const locale = i18n.fromRequest(req);
     const { captcha_id, captcha_answer } = req.body;
+    const birth = parseBirthDate(req.body.birth_date); // optional
 
     if (!EMAIL_RE.test(email)) {
       return res.status(400).json({ error: 'Please enter a valid email address.', code: 'BAD_EMAIL' });
@@ -93,6 +95,10 @@ router.post('/signup', async (req, res, next) => {
     }
     if (password !== password2) {
       return res.status(400).json({ error: 'Passwords do not match.', code: 'PASSWORD_MISMATCH' });
+    }
+
+    if (!birth.ok) {
+      return res.status(400).json({ error: 'Please enter a valid birthday (or leave it empty).', code: 'BAD_BIRTHDATE' });
     }
 
     const captcha = await checkCaptcha(captcha_id, captcha_answer);
@@ -119,16 +125,17 @@ router.post('/signup', async (req, res, next) => {
       userId = existing.id;
       await db.query(
         `UPDATE users SET name = COALESCE(NULLIF($2,''), name), locale = $3, email_enc = $4,
-                password_hash = $5, password_updated_at = NOW(), updated_at = NOW()
+                password_hash = $5, password_updated_at = NOW(), updated_at = NOW(),
+                birth_date = COALESCE($6::date, birth_date)
          WHERE id = $1`,
-        [userId, name, locale, enc.enc, pwHash]
+        [userId, name, locale, enc.enc, pwHash, birth.value]
       );
     } else {
       const created = await db.getOne(
-        `INSERT INTO users (email_hash, email_enc, name, locale, email_verified, provider, password_hash, password_updated_at)
-         VALUES ($1, $2, $3, $4, false, 'password', $5, NOW())
+        `INSERT INTO users (email_hash, email_enc, name, locale, email_verified, provider, password_hash, password_updated_at, birth_date)
+         VALUES ($1, $2, $3, $4, false, 'password', $5, NOW(), $6::date)
          RETURNING id`,
-        [emailHash, enc.enc, name || email.split('@')[0], locale, pwHash]
+        [emailHash, enc.enc, name || email.split('@')[0], locale, pwHash, birth.value]
       );
       userId = created.id;
     }
@@ -432,7 +439,7 @@ async function requireUser(req, res) {
     return null;
   }
   const row = await db.getOne(
-    `SELECT id, name, locale, email_verified, provider,
+    `SELECT id, name, locale, email_verified, provider, birth_date,
             pgp_sym_decrypt(email_enc, current_setting('app.survey_encryption_key')) AS email
      FROM users WHERE id = $1`,
     [payload.sub]
@@ -448,6 +455,7 @@ async function requireUser(req, res) {
     locale: row.locale,
     verified: row.email_verified,
     provider: row.provider,
+    birthDate: toIso(row.birth_date),
   };
 }
 

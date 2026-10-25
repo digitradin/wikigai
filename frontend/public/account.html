@@ -34,6 +34,13 @@
           </div>
         </div>
         <div class="ac-row">
+          <div><label for="acBirth" data-i18n="account.birth">Birthday</label><small data-i18n="account.birthHelp">Optional — lets us adapt your learning plans to your age.</small></div>
+          <div style="flex:1 1 260px;max-width:420px">
+            <form class="ac-name" id="acBirthForm"><input id="acBirth" type="date" autocomplete="bday" min="1926-01-01"><button class="ac-btn primary" type="submit" data-i18n="account.save">Save</button><button class="ac-btn" type="button" id="acBirthClear" data-i18n="account.clear">Clear</button></form>
+            <div class="ac-msg" id="acBirthMsg" role="status"></div>
+          </div>
+        </div>
+        <div class="ac-row">
           <div><span class="ac-k" data-i18n="account.email">Email</span></div>
           <div class="ac-v"><span id="acEmail">—</span><span class="ac-badge" id="acVerified" hidden></span></div>
         </div>
@@ -98,6 +105,7 @@
     catch (err) { if (err.status === 401) { Store.clear(); location.href = '/login'; } return; }
     Store.user = user;
     $('acName').value = user.name || '';
+    $('acBirth').value = user.birthDate || '';
     paint();
   }
   $('acNameForm').addEventListener('submit', async (e) => {
@@ -112,6 +120,21 @@
     } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
   });
   $('acPassword').addEventListener('click', () => { try { sessionStorage.setItem('wk_forgot_email', user?.email || ''); } catch {} });
+  // ── birthday (optional) ──
+  (function () { const d = new Date(); d.setFullYear(d.getFullYear() - 8); $('acBirth').max = d.toISOString().slice(0, 10); })();
+  const ageOf = (iso) => { const b = new Date(iso + 'T12:00:00Z'), n = new Date(); let a = n.getFullYear() - b.getUTCFullYear(); if (n.getMonth() < b.getUTCMonth() || (n.getMonth() === b.getUTCMonth() && n.getDate() < b.getUTCDate())) a -= 1; return a; };
+  async function saveBirth(value) {
+    const msg = $('acBirthMsg');
+    msg.className = 'ac-msg'; msg.textContent = '';
+    try {
+      const r = await api('/api/user/profile', { method: 'PUT', body: { birthDate: value } });
+      user.birthDate = r.birthDate || null; Store.user = user; $('acBirth').value = user.birthDate || '';
+      msg.className = 'ac-msg ok';
+      msg.textContent = user.birthDate ? T('account.birthSaved', { age: ageOf(user.birthDate) }) : T('account.birthCleared');
+    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
+  }
+  $('acBirthForm').addEventListener('submit', (e) => { e.preventDefault(); saveBirth($('acBirth').value || ''); });
+  $('acBirthClear').addEventListener('click', () => saveBirth(''));
   $('acSignOut').addEventListener('click', () => { if (window.CPS.logout) window.CPS.logout(); else { Store.clear(); location.href = '/login'; } });
   // ── delete account: retype email + password ──
   const delForm = $('acDeleteForm'), delGo = $('acDeleteGo'), delMsg = $('acDelMsg');

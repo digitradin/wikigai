@@ -201,6 +201,11 @@ WK.i18n.register('fr', 'ui', {
     deleteCancel: "Annuler",
     deleteConfirm: "Supprimer définitivement",
     deleted: "Votre compte a été supprimé. Retour à l’accueil…",
+    birth: "Date de naissance",
+    birthHelp: "Facultatif — permet d’adapter vos plans d’apprentissage à votre âge. Vous seul la voyez.",
+    clear: "Effacer",
+    birthSaved: "✓ Enregistrée — vos plans seront adaptés à vos {age} ans.",
+    birthCleared: "✓ Date de naissance supprimée.",
   },
 
   landing: {
@@ -304,6 +309,8 @@ WK.i18n.register('fr', 'ui', {
       switchLink: 'En recevoir un nouveau',
       devPin: 'Code préprod : {pin}',
     },
+    birthLabel: "Date de naissance",
+    birthHelp: "Nous aide à adapter vos plans d’apprentissage à votre âge. Vous seul la voyez.",
   },
   captcha: {
     prompt: 'Sélectionnez les 3 marques de boissons',
@@ -347,6 +354,7 @@ WK.i18n.register('fr', 'ui', {
     AI_BAD_OUTPUT: "La réponse de l’IA est illisible. Veuillez réessayer.",
     DELETE_EMAIL_MISMATCH: "L’e-mail ne correspond pas à votre compte.",
     DELETE_BAD_PASSWORD: "Mot de passe incorrect.",
+    BAD_BIRTHDATE: "Veuillez saisir une date de naissance valide (ou laisser le champ vide).",
   },
 
   support: {

@@ -137,3 +137,4 @@
 .ac-btn.danger.solid{background:#dc2626;border-color:#dc2626;color:#fff}
 .ac-btn:disabled{opacity:.45;cursor:not-allowed}
 .ac-btn[hidden],.ac-delform[hidden]{display:none}
+input[type=date]{color-scheme:dark}

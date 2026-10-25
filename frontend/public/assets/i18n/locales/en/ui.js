@@ -206,6 +206,11 @@ WK.i18n.register('en', 'ui', {
     deleteCancel: "Cancel",
     deleteConfirm: "Delete permanently",
     deleted: "Your account has been deleted. Taking you to the home page…",
+    birth: "Birthday",
+    birthHelp: "Optional — lets us adapt your learning plans to your age. Only you can see it.",
+    clear: "Clear",
+    birthSaved: "✓ Saved — your plans will be adapted to age {age}.",
+    birthCleared: "✓ Birthday removed.",
   },
 
   /* ── landing (index.html) ── */
@@ -311,6 +316,8 @@ WK.i18n.register('en', 'ui', {
       switchLink: 'Send a new one',
       devPin: 'Preprod code: {pin}',
     },
+    birthLabel: "Birthday",
+    birthHelp: "Helps us adapt your learning plans to your age. Only you can see it.",
   },
   captcha: {
     prompt: 'Select the 3 drink brands',
@@ -355,6 +362,7 @@ WK.i18n.register('en', 'ui', {
     AI_BAD_OUTPUT: "The AI answer could not be read. Please try again.",
     DELETE_EMAIL_MISMATCH: "The email doesn’t match your account.",
     DELETE_BAD_PASSWORD: "Incorrect password.",
+    BAD_BIRTHDATE: "Please enter a valid birthday (or leave it empty).",
   },
 
   /* ── shared support / share box ── */
