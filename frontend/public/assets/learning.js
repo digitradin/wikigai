@@ -53,7 +53,19 @@
     const seen = new Set();
     const allPros = (Array.isArray(s2.love) ? s2.love.slice() : []).sort((a, b) => (b.L || 0) - (a.L || 0))
       .map((x) => x.career).filter((c) => c && !seen.has(c) && seen.add(c));
-    return { domains, pros, allPros, kind, strengths, s1: !!ranked.length, s2: !!(s2.love && s2.love.length), s3: !!s3.completedAt };
+    // WikiVids topics: every subfield kept in Stage 2 and every profession (Stage 3 match order first, then love)
+    const SUBS = S2.subfields || {};
+    const keptSubs = Object.keys(s2.subPrefs || {}).filter((k) => s2.subPrefs[k] && SUBS[k]);
+    const loveSubs = [...new Set((Array.isArray(s2.love) ? s2.love : []).map((x) => x.subfield).filter((k) => SUBS[k]))];
+    const subs = [...new Set(keptSubs.length ? keptSubs : loveSubs)]
+      .sort((a, b) => ((s2.subPct || {})[b] || 0) - ((s2.subPct || {})[a] || 0))
+      .map((k) => ({ key: k, name: SUBS[k].name, domain: SUBS[k].domain }));
+    const domOf = {};
+    (Array.isArray(s2.love) ? s2.love : []).forEach((x) => { if (x.career) domOf[x.career] = x.domain || (SUBS[x.subfield] || {}).domain; });
+    const seenP = new Set();
+    const proItems = [...(Array.isArray(s3.top) ? s3.top.map((x) => x.career) : []), ...allPros]
+      .filter((c) => c && !seenP.has(c) && seenP.add(c)).map((c) => ({ name: c, domain: domOf[c] || null }));
+    return { domains, pros, allPros, subs, proItems, kind, strengths, s1: !!ranked.length, s2: !!(s2.love && s2.love.length), s3: !!s3.completedAt };
   }
   function pathBox() {
     if (path === null) return `<div class="lr-path loading">${T('common.loading')}</div>`;
@@ -162,7 +174,11 @@
   /* ── Videos: WikiVids ── */
   const fmtDur = (s) => { s = +s || 0; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
   const fmtViews = (n) => I.fmt.number(+n || 0, { notation: 'compact', maximumFractionDigits: 1 });
-  const vDomains = () => (path && path.domains && path.domains.length ? path.domains.map((d) => d.key) : Object.keys(AREAS));
+  const vDomains = () => {
+    const base = path && path.domains && path.domains.length ? path.domains.map((d) => d.key) : Object.keys(AREAS);
+    const extra = path ? [...(path.subs || []), ...(path.proItems || [])].map((t) => t.domain).filter((k) => k && AREAS[k]) : [];
+    return [...new Set([...base, ...extra, ...(wv.domain && AREAS[wv.domain] ? [wv.domain] : [])])];
+  };
   function wvDefaults() {
     if (wv.q === null && path) { // wait for the user's path so we can prefill their top profession
       const p = new URLSearchParams(location.search);
@@ -206,7 +222,9 @@
           <input id="wvQ" maxlength="80" value="${esc(wv.q || '')}" placeholder="${esc(T('learn.vPh'))}" aria-label="${esc(T('learn.vPh'))}" ${wv.busy ? 'disabled' : ''}>
           <button class="btn-primary" type="submit" ${wv.busy ? 'disabled' : ''}>🔎 ${T('learn.vSearch')}</button>
         </form>
-        ${doms.length ? `<div class="lr-suggest"><span class="ik-dim">${T('learn.vDomain')}</span>${doms.map((k) => `<button type="button" class="lr-sug wv-dom${k === wv.domain ? ' on' : ''}" data-wvdom="${k}" aria-pressed="${k === wv.domain}">${area(k).icon} ${esc(C(area(k).name))}</button>`).join('')}</div>` : ''}
+        ${doms.length ? `<div class="lr-suggest wv-row"><span class="ik-dim">${T('learn.vDomain')}</span>${doms.map((k) => `<button type="button" class="lr-sug wv-dom${k === wv.domain ? ' on' : ''}" data-wvdom="${k}" aria-pressed="${k === wv.domain}">${area(k).icon} ${esc(C(area(k).name))}</button>`).join('')}</div>` : ''}
+        ${topicRow('subs', T('learn.vSubfields'), (path && path.subs) || [])}
+        ${topicRow('pros', T('learn.vProfessions'), (path && path.proItems) || [])}
         ${wv.off ? `<p class="lr-warn">${T('learn.vNotConfigured')}</p>` : ''}
         ${wv.err ? `<p class="lr-err" role="alert">${esc(wv.err)}</p>` : ''}
       </section>
@@ -215,6 +233,20 @@
         <button role="tab" class="lr-tab${wv.tab === 'saved' ? ' on' : ''}" data-wvtab="saved" aria-selected="${wv.tab === 'saved'}">★ ${T('learn.vTabSaved')}${nSaved ? ` (${nSaved})` : ''}</button>
       </div>
       <div id="wvBody">${body}</div>`;
+  }
+  /* topic suggestions: every subfield and profession from the user's path — one tap fills the words */
+  const FOLDV = 8;
+  function topicRow(kind, label, list) {
+    if (!list.length) return '';
+    const cur = String(wv.q || '').trim().toLowerCase();
+    const open = wv.open && wv.open[kind];
+    const chips = list.map((t, i) => {
+      const name = C(t.name);
+      const on = name.toLowerCase() === cur;
+      return `<button type="button" class="lr-sug wv-topic${on ? ' on' : ''}${i >= FOLDV && !open ? ' lr-more-item' : ''}" data-wvtopic="${esc(name)}" data-wvtdom="${esc(t.domain || '')}" aria-pressed="${on}">${kind === 'subs' ? (area(t.domain).icon || '•') : '💼'} ${esc(name)}</button>`;
+    }).join('');
+    const more = list.length > FOLDV && !open ? `<button type="button" class="lr-more" data-wvmore="${kind}">${T('learn.showAll', { count: list.length - FOLDV })}</button>` : '';
+    return `<div class="lr-suggest wv-row"><span class="ik-dim">${label}</span>${chips}${more}</div>`;
   }
   async function wvSearch() {
     const q = String(wv.q || '').trim();
@@ -317,6 +349,10 @@
     if (play) { wvPlay(play.dataset.play); return; }
     const sv = e.target.closest && e.target.closest('[data-save]');
     if (sv) { wvToggleSave(sv.dataset.save); return; }
+    const wtp = e.target.closest && e.target.closest('[data-wvtopic]');
+    if (wtp && !wv.busy) { wv.q = wtp.dataset.wvtopic; if (wtp.dataset.wvtdom && AREAS[wtp.dataset.wvtdom]) wv.domain = wtp.dataset.wvtdom; wvSearch(); return; }
+    const wm = e.target.closest && e.target.closest('[data-wvmore]');
+    if (wm) { if ($('wvQ')) wv.q = $('wvQ').value; wv.open = Object.assign({}, wv.open, { [wm.dataset.wvmore]: true }); render(); return; }
     const wd = e.target.closest && e.target.closest('[data-wvdom]');
     if (wd && !wv.busy) { if ($('wvQ')) wv.q = $('wvQ').value; wv.domain = wd.dataset.wvdom; wvSearch(); return; }
     const wt = e.target.closest && e.target.closest('[data-wvtab]');

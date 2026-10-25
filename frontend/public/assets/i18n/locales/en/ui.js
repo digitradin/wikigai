@@ -177,7 +177,7 @@ WK.i18n.register('en', 'ui', {
     vPh: "e.g. Robotics Engineer, Python for beginners",
     vSearch: "Search",
     vSearching: "Finding the best videos…",
-    vDomain: "Only videos about:",
+    vDomain: "Area:",
     vTabResults: "Videos",
     vTabSaved: "My WikiVids",
     vSave: "Save",
@@ -188,6 +188,8 @@ WK.i18n.register('en', 'ui', {
     vNone: "No good videos found for these words. Try fewer or simpler words.",
     vSavedEmpty: "No saved videos yet. Tap ☆ Save on any video to keep it here.",
     vNotConfigured: "Video search isn’t switched on yet on this server.",
+    vSubfields: "Subfields:",
+    vProfessions: "Professions:",
   },
 
   /* ── My account (account.html) ── */
