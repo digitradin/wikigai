@@ -3,7 +3,9 @@
    Every page starts with "Your path at a glance" (top areas + key professions from My path).
    Plans = AI research: "I want to learn about X" → Outlook · Focus (skills + video searches) · Plan
    (30 days, 1 year, 3 years), via POST /api/learn/research (server calls the Digitradin AI router).
-   Videos / Tools / Schools are "coming soon". Text: learn.* (i18n). */
+   Videos = "WikiVids": filtered YouTube search (filters hidden, server side: /api/videos/search),
+   play in a privacy-enhanced player, save favourites ("My WikiVids").
+   Tools / Schools are "coming soon". Text: learn.* (i18n). */
 (function () {
   'use strict';
   const { api, Store } = window.CPS;
@@ -27,6 +29,8 @@
   let history = [];             // recent research titles
   let configured = true;        // is the AI service set up on the server?
   let busy = false, errMsg = '', topicDraft = '', showAll = false;
+  /* WikiVids state */
+  const wv = { q: null, domain: null, items: null, busy: false, err: '', off: false, tab: 'search', saved: null, auto: false };
 
   const current = () => { const m = location.pathname.match(/^\/learning\/(\w+)/); return SECTIONS.find((s) => s.id === (m && m[1])) || null; };
 
@@ -67,7 +71,6 @@
   }
 
   /* ── Plans: AI research ── */
-  const ytUrl = (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
   function researchForm() {
     const doms = path && path.s1 ? path.domains.map((d) => ({ t: C(area(d.key).name), ico: area(d.key).icon })) : [];
     const pros = path && path.allPros ? path.allPros.map((n) => ({ t: C(n), ico: '💼' })) : [];
@@ -102,7 +105,6 @@
     if (!research) return '';
     const r = research.result || {}, o = r.outlook || {};
     const topic = r.topic || research.topic;
-    const vSuffix = ' ' + T('learn.videoSuffix');
     return `<div class="lr-result" id="lrResult">
       <div class="lr-result-h"><h2>${T('learn.resultTitle', { topic: esc(topic) })}</h2>
         <div class="lr-result-a"><span class="ik-dim">${esc(I.fmt.date(research.created_at, { day: 'numeric', month: 'long', year: 'numeric' }))}</span>
@@ -115,7 +117,7 @@
       </section>
       <section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">2</span><div><h3>${T('learn.b2')}</h3><small>${T('learn.b2d')}</small></div></div>
         <ol class="lr-skills">${(r.focus || []).map((f, i) => `<li><span class="lr-rank">${i + 1}</span><div class="lr-sk"><strong>${esc(f.skill)}</strong>${f.why ? `<small>${esc(f.why)}</small>` : ''}</div>
-          <a class="lr-vid" href="${esc(ytUrl(f.videoSearch || (f.skill + ' ' + topic + vSuffix)))}" target="_blank" rel="noopener" data-skill="${esc(f.skill)}">▶ ${T('learn.videos')}</a></li>`).join('')}</ol>
+          <a class="lr-vid" href="/learning/videos?q=${encodeURIComponent((f.skill + ' ' + topic).slice(0, 80))}" data-skill="${esc(f.skill)}">▶ ${T('learn.videos')}</a></li>`).join('')}</ol>
       </section>
       <section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">3</span><div><h3>${T('learn.b3')}</h3><small>${T('learn.b3d')}</small></div></div>
         <div class="lr-tabs" role="tablist">
@@ -157,10 +159,107 @@
     busy = false; render(true);
   }
 
+  /* ── Videos: WikiVids ── */
+  const fmtDur = (s) => { s = +s || 0; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+  const fmtViews = (n) => I.fmt.number(+n || 0, { notation: 'compact', maximumFractionDigits: 1 });
+  const vDomains = () => (path && path.domains && path.domains.length ? path.domains.map((d) => d.key) : Object.keys(AREAS));
+  function wvDefaults() {
+    if (wv.q === null && path) { // wait for the user's path so we can prefill their top profession
+      const p = new URLSearchParams(location.search);
+      const fromUrl = (p.get('q') || '').trim();
+      wv.q = fromUrl || (path && path.pros && path.pros[0] ? C(path.pros[0].name) : '');
+      wv.auto = !!wv.q;
+      const d = p.get('d');
+      wv.domain = d && AREAS[d] ? d : null;
+    }
+    if (!wv.domain && path) wv.domain = vDomains()[0] || null;
+  }
+  function savedIds() { return new Set((wv.saved || []).map((v) => v.id)); }
+  function videoCard(v, isSaved) {
+    return `<div class="wv-card">
+      <button type="button" class="wv-thumb" data-play="${esc(v.id)}" aria-label="${esc(T('learn.vWatch') + ': ' + v.title)}"><img src="${esc(v.thumb)}" alt="" loading="lazy">${v.durationS ? `<span class="wv-dur">${fmtDur(v.durationS)}</span>` : ''}<span class="wv-play" aria-hidden="true">▶</span></button>
+      <div class="wv-meta"><strong title="${esc(v.title)}">${esc(v.title)}</strong>
+        <small>${esc(v.channel || '')}${v.views != null ? ' · ' + T('learn.vViews', { n: fmtViews(v.views) }) : ''}${v.published ? ' · ' + esc(v.published.slice(0, 4)) : ''}</small>
+        <div class="wv-acts"><button type="button" class="wv-save${isSaved ? ' on' : ''}" data-save="${esc(v.id)}" aria-pressed="${isSaved}">${isSaved ? '★ ' + T('learn.vSaved') : '☆ ' + T('learn.vSave')}</button>
+        <a class="wv-yt" href="https://www.youtube.com/watch?v=${esc(v.id)}" target="_blank" rel="noopener">YouTube ↗</a></div></div>
+    </div>`;
+  }
+  function pageVideos() {
+    wvDefaults();
+    const ids = savedIds();
+    const doms = path ? vDomains() : [];
+    const nSaved = wv.saved ? wv.saved.length : 0;
+    let body;
+    if (wv.tab === 'saved') {
+      body = !wv.saved ? `<p class="ik-dim">${T('common.loading')}</p>`
+        : wv.saved.length ? `<div class="wv-grid">${wv.saved.map((v) => videoCard(v, true)).join('')}</div>` : `<p class="wv-empty">${T('learn.vSavedEmpty')}</p>`;
+    } else if (wv.busy) {
+      body = `<div class="lr-loading wv-loading"><div class="lr-spinner" aria-hidden="true"></div><div><strong>${T('learn.vSearching')}</strong></div></div>`;
+    } else if (wv.items) {
+      body = wv.items.length ? `<div class="wv-grid">${wv.items.map((v) => videoCard(v, ids.has(v.id))).join('')}</div>` : `<p class="wv-empty">${T('learn.vNone')}</p>`;
+    } else body = '';
+    return `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')} · ${T('side.videos')}</div>
+        <h1>${T('learn.videosTitle')}</h1><p>${T('learn.vLead')}</p></header>
+      ${pathBox()}
+      <section class="ik-card wv-box">
+        <form id="wvForm" class="lr-inputrow wv-form" autocomplete="off" role="search">
+          <input id="wvQ" maxlength="80" value="${esc(wv.q || '')}" placeholder="${esc(T('learn.vPh'))}" aria-label="${esc(T('learn.vPh'))}" ${wv.busy ? 'disabled' : ''}>
+          <button class="btn-primary" type="submit" ${wv.busy ? 'disabled' : ''}>🔎 ${T('learn.vSearch')}</button>
+        </form>
+        ${doms.length ? `<div class="lr-suggest"><span class="ik-dim">${T('learn.vDomain')}</span>${doms.map((k) => `<button type="button" class="lr-sug wv-dom${k === wv.domain ? ' on' : ''}" data-wvdom="${k}" aria-pressed="${k === wv.domain}">${area(k).icon} ${esc(C(area(k).name))}</button>`).join('')}</div>` : ''}
+        ${wv.off ? `<p class="lr-warn">${T('learn.vNotConfigured')}</p>` : ''}
+        ${wv.err ? `<p class="lr-err" role="alert">${esc(wv.err)}</p>` : ''}
+      </section>
+      <div class="lr-tabs wv-tabs" role="tablist">
+        <button role="tab" class="lr-tab${wv.tab === 'search' ? ' on' : ''}" data-wvtab="search" aria-selected="${wv.tab === 'search'}">${T('learn.vTabResults')}</button>
+        <button role="tab" class="lr-tab${wv.tab === 'saved' ? ' on' : ''}" data-wvtab="saved" aria-selected="${wv.tab === 'saved'}">★ ${T('learn.vTabSaved')}${nSaved ? ` (${nSaved})` : ''}</button>
+      </div>
+      <div id="wvBody">${body}</div>`;
+  }
+  async function wvSearch() {
+    const q = String(wv.q || '').trim();
+    if (q.length < 2) { wv.err = T('errors.BAD_QUERY'); render(); return; }
+    wv.busy = true; wv.err = ''; wv.tab = 'search'; render();
+    try {
+      const r = await api(`/api/videos/search?q=${encodeURIComponent(q)}&domain=${encodeURIComponent(wv.domain || '')}&lang=${I.lang}`);
+      wv.items = r.items || []; wv.off = false;
+      window.WK?.track?.('video_search', { cached: !!r.cached });
+    } catch (err) {
+      if (err.code === 'VIDEOS_UNAVAILABLE') { wv.off = true; wv.err = ''; } else wv.err = err.message;
+      wv.items = wv.items || null;
+    }
+    wv.busy = false; render();
+  }
+  async function wvLoadSaved() {
+    try { wv.saved = (await api('/api/videos/saved')).items || []; } catch { wv.saved = wv.saved || []; }
+  }
+  async function wvToggleSave(id) {
+    const ids = savedIds();
+    const v = (wv.items || []).concat(wv.saved || []).find((x) => x.id === id);
+    if (!v) return;
+    try {
+      if (ids.has(id)) { await api('/api/videos/saved/remove', { method: 'POST', body: { id } }); wv.saved = wv.saved.filter((x) => x.id !== id); }
+      else { await api('/api/videos/saved', { method: 'POST', body: { video: v, domain: wv.domain, query: wv.q } }); wv.saved = [{ ...v, savedAt: new Date().toISOString() }, ...(wv.saved || [])]; window.WK?.track?.('video_save', {}); }
+      wv.err = '';
+    } catch (err) { wv.err = err.message; }
+    render();
+  }
+  function wvPlay(id) {
+    const v = (wv.items || []).concat(wv.saved || []).find((x) => x.id === id) || { id, title: '' };
+    let m = $('wvModal');
+    if (!m) { m = document.createElement('div'); m.id = 'wvModal'; m.className = 'wv-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); document.body.appendChild(m); }
+    m.innerHTML = `<div class="wv-modal-in"><div class="wv-modal-h"><strong>${esc(v.title)}</strong><button type="button" class="wv-x" data-wvclose aria-label="${esc(T('learn.vClose'))}">✕</button></div>
+      <div class="wv-frame"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&modestbranding=1" title="${esc(v.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div></div>`;
+    m.hidden = false; document.body.classList.add('wv-lock');
+    m.querySelector('.wv-x').focus();
+    window.WK?.track?.('video_play', {});
+  }
+  function wvClose() { const m = $('wvModal'); if (m) { m.hidden = true; m.innerHTML = ''; } document.body.classList.remove('wv-lock'); }
+
   /* ── overview + coming-soon sections ── */
   function sectionCards(except) {
     return `<div class="lr-grid">${SECTIONS.filter((s) => s.id !== except).map((s) => `<a class="ik-card lr-card" href="/learning/${s.id}">
-      <span class="lr-ico">${s.icon}</span><strong>${T('side.' + s.id)}</strong><small>${T('learn.' + (s.id === 'plans' ? 'plansAi' : s.id) + 'Lead')}</small>${s.id === 'plans' ? `<span class="lr-new">✨ ${T('learn.aiBadge')}</span>` : `<span class="lr-soon">${T('learn.soon')}</span>`}</a>`).join('')}</div>`;
+      <span class="lr-ico">${s.icon}</span><strong>${T('side.' + s.id)}</strong><small>${T('learn.' + (s.id === 'plans' ? 'plansAi' : s.id === 'videos' ? 'vCard' : s.id) + 'Lead')}</small>${s.id === 'plans' ? `<span class="lr-new">✨ ${T('learn.aiBadge')}</span>` : s.id === 'videos' ? `<span class="lr-new">▶ WikiVids</span>` : `<span class="lr-soon">${T('learn.soon')}</span>`}</a>`).join('')}</div>`;
   }
   function pageSoon(s) {
     return `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')} · ${T('side.' + s.id)}</div>
@@ -190,6 +289,14 @@
       view.innerHTML = pagePlans();
       if (focused && $('lrTopic')) { const i = $('lrTopic'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
       if (scrollToResult && $('lrResult')) $('lrResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (s.id === 'videos') {
+      document.title = `${T('side.videos')} — ${T('side.myLearning')} — Wikigai`;
+      const vFocused = document.activeElement && document.activeElement.id === 'wvQ';
+      if ($('wvQ') && !wv.busy && wv.q !== null) wv.q = $('wvQ').value;
+      view.innerHTML = pageVideos();
+      if (vFocused && $('wvQ')) { const i = $('wvQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+      if (path && wv.saved === null) { wv.saved = undefined; wvLoadSaved().then(() => render()); }
+      if (path && wv.auto && !wv.busy) { wv.auto = false; wvSearch(); }
     } else {
       document.title = `${T('side.' + s.id)} — ${T('side.myLearning')} — Wikigai`;
       view.innerHTML = pageSoon(s);
@@ -204,6 +311,16 @@
       history_push(a.getAttribute('href'));
       return;
     }
+    if (e.target.closest && e.target.closest('[data-wvclose]')) { wvClose(); return; }
+    if (e.target.classList && e.target.classList.contains('wv-modal')) { wvClose(); return; }
+    const play = e.target.closest && e.target.closest('[data-play]');
+    if (play) { wvPlay(play.dataset.play); return; }
+    const sv = e.target.closest && e.target.closest('[data-save]');
+    if (sv) { wvToggleSave(sv.dataset.save); return; }
+    const wd = e.target.closest && e.target.closest('[data-wvdom]');
+    if (wd && !wv.busy) { if ($('wvQ')) wv.q = $('wvQ').value; wv.domain = wd.dataset.wvdom; wvSearch(); return; }
+    const wt = e.target.closest && e.target.closest('[data-wvtab]');
+    if (wt) { if ($('wvQ')) wv.q = $('wvQ').value; wv.tab = wt.dataset.wvtab; render(); return; }
     const sug = e.target.closest && e.target.closest('[data-topic]');
     if (sug && !busy) { ask(sug.dataset.topic); return; }
     const h = e.target.closest && e.target.closest('[data-rid]');
@@ -226,8 +343,14 @@
   });
   document.addEventListener('submit', (e) => {
     if (e.target && e.target.id === 'lrForm') { e.preventDefault(); if (!busy) ask($('lrTopic').value); }
+    if (e.target && e.target.id === 'wvForm') { e.preventDefault(); if (!wv.busy) { wv.q = $('wvQ').value; wvSearch(); } }
   });
-  function history_push(href) { window.history.pushState({}, '', href); render(); window.scrollTo(0, 0); }
+  function history_push(href) {
+    window.history.pushState({}, '', href);
+    if (/^\/learning\/videos\?/.test(href)) { wv.q = null; wv.domain = null; wv.items = null; } // a new "▶ Videos" search from Plans
+    render(); window.scrollTo(0, 0);
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') wvClose(); });
   window.addEventListener('popstate', () => render());
 
   async function load() {

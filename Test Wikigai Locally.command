@@ -39,6 +39,15 @@ fi
 if ! grep -q '^STATS_API_TOKEN=' "$LOCAL/local.env"; then
   printf '\n# Owner statistics page (http://localhost:%s/__stats) — paste this token there.\nSTATS_API_TOKEN=%s\n' "$PORT" "$(node -e "console.log(require('crypto').randomBytes(24).toString('hex'))")" >> "$LOCAL/local.env"
 fi
+# WikiVids (My learning › Videos) — added once to older local.env files too
+if ! grep -q '^YOUTUBE_API_KEY=' "$LOCAL/local.env"; then
+  cat >> "$LOCAL/local.env" <<'CONF'
+
+# WikiVids (My learning › Videos). Paste a YouTube Data API v3 key from
+# https://console.cloud.google.com → APIs & Services → Credentials. Leave empty to test without videos.
+YOUTUBE_API_KEY=
+CONF
+fi
 # AI research (My learning › Plans) — added once to older local.env files too
 if ! grep -q '^AI_ROUTER_TOKEN=' "$LOCAL/local.env"; then
   cat >> "$LOCAL/local.env" <<'CONF'
@@ -80,6 +89,8 @@ if curl -s -o /dev/null "http://localhost:$PORT/health"; then
    • French / Spanish: http://localhost:$PORT/fr/  ·  http://localhost:$PORT/es/
    • AI research (My learning › Plans): add your router token to tools/local/local.env
      (AI_ROUTER_TOKEN=…) and restart this window.
+   • WikiVids (My learning › Videos): add a YouTube Data API key to tools/local/local.env
+     (YOUTUBE_API_KEY=…) and restart this window.
 
    Leave this window open while testing. Close it (or press Ctrl+C) to stop.
 INFO

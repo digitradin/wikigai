@@ -22,7 +22,7 @@
     ] },
     { id: 'learn', icon: '📚', label: 'side.myLearning', href: '/learning', items: [
       { href: '/learning/plans', icon: '🗺️', label: 'side.plans', badge: 'ai' },
-      { href: '/learning/videos', icon: '🎬', label: 'side.videos', badge: 'soon' },
+      { href: '/learning/videos', icon: '🎬', label: 'side.videos' },
       { href: '/learning/tools', icon: '🔧', label: 'side.tools', badge: 'soon' },
       { href: '/learning/schools', icon: '🎓', label: 'side.schools', badge: 'soon' },
     ] },

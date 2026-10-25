@@ -18,6 +18,7 @@ const resultsRoutes = require('./routes/results');
 const healthRoute = require('./routes/health');
 const adminRoutes = require('./routes/admin');
 const learnRoutes = require('./routes/learn');
+const videoRoutes = require('./routes/videos');
 const analytics = require('./analytics/collect');
 const seo = require('./seo');
 
@@ -39,7 +40,7 @@ app.use(helmet({
       scriptSrcAttr: ["'unsafe-inline'"], // allow inline onclick handlers (buttons use them)
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       connectSrc: ["'self'", 'https://api.gohighlevel.com'],
-      frameSrc: ["'self'"],
+      frameSrc: ["'self'", 'https://www.youtube-nocookie.com'], // WikiVids player (privacy-enhanced YouTube embeds)
       imgSrc: ["'self'", 'data:', 'https:'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
     },
@@ -147,6 +148,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 // My learning › Plans (AI research via the Digitradin AI router)
 app.use('/api/learn', learnRoutes);
+// My learning › Videos (filtered YouTube search + saved WikiVids)
+app.use('/api/videos', videoRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount
