@@ -67,18 +67,21 @@
       .filter((c) => c && !seenP.has(c) && seenP.add(c)).map((c) => ({ name: c, domain: domOf[c] || null }));
     return { domains, pros, allPros, subs, proItems, kind, strengths, s1: !!ranked.length, s2: !!(s2.love && s2.love.length), s3: !!s3.completedAt };
   }
-  function pathBox() {
+  function pathBox(fill) {
+    const tag = (cls, text, dom, inner, style) => fill
+      ? `<button type="button" class="${cls} wv-fill" data-wvfill="${esc(text)}" data-wvtdom="${esc(dom || '')}"${style || ''}>${inner}</button>`
+      : `<span class="${cls}"${style || ''}>${inner}</span>`;
     if (path === null) return `<div class="lr-path loading">${T('common.loading')}</div>`;
     if (!path.s1) return `<div class="lr-path"><div class="lr-path-empty"><span>${T('learn.pathEmpty')}</span><a class="btn-primary sm" href="/dashboard">${T('learn.finishStage2')} →</a></div></div>`;
-    const doms = path.domains.map((d) => { const a = area(d.key); return `<span class="lr-dom" style="--c:${a.color}">${a.icon} ${esc(C(a.name))} <b>${d.pct}%</b></span>`; }).join('');
+    const doms = path.domains.map((d) => { const a = area(d.key); return tag('lr-dom', C(a.name), d.key, `${a.icon} ${esc(C(a.name))} <b>${d.pct}%</b>`, ` style="--c:${a.color}"`); }).join('');
     const pros = path.pros.length
-      ? path.pros.map((p, i) => `<span class="lr-pro${i === 0 ? ' top' : ''}">${i === 0 ? '🏆 ' : ''}${esc(C(p.name))} <b>${p.score}</b></span>`).join('')
+      ? path.pros.map((p, i) => tag('lr-pro' + (i === 0 ? ' top' : ''), C(p.name), null, `${i === 0 ? '🏆 ' : ''}${esc(C(p.name))} <b>${p.score}</b>`)).join('')
       : `<span class="ik-dim">${T('learn.noMatches')}</span> <a href="/dashboard">${T('learn.finishStage2')} →</a>`;
     return `<div class="lr-path">
       <div class="lr-path-h"><strong>${T('learn.pathTitle')}</strong><a href="/ikigai">${T('learn.seePath')} →</a></div>
       <div class="lr-path-row"><span class="lr-path-l">${T('learn.topAreas')}</span><div class="lr-chips">${doms}</div></div>
       <div class="lr-path-row"><span class="lr-path-l">${T(path.kind === 'match' ? 'learn.keyProsMatch' : 'learn.keyProsLove')}</span><div class="lr-chips">${pros}</div></div>
-      ${path.strengths.length ? `<div class="lr-path-row"><span class="lr-path-l">${T('learn.strengths')}</span><div class="lr-chips">${path.strengths.map((k) => `<span class="lr-chip">${esc(C(SUBJECTS[k] || k))}</span>`).join('')}</div></div>` : ''}
+      ${path.strengths.length ? `<div class="lr-path-row"><span class="lr-path-l">${T('learn.strengths')}</span><div class="lr-chips">${path.strengths.map((k) => tag('lr-chip', C(SUBJECTS[k] || k), null, esc(C(SUBJECTS[k] || k)))).join('')}</div></div>` : ''}
     </div>`;
   }
 
@@ -190,6 +193,17 @@
     }
     if (!wv.domain && path) wv.domain = vDomains()[0] || null;
   }
+  /* a chip was tapped: put its words in the search field (and pick its area); the user can edit, then Search */
+  function wvFill(text, dom) {
+    wv.q = String(text || '').slice(0, 80);
+    if ($('wvQ')) $('wvQ').value = wv.q;
+    if (dom && AREAS[dom]) wv.domain = dom;
+    wv.err = '';
+    if (wv.busy) return; // the field is locked during a search; the words are kept for the next one
+    render();
+    const i = $('wvQ');
+    if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); i.classList.add('wv-flash'); setTimeout(() => i.classList.remove('wv-flash'), 700); }
+  }
   function savedIds() { return new Set((wv.saved || []).map((v) => v.id)); }
   function videoCard(v, isSaved) {
     return `<div class="wv-card">
@@ -216,13 +230,13 @@
     } else body = '';
     return `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')} · ${T('side.videos')}</div>
         <h1>${T('learn.videosTitle')}</h1><p>${T('learn.vLead')}</p></header>
-      ${pathBox()}
+      ${pathBox(true)}
       <section class="ik-card wv-box">
         <form id="wvForm" class="lr-inputrow wv-form" autocomplete="off" role="search">
           <input id="wvQ" maxlength="80" value="${esc(wv.q || '')}" placeholder="${esc(T('learn.vPh'))}" aria-label="${esc(T('learn.vPh'))}" ${wv.busy ? 'disabled' : ''}>
           <button class="btn-primary" type="submit" ${wv.busy ? 'disabled' : ''}>🔎 ${T('learn.vSearch')}</button>
         </form>
-        ${doms.length ? `<div class="lr-suggest wv-row"><span class="ik-dim">${T('learn.vDomain')}</span>${doms.map((k) => `<button type="button" class="lr-sug wv-dom${k === wv.domain ? ' on' : ''}" data-wvdom="${k}" aria-pressed="${k === wv.domain}">${area(k).icon} ${esc(C(area(k).name))}</button>`).join('')}</div>` : ''}
+        ${doms.length ? `<div class="lr-suggest wv-row"><span class="ik-dim">${T('learn.vDomain')}</span>${doms.map((k) => `<button type="button" class="lr-sug wv-dom${k === wv.domain ? ' on' : ''}" data-wvdom="${k}" data-wvfill="${esc(C(area(k).name))}" data-wvtdom="${k}" aria-pressed="${k === wv.domain}">${area(k).icon} ${esc(C(area(k).name))}</button>`).join('')}</div>` : ''}
         ${topicRow('subs', T('learn.vSubfields'), (path && path.subs) || [])}
         ${topicRow('pros', T('learn.vProfessions'), (path && path.proItems) || [])}
         ${wv.off ? `<p class="lr-warn">${T('learn.vNotConfigured')}</p>` : ''}
@@ -235,7 +249,7 @@
       <div id="wvBody">${body}</div>`;
   }
   /* topic suggestions: every subfield and profession from the user's path — one tap fills the words */
-  const FOLDV = 8;
+  const FOLDV = Infinity; // show every subfield and profession
   function topicRow(kind, label, list) {
     if (!list.length) return '';
     const cur = String(wv.q || '').trim().toLowerCase();
@@ -243,7 +257,7 @@
     const chips = list.map((t, i) => {
       const name = C(t.name);
       const on = name.toLowerCase() === cur;
-      return `<button type="button" class="lr-sug wv-topic${on ? ' on' : ''}${i >= FOLDV && !open ? ' lr-more-item' : ''}" data-wvtopic="${esc(name)}" data-wvtdom="${esc(t.domain || '')}" aria-pressed="${on}">${kind === 'subs' ? (area(t.domain).icon || '•') : '💼'} ${esc(name)}</button>`;
+      return `<button type="button" class="lr-sug wv-topic${on ? ' on' : ''}${i >= FOLDV && !open ? ' lr-more-item' : ''}" data-wvfill="${esc(name)}" data-wvtdom="${esc(t.domain || '')}" aria-pressed="${on}">${kind === 'subs' ? (area(t.domain).icon || '•') : '💼'} ${esc(name)}</button>`;
     }).join('');
     const more = list.length > FOLDV && !open ? `<button type="button" class="lr-more" data-wvmore="${kind}">${T('learn.showAll', { count: list.length - FOLDV })}</button>` : '';
     return `<div class="lr-suggest wv-row"><span class="ik-dim">${label}</span>${chips}${more}</div>`;
@@ -281,7 +295,7 @@
     let m = $('wvModal');
     if (!m) { m = document.createElement('div'); m.id = 'wvModal'; m.className = 'wv-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); document.body.appendChild(m); }
     m.innerHTML = `<div class="wv-modal-in"><div class="wv-modal-h"><strong>${esc(v.title)}</strong><button type="button" class="wv-x" data-wvclose aria-label="${esc(T('learn.vClose'))}">✕</button></div>
-      <div class="wv-frame"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&modestbranding=1" title="${esc(v.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div></div>`;
+      <div class="wv-frame"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&modestbranding=1&origin=${encodeURIComponent(location.origin)}" title="${esc(v.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`;
     m.hidden = false; document.body.classList.add('wv-lock');
     m.querySelector('.wv-x').focus();
     window.WK?.track?.('video_play', {});
@@ -349,12 +363,10 @@
     if (play) { wvPlay(play.dataset.play); return; }
     const sv = e.target.closest && e.target.closest('[data-save]');
     if (sv) { wvToggleSave(sv.dataset.save); return; }
-    const wtp = e.target.closest && e.target.closest('[data-wvtopic]');
-    if (wtp && !wv.busy) { wv.q = wtp.dataset.wvtopic; if (wtp.dataset.wvtdom && AREAS[wtp.dataset.wvtdom]) wv.domain = wtp.dataset.wvtdom; wvSearch(); return; }
+    const wf = e.target.closest && e.target.closest('[data-wvfill]');
+    if (wf) { wvFill(wf.dataset.wvfill, wf.dataset.wvtdom); return; }
     const wm = e.target.closest && e.target.closest('[data-wvmore]');
     if (wm) { if ($('wvQ')) wv.q = $('wvQ').value; wv.open = Object.assign({}, wv.open, { [wm.dataset.wvmore]: true }); render(); return; }
-    const wd = e.target.closest && e.target.closest('[data-wvdom]');
-    if (wd && !wv.busy) { if ($('wvQ')) wv.q = $('wvQ').value; wv.domain = wd.dataset.wvdom; wvSearch(); return; }
     const wt = e.target.closest && e.target.closest('[data-wvtab]');
     if (wt) { if ($('wvQ')) wv.q = $('wvQ').value; wv.tab = wt.dataset.wvtab; render(); return; }
     const sug = e.target.closest && e.target.closest('[data-topic]');

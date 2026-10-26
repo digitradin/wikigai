@@ -46,7 +46,7 @@ app.use(helmet({
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
     },
   },
-  referrerPolicy: { policy: 'same-origin' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }, // YouTube embeds need the site origin (else player error 153); paths/queries never leave the site
   noSniff: true,
 }));
 

@@ -176,3 +176,8 @@ body.wv-lock{overflow:hidden}
 .wv-topic.on{background:rgba(196,77,255,.22);border-color:rgba(196,77,255,.7);color:#fff}
 .wv-row .ik-dim{min-width:118px}
 @media (max-width:640px){.wv-row .ik-dim{min-width:0;width:100%}}
+
+/* WikiVids: path chips are tappable and fill the search words */
+button.wv-fill.lr-dom, button.wv-fill.lr-pro, button.wv-fill.lr-chip { font-family: inherit; color: var(--text); cursor: pointer; border-style: solid; transition: transform .12s, box-shadow .12s; }
+button.wv-fill.lr-dom:hover, button.wv-fill.lr-pro:hover, button.wv-fill.lr-chip:hover { transform: translateY(-1px); box-shadow: 0 0 0 2px var(--accent, #8b5cf6); }
+#wvQ.wv-flash { box-shadow: 0 0 0 3px var(--accent, #8b5cf6); transition: box-shadow .2s; }

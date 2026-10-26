@@ -32,3 +32,7 @@ logs/
 # Local test runner (Test Wikigai Locally.command)
 tools/local/.data/
 tools/local/local.env
+
+# local-only secrets
+deploy/.secrets.env
+tools/local/local.env

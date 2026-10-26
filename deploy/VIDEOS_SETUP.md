@@ -21,6 +21,11 @@ YOUTUBE_API_KEY=...          # Google Cloud console → enable "YouTube Data API
 VIDEO_DAILY_LIMIT=30         # fresh searches per user per day (cached ones are free)
 VIDEO_CACHE_HOURS=24         # identical searches reuse results for everyone
 ```
+**Automatic:** `Deploy Wikigai.command` copies `YOUTUBE_API_KEY` from `tools/local/local.env` (or from
+`deploy/.secrets.env`, if you prefer a separate server key) into the server's `.env.production`, never printing it,
+then asks YouTube from the server whether the key works and prints ✅ or the reason it was refused.
+The key must be restricted by **IP address** (server: 76.13.248.104), not by website — the server calls YouTube directly.
+
 Without `YOUTUBE_API_KEY` the page says "Video search isn't switched on yet"; saved WikiVids still work.
 
 ## Quota

@@ -72,7 +72,6 @@
   const T = (k, v) => WK.i18n.t(k, v);
   WK.i18n.onChange(() => {}); // static text re-applies itself; keep typed input
 
-  if (Store.token) window.location.href = '/dashboard';
   WK.i18n.ready.then(() => Captcha.mount('captcha'));
   const flash = sessionStorage.getItem('cps_flash');
   if (flash) { sessionStorage.removeItem('cps_flash'); showAlert(alertEl, flash, 'ok'); }
