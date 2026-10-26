@@ -21,6 +21,7 @@ const learnRoutes = require('./routes/learn');
 const videoRoutes = require('./routes/videos');
 const analytics = require('./analytics/collect');
 const seo = require('./seo');
+const { guardMemberPages } = require('./lib/pageGuard');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -102,6 +103,9 @@ app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/user/delete-account', authLimiter); // password check: same brute-force limit as sign-in
 app.use('/api/admin/', authLimiter);               // statistics token: same brute-force limit
+
+// ── Members-only pages: visitors without a session are sent to /login (before any static file) ──
+app.use(guardMemberPages);
 
 // ── SEO: robots, sitemap, localized public pages (/, /fr/, /es/…), noindex on private areas ──
 seo.mount(app, PUBLIC_DIR);

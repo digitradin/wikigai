@@ -60,6 +60,12 @@
 <script src="/assets/app.js"></script>
 <script>
   const { api, Captcha, showAlert, hideAlert, Store } = window.CPS;
+  // where to go after sign-in: only paths on this site (?next=/learning/videos…)
+  const nextUrl = (() => { const n = new URLSearchParams(location.search).get('next') || ''; return /^\/(?!\/)[\w\-/.?=&%]*$/.test(n) && !/^\/login/.test(n) ? n : '/dashboard'; })();
+  // already signed in on this browser (token from before the page guard): get the page cookie and go back
+  if (Store.token) {
+    api('/api/auth/session', { method: 'POST' }).then(() => { location.replace(nextUrl); }).catch(() => { Store.clear(); });
+  }
   const alertEl = document.getElementById('alert');
   const form = document.getElementById('loginForm');
   const btn = document.getElementById('submitBtn');
@@ -99,7 +105,7 @@
       Store.token = res.token;
       Store.user = res.user;
       window.WK?.track?.('login_done');
-      window.location.href = '/dashboard';
+      window.location.href = nextUrl;
     } catch (err) {
       if (err.code === 'EMAIL_NOT_VERIFIED') {
         sessionStorage.setItem('cps_pending_email', email);

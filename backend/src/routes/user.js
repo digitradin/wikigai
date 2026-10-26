@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../lib/db');
 const { hashEmail, verifyPassword } = require('../lib/crypto');
 const { parseBirthDate } = require('../lib/birthdate');
+const { clearSessionCookie } = require('../lib/pageGuard');
 const { requireUser } = require('./auth');
 const i18n = require('../i18n');
 
@@ -145,6 +146,7 @@ router.post('/delete-account', async (req, res, next) => {
       await c.query('DELETE FROM users WHERE id = $1', [user.id]); // cascades to learning_research
     });
     console.log('[user] account deleted');
+    clearSessionCookie(req, res);
     res.json({ ok: true });
   } catch (err) {
     next(err);

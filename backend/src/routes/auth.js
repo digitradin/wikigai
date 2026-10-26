@@ -11,6 +11,7 @@ const {
   generatePin,
 } = require('../lib/crypto');
 const { createSessionToken, verifySessionToken } = require('../lib/session');
+const { setSessionCookie, clearSessionCookie } = require('../lib/pageGuard');
 const { sendMail } = require('../lib/mailer');
 const i18n = require('../i18n');
 const { parseBirthDate, toIso } = require('../lib/birthdate');
@@ -186,6 +187,7 @@ router.post('/verify', async (req, res, next) => {
     await ensureResultsRow(emailHash, user.name);
 
     const token = createSessionToken(user.id);
+    setSessionCookie(req, res, token); // lets the server open member pages (dashboard…) for this browser
     res.json({
       ok: true,
       token,
@@ -298,6 +300,7 @@ router.post('/login', async (req, res, next) => {
     await ensureResultsRow(emailHash, user.name);
 
     const token = createSessionToken(user.id);
+    setSessionCookie(req, res, token); // lets the server open member pages (dashboard…) for this browser
     res.json({
       ok: true,
       token,
@@ -413,9 +416,22 @@ router.get('/me', async (req, res, next) => {
   }
 });
 
-/* POST /api/auth/logout — stateless; client discards token */
+/* POST /api/auth/logout — client discards the token; the page cookie is cleared here */
 router.post('/logout', (req, res) => {
+  clearSessionCookie(req, res);
   res.json({ ok: true });
+});
+
+/* POST /api/auth/session — browsers signed in before the page guard existed (token only in
+   localStorage) exchange their valid Bearer token for the member-pages cookie. */
+router.post('/session', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const auth = req.headers.authorization || '';
+    setSessionCookie(req, res, auth.slice(7));
+    res.json({ ok: true });
+  } catch (err) { next(err); }
 });
 
 // ── helpers ───────────────────────────────────────────────────────

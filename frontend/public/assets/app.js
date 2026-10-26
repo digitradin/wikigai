@@ -41,6 +41,11 @@
     let data = null;
     try { data = await res.json(); } catch { data = {}; }
     if (!res.ok) {
+      // session expired or account gone: back to sign-in (then straight back to this page)
+      if (auth && Store.token && (data.code === 'NO_SESSION' || data.code === 'NO_USER') && path !== '/api/auth/session' && !/^\/(login|signup|verify|forgot|reset)\b/.test(location.pathname)) {
+        Store.clear();
+        window.location.href = '/login?next=' + encodeURIComponent(location.pathname + location.search);
+      }
       const err = new Error(localError(data, res.status));
       err.status = res.status;
       err.code = data.code;
