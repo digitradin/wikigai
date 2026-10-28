@@ -91,7 +91,7 @@ __MAIN__
   document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-lang]'); if (!b) return; lang = b.dataset.lang; LS.set('wkstats_lang', lang); apply(document); paintLang(); listeners.forEach((f) => f(lang)); });
 
   /* connection: which Wikigai site + the statistics token (kept in this browser only) */
-  const DEFAULT_SITE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : 'https://wikigai.digitradin.cloud';
+  const DEFAULT_SITE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : 'https://wikigai.com';
   const site = () => (LS.get('wkstats_site') || DEFAULT_SITE).replace(/\/+$/, '');
   const token = () => LS.get('wkstats_token') || '';
   async function api(p) {

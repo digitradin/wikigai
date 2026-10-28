@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Wikigai SEO audit from the command line.
-     BASE_URL=https://wikigai.digitradin.cloud node tools/seo/audit.js
+     BASE_URL=https://wikigai.com node tools/seo/audit.js
      BASE_URL=http://localhost:3000 node tools/seo/audit.js --json
    Checks every public page in every language (title, description, canonical,
    hreflang, Open Graph, JSON-LD, h1, image alt…), the sitemap, robots.txt and
@@ -11,7 +11,7 @@ const seo = require(path.join(__dirname, '..', '..', 'backend', 'src', 'seo'));
 const { audit } = require(path.join(__dirname, '..', '..', 'backend', 'src', 'seo', 'audit'));
 seo.init(path.join(__dirname, '..', '..', 'frontend', 'public')); // loads the languages (en, fr, es…)
 
-const BASE = (process.env.BASE_URL || 'https://wikigai.digitradin.cloud').replace(/\/+$/, '');
+const BASE = (process.env.BASE_URL || 'https://wikigai.com').replace(/\/+$/, '');
 const asJson = process.argv.includes('--json');
 
 async function fetchPage(p) {

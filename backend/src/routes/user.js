@@ -7,6 +7,10 @@ const { clearSessionCookie } = require('../lib/pageGuard');
 const { requireUser } = require('./auth');
 const i18n = require('../i18n');
 
+const { isCountry } = require('../lib/countries'); // Account page countries (v20261028b)
+const { findResultsRow } = require('../lib/results'); // results belong to users.id (v20261028b)
+const MAX_TARGET_COUNTRIES = 10;
+
 /**
  * All /api/user/* routes now authenticate with the signed session token
  * (Authorization: Bearer <token>) and are scoped to the real logged-in user.
@@ -21,11 +25,7 @@ router.get('/profile', async (req, res, next) => {
     const user = await requireUser(req, res);
     if (!user) return;
 
-    const results = await db.getOne(
-      `SELECT id, user_name, stage, results, created_at, updated_at
-       FROM user_results WHERE user_email = $1 ORDER BY created_at DESC LIMIT 1`,
-      [hashEmail(user.email)]
-    );
+    const results = await findResultsRow(user);
 
     res.json({
       ok: true,
@@ -53,11 +53,7 @@ router.get('/results', async (req, res, next) => {
     const user = await requireUser(req, res);
     if (!user) return;
 
-    const row = await db.getOne(
-      `SELECT id, user_name, stage, results, created_at, updated_at
-       FROM user_results WHERE user_email = $1 ORDER BY created_at DESC LIMIT 1`,
-      [hashEmail(user.email)]
-    );
+    const row = await findResultsRow(user);
     if (!row) {
       return res.json({ ok: true, user, stage: 1, results: {}, registeredAt: null, lastUpdated: null });
     }
@@ -94,7 +90,9 @@ router.put('/locale', async (req, res, next) => {
 
 /**
  * PUT /api/user/profile — update the Account page fields. Send only what changes.
- * Body: { name?: string (1–80 chars), birthDate?: 'YYYY-MM-DD' | '' | null (optional, '' clears) }
+ * Body: { name?: string (1–80 chars), birthDate?: 'YYYY-MM-DD' | '' | null (optional, '' clears),
+ *         residenceCountry?: 'ES' | '' (clears), targetCountries?: ['DE','FR',…] (max 10, [] clears),
+ *         phone?: '+34 600 000 000' | '' (clears) — international format, stored encrypted }
  */
 router.put('/profile', async (req, res, next) => {
   try {
@@ -111,6 +109,27 @@ router.put('/profile', async (req, res, next) => {
       const birth = parseBirthDate(b.birthDate);
       if (!birth.ok) return res.status(400).json({ error: 'Please enter a valid birthday (or leave it empty).', code: 'BAD_BIRTHDATE' });
       vals.push(birth.value); sets.push(`birth_date = $${vals.length}::date`); out.birthDate = birth.value;
+    }
+    if (Object.prototype.hasOwnProperty.call(b, 'residenceCountry')) {
+      const c = String(b.residenceCountry || '').trim().toUpperCase();
+      if (c && !isCountry(c)) return res.status(400).json({ error: 'Please choose a country from the list.', code: 'BAD_COUNTRY' });
+      vals.push(c || null); sets.push(`residence_country = $${vals.length}`); out.residenceCountry = c || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(b, 'targetCountries')) {
+      if (!Array.isArray(b.targetCountries)) return res.status(400).json({ error: 'Please choose countries from the list.', code: 'BAD_COUNTRY' });
+      const list = [...new Set(b.targetCountries.map((x) => String(x || '').trim().toUpperCase()))];
+      if (list.some((c) => !isCountry(c))) return res.status(400).json({ error: 'Please choose countries from the list.', code: 'BAD_COUNTRY' });
+      if (list.length > MAX_TARGET_COUNTRIES) return res.status(400).json({ error: `You can choose up to ${MAX_TARGET_COUNTRIES} countries.`, code: 'TOO_MANY_COUNTRIES' });
+      vals.push(list); sets.push(`target_countries = $${vals.length}::text[]`); out.targetCountries = list;
+    }
+    if (Object.prototype.hasOwnProperty.call(b, 'phone')) {
+      // international format: + (or 00) then 7-15 digits; spaces, dots, dashes and brackets are ignored
+      let ph = String(b.phone || '').trim().replace(/[\s().-]/g, '');
+      if (ph.startsWith('00')) ph = '+' + ph.slice(2);
+      if (ph && !/^\+[1-9]\d{6,14}$/.test(ph)) return res.status(400).json({ error: 'Please enter your phone in international format, e.g. +34 600 000 000.', code: 'BAD_PHONE' });
+      if (ph) { vals.push(ph); sets.push(`phone_enc = pgp_sym_encrypt($${vals.length}, current_setting('app.survey_encryption_key'))`); }
+      else sets.push('phone_enc = NULL');
+      out.phone = ph || null;
     }
     if (!sets.length) return res.status(400).json({ error: 'Nothing to update.', code: 'NOTHING_TO_UPDATE' });
     await db.query(`UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $1`, vals);
@@ -141,7 +160,7 @@ router.post('/delete-account', async (req, res, next) => {
     }
     const emailHash = hashEmail(user.email);
     await db.transaction(async (c) => {
-      await c.query('DELETE FROM user_results WHERE user_email = $1', [emailHash]);
+      await c.query('DELETE FROM user_results WHERE user_id = $1 OR user_email = $2', [user.id, emailHash]);
       await c.query('DELETE FROM auth_pins WHERE email_hash = $1', [emailHash]);
       await c.query('DELETE FROM users WHERE id = $1', [user.id]); // cascades to learning_research
     });
@@ -172,10 +191,7 @@ router.post('/results', async (req, res, next) => {
     }
 
     const emailHash = hashEmail(user.email);
-    const existing = await db.getOne(
-      'SELECT id, results FROM user_results WHERE user_email = $1 ORDER BY created_at DESC LIMIT 1',
-      [emailHash]
-    );
+    const existing = await findResultsRow(user, 'id, results');
 
     // Guard: never let a late "partial" autosave overwrite a completed summary
     // for the same stage (prevents the skip-through race).
@@ -190,9 +206,9 @@ router.post('/results', async (req, res, next) => {
     const nextStage = stage < 3 ? stage + 1 : 3;
     if (!existing) {
       await db.query(
-        `INSERT INTO user_results (user_email, user_name, stage, results)
-         VALUES ($1, $2, $3, $4::jsonb)`,
-        [emailHash, user.name, nextStage, JSON.stringify({ ['stage_' + stage]: results })]
+        `INSERT INTO user_results (user_email, user_id, user_name, stage, results)
+         VALUES ($1, $5, $2, $3, $4::jsonb)`,
+        [emailHash, user.name, nextStage, JSON.stringify({ ['stage_' + stage]: results }), user.id]
       );
     } else {
       const merged = (typeof existing.results === 'object' && existing.results) ? existing.results : {};

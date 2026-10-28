@@ -6,12 +6,12 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   let cfgP = null;
   const cfg = () => (cfgP = cfgP || (window.CPS?.api ? window.CPS.api('/api/config', { auth: false }).catch(() => ({})) : Promise.resolve({})));
-  const PUBLIC_SITE = 'https://wikigai.digitradin.cloud';
+  const PUBLIC_SITE = 'https://wikigai.com'; // production (v20261028b)
   // Share the public site, never the address of a preview or test copy.
   // channel → UTM tags, so the admin dashboard shows which share channel brings visitors
   const shareUrl = (channel) => {
     const h = location.hostname;
-    const base = /(^|\.)digitradin\.cloud$|(^|\.)wikigai\.com$/.test(h) ? location.origin : PUBLIC_SITE;
+    const base = /(^|\.)wikigai\.com$/.test(h) ? location.origin : PUBLIC_SITE; // always share the production site
     const ch = channel || 'link';
     return `${base}/?ref=share&utm_source=${encodeURIComponent(ch)}&utm_medium=share&utm_campaign=user_share`;
   };

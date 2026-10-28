@@ -19,7 +19,7 @@
 ```
 STATS_API_TOKEN=<openssl rand -hex 24>
 STATS_ALLOWED_ORIGINS=https://dashboard.digitradin.cloud
-PUBLIC_URL=https://wikigai.digitradin.cloud
+PUBLIC_URL=https://wikigai.com
 GOOGLE_SITE_VERIFICATION=
 BING_SITE_VERIFICATION=
 ANALYTICS_ENABLED=true
@@ -33,8 +33,8 @@ TRUST_PROXY_HOPS=1
 ## After deploy
 1. Open the stats page on the dashboard, paste the token → "Run SEO check" (expect ~100).
 2. Google Search Console: add the property, paste the code into `GOOGLE_SITE_VERIFICATION`,
-   redeploy, then submit `https://wikigai.digitradin.cloud/sitemap.xml`. Same for Bing.
-3. From the Mac: `BASE_URL=https://wikigai.digitradin.cloud node tools/seo/audit.js`
+   redeploy, then submit `https://wikigai.com/sitemap.xml`. Same for Bing.
+3. From the Mac: `BASE_URL=https://wikigai.com node tools/seo/audit.js`
 
 Visit numbers start from the deploy day — earlier visits were never recorded and can't be recovered.
 Rollback copies of the replaced files: `_backup_20261024_tracking_seo/`.

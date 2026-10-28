@@ -122,7 +122,52 @@
     const p = payScore(c);
     return p >= 70 ? 'HIGH' : p >= 40 ? 'MID' : 'LOW';
   }
-  function loveList() { return Array.isArray(results.stage_2?.love) ? results.stage_2.love : []; }
+  /* v20261028b: the user can select / deselect areas (Stage 1), subfields and professions (Stage 2) on Passions.
+     Deselected ones drop out of every match; nothing is deleted, so they can be selected again. */
+  function allLove() { return Array.isArray(results.stage_2?.love) ? results.stage_2.love : []; }
+  const domOn = (d) => !d || ((results.stage_1 || {}).domainPrefs || {})[d] !== false;
+  const subOn = (sf) => !sf || ((results.stage_2 || {}).subPrefs || {})[sf] !== false;
+  const proOn = (c) => !((results.stage_2 || {}).excluded || []).includes(c);
+  const loveDom = (l) => l.domain || SUBS[l.subfield]?.domain;
+  function isActive(l) { return domOn(loveDom(l)) && subOn(l.subfield) && proOn(l.career); }
+  function loveList() { return allLove().filter(isActive); }
+  const MAX_DOMAINS = (S2.config && S2.config.maxDomains) || 4;
+  function tglBtn(key, on, disabled) {
+    return `<button type="button" class="ik-tgl ${on ? 'on' : ''}" data-tgl="${esc(key)}" aria-pressed="${on}" ${disabled ? 'disabled' : ''}>${on ? '✓ ' + T('hub.tglOn') : T('hub.tglOff')}</button>`;
+  }
+  async function savePrefs(stage, fields) {
+    const k = 'stage_' + stage;
+    results[k] = { ...(results[k] || {}), ...fields };
+    render();
+    try {
+      await api('/api/user/results', { method: 'POST', body: { stage, results: fields } });
+      if (results.stage_3 && results.stage_3.completedAt) await save(topFields()); // keep the saved top matches in step
+      toast(T('hub.prefsSaved'));
+    } catch { toast(T('common.saveFailed')); }
+  }
+  function toggle(key) {
+    const [kind, id] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
+    if (kind === 'dom') {
+      const s1 = results.stage_1 || {};
+      const prefs = { ...(s1.domainPrefs || {}) };
+      const turningOn = prefs[id] === false;
+      if (turningOn) {
+        const onCount = (s1.ranked || []).filter((r) => prefs[r.area] !== false).length;
+        if (onCount >= MAX_DOMAINS) { toast(T('hub.maxDomains', { max: MAX_DOMAINS })); return; }
+      }
+      (s1.ranked || []).forEach((r) => { if (prefs[r.area] === undefined) prefs[r.area] = true; });
+      prefs[id] = turningOn;
+      savePrefs(1, { domainPrefs: prefs });
+    } else if (kind === 'sub') {
+      const subPrefs = { ...((results.stage_2 || {}).subPrefs || {}) };
+      subPrefs[id] = subPrefs[id] === false;
+      savePrefs(2, { subPrefs });
+    } else if (kind === 'pro') {
+      const ex = new Set((results.stage_2 || {}).excluded || []);
+      if (ex.has(id)) ex.delete(id); else ex.add(id);
+      savePrefs(2, { excluded: [...ex] });
+    }
+  }
   function scored() {
     const prof = profile();
     return loveList().map((l) => {
@@ -150,6 +195,13 @@
       }, 150);
     });
   }
+  function topFields() {
+    const top = scored().sort((a, b) => b.match - a.match).slice(0, 20);
+    return {
+      top: top.map((r) => ({ career: r.career, domain: r.domain, subfield: r.subfield, match: r.match, IK: r.match, L: r.L, G: r.G, trend: r.trend, pay: r.pay })),
+      ranked: top.slice(0, 10).map((r) => ({ area: r.domain, name: r.career, score: r.match, pct: r.match })),
+    };
+  }
   function completeStage3() {
     const top = scored().sort((a, b) => b.match - a.match).slice(0, 20);
     return save({
@@ -171,7 +223,7 @@
 
   /* ── shared bits ── */
   const s1Done = () => !!(results.stage_1 && (results.stage_1.completedAt || results.stage_1.ranked));
-  const s2Done = () => loveList().length > 0;
+  const s2Done = () => allLove().length > 0; // Stage 2 done even if the user deselected every profession
   const hasGrades = () => !!profile();
 
   function pageHead(icon, kicker, title, lead, kind) {
@@ -253,7 +305,7 @@
       { k: 'pay', ico: '💰', t: T('hub.cPay'), v: s2Done() ? T('hub.xOfTop', { x: hi, n: top.length }) : '—', s: T('hub.highBand'), href: '/ikigai/pay', key: false, done: true },
     ];
     return `<div class="ik-circles">
-      <div class="ik-venn" aria-hidden="true"><i class="v1"></i><i class="v2"></i><i class="v3"></i><i class="v4"></i><b>Wikigai</b></div>
+      <div class="ik-venn" aria-hidden="true"><img src="/assets/brand/wikigai-mark-icon.png" alt=""></div>
       <div class="ik-cgrid">${c.map((x) => `<a class="ik-ccard ${x.k} ${x.key ? 'key' : 'info'} ${x.done ? '' : 'todo'}" href="${x.href}" data-nav>
         <div class="ik-ct">${x.ico} ${x.t}<span>${T(x.key ? 'common.key' : 'common.info')}</span></div>
         <div class="ik-cv">${x.v}</div><div class="ik-cs">${x.s}</div></a>`).join('')}</div>
@@ -306,26 +358,29 @@
     if (!s1Done()) return h + empty(T('hub.loveEmpty1'), '/survey?stage=1', T('hub.startS1'));
     const ranked = (s1.ranked || []).slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     const max = Math.max(1, ...ranked.map((r) => r.score ?? 0));
-    const prefs = s1.domainPrefs || {};
-    h += `<div class="ik-card"><h2>${T('hub.domainsTitle')}</h2><p class="ik-sub">${T('hub.domainsSub')}</p>
-      ${ranked.map((r) => { const m = area(r.area); const p = Math.round(((r.score ?? 0) / max) * 100); const on = prefs[r.area] !== false;
-        return `<div class="ik-row ${on ? '' : 'off'}"><span class="ik-rlabel">${m.icon} ${esc(areaName(r.area))}</span>${bar(p, m.color)}<b>${p}%</b><span class="ik-dim">${on ? T('hub.kept') : '—'}</span></div>`; }).join('')}
+    h += `<div class="ik-card"><h2>${T('hub.domainsTitle')}</h2><p class="ik-sub">${T('hub.domainsSubTgl', { max: MAX_DOMAINS })}</p>
+      ${ranked.map((r) => { const m = area(r.area); const p = Math.round(((r.score ?? 0) / max) * 100); const on = domOn(r.area);
+        return `<div class="ik-row tg ${on ? '' : 'off'}"><span class="ik-rlabel">${m.icon} ${esc(areaName(r.area))}</span>${bar(p, m.color)}<b>${p}%</b>${tglBtn('dom:' + r.area, on)}</div>`; }).join('')}
     </div>`;
     if (!s2Done()) return h + empty(T('hub.loveEmpty2'), '/survey?stage=2', T('hub.toS2'));
     const s2 = results.stage_2;
     const subPct = s2.subPct || {};
-    const kept = Object.keys(s2.subPrefs || {}).filter((k) => s2.subPrefs[k]);
-    h += `<div class="ik-card"><h2>${T('hub.subsTitle')}</h2><p class="ik-sub">${T('hub.subsSub')}</p>
-      ${kept.sort((a, b) => (subPct[b] || 0) - (subPct[a] || 0)).map((s) => { const m = area(SUBS[s]?.domain); return `<div class="ik-row"><span class="ik-rlabel">${m.icon} ${esc(subName(s))}</span>${bar(subPct[s], m.color)}<b>${subPct[s] ?? '—'}%</b><span></span></div>`; }).join('')}
+    const subsWithPros = new Set(allLove().map((l) => l.subfield).filter(Boolean));
+    const kept = [...new Set([...Object.keys(s2.subPrefs || {}).filter((k) => s2.subPrefs[k] || subsWithPros.has(k)), ...subsWithPros])].filter((k) => SUBS[k]);
+    h += `<div class="ik-card"><h2>${T('hub.subsTitle')}</h2><p class="ik-sub">${T('hub.subsSubTgl')}</p>
+      ${kept.sort((a, b) => (subPct[b] || 0) - (subPct[a] || 0)).map((s) => { const d = SUBS[s]?.domain, m = area(d), on = subOn(s) && domOn(d);
+        return `<div class="ik-row tg ${on ? '' : 'off'}"><span class="ik-rlabel">${m.icon} ${esc(subName(s))}</span>${bar(subPct[s], m.color)}<b>${subPct[s] ?? '—'}%</b>${domOn(d) ? tglBtn('sub:' + s, subOn(s)) : `<span class="ik-dim ik-tglnote">${T('hub.areaOff')}</span>`}</div>`; }).join('')}
     </div>`;
-    const love = loveList().slice(0, 20);
-    h += `<div class="ik-card"><h2>${T('hub.shortTitle')}</h2><p class="ik-sub">${T('hub.shortSub')}</p>
-      <div class="ik-table lovetab"><div class="ik-tr ik-th"><span>#</span><span>${T('hub.colProfession')}</span><span>${T('hub.colDomainSub')}</span><span>${T('hub.colLove')}</span></div>
-      ${love.map((l, i) => { const m = area(l.domain || SUBS[l.subfield]?.domain); const sf = SUBS[l.subfield];
-        return `<div class="ik-tr"><span>${i + 1}</span><span><strong>${esc(C(l.career))}</strong></span>
-        <span class="ik-ds"><b>${m.icon} ${esc(areaName(l.domain || sf?.domain))}</b><small>${esc(C(m.desc || ''))}</small>${sf ? `<b class="ik-ds-sub">↳ ${esc(subName(l.subfield))}</b><small>${esc(C(sf.desc || ''))}</small>` : ''}</span>
-        <span class="ik-num love">${l.L}</span></div>`; }).join('')}
-      </div></div>`;
+    const all = allLove();
+    const nOn = all.filter(isActive).length;
+    const love = ui.loveAll ? all : all.slice(0, 20);
+    h += `<div class="ik-card"><h2>${T('hub.shortTitle')}</h2><p class="ik-sub">${T('hub.shortSub')} ${T('hub.shortTgl', { n: nOn, total: all.length })}</p>
+      <div class="ik-table lovetab tg"><div class="ik-tr ik-th"><span>#</span><span>${T('hub.colProfession')}</span><span>${T('hub.colDomainSub')}</span><span>${T('hub.colLove')}</span><span></span></div>
+      ${love.map((l, i) => { const m = area(loveDom(l)); const sf = SUBS[l.subfield]; const parentOn = domOn(loveDom(l)) && subOn(l.subfield); const on = parentOn && proOn(l.career);
+        return `<div class="ik-tr ${on ? '' : 'off'}"><span>${i + 1}</span><span><strong>${esc(C(l.career))}</strong></span>
+        <span class="ik-ds"><b>${m.icon} ${esc(areaName(loveDom(l)))}</b><small>${esc(C(m.desc || ''))}</small>${sf ? `<b class="ik-ds-sub">↳ ${esc(subName(l.subfield))}</b><small>${esc(C(sf.desc || ''))}</small>` : ''}</span>
+        <span class="ik-num love">${l.L}</span><span>${parentOn ? tglBtn('pro:' + l.career, proOn(l.career)) : `<span class="ik-dim ik-tglnote">${T(domOn(loveDom(l)) ? 'hub.subOff' : 'hub.areaOff')}</span>`}</span></div>`; }).join('')}
+      </div>${!ui.loveAll && all.length > 20 ? `<div class="ik-more"><button type="button" class="btn-ghost sm" data-act="love-all">${T('hub.showAllPros', { count: all.length - 20 })}</button></div>` : ''}</div>`;
     return h + nextLink('/ikigai/skills', T('hub.nextSkills'));
   }
   function stepCard(n, t, d, done, href, review) {
@@ -548,8 +603,11 @@
     if (a && a.getAttribute('href') && a.getAttribute('href').startsWith('/ikigai') && !a.target && !e.metaKey && !e.ctrlKey) {
       e.preventDefault(); go(a.getAttribute('href')); return;
     }
+    const tg = e.target.closest('[data-tgl]');
+    if (tg && !tg.disabled) { toggle(tg.dataset.tgl); return; }
     const b = e.target.closest('[data-act],[data-dom],[data-country]');
     if (!b) return;
+    if (b.dataset.act === 'love-all') { ui.loveAll = true; render(); return; }
     if (b.dataset.dom) { ui.domain = b.dataset.dom; render(); return; }
     if (b.dataset.country) {
       const c = b.dataset.country, list = st.region.countries, i = list.indexOf(c);

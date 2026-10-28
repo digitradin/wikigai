@@ -7,6 +7,10 @@
     "hi": "Bonjour {name},",
     "bodyVerify": "Utilisez ce code de vérification pour continuer. Il expire dans 10 minutes.",
     "bodyReset": "Utilisez ce code de réinitialisation pour continuer. Il expire dans 10 minutes.",
-    "ignore": "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail."
+    "ignore": "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.",
+    "subjectEmailChange": "Confirmez votre nouvelle adresse Wikigai",
+    "bodyEmailChange": "Utilisez ce code pour confirmer cette adresse comme nouvel e-mail Wikigai. Il expire dans 10 minutes.",
+    "subjectEmailChanged": "L’e-mail de votre compte Wikigai a été modifié",
+    "bodyEmailChanged": "L’e-mail de votre compte Wikigai a été remplacé par {email}. Vos résultats et éléments enregistrés sont conservés. Si ce n’est pas vous, répondez à cet e-mail ou réinitialisez votre mot de passe immédiatement."
   }
 }

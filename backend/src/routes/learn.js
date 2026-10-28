@@ -18,6 +18,7 @@ const express = require('express');
 const db = require('../lib/db');
 const { requireUser } = require('./auth');
 const { ageOn } = require('../lib/birthdate');
+const llm = require('../lib/llm');
 
 const router = express.Router();
 const LANGS = { en: 'English', fr: 'French', es: 'Spanish' };
@@ -101,22 +102,6 @@ function normalize(raw, topic) {
   return out;
 }
 
-async function callAI(messages, c) {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), c.timeout);
-  try {
-    const r = await fetch(c.url + '/v1/chat/completions', {
-      method: 'POST',
-      signal: ctl.signal,
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + c.token },
-      body: JSON.stringify({ model: c.model, messages, temperature: 0.4, max_tokens: 3000 }),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) { const e = new Error('AI router ' + r.status + ': ' + clip(data.error && (data.error.message || data.error) || '', 200)); e.status = r.status; throw e; }
-    return { text: data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content, model: data.model || c.model };
-  } finally { clearTimeout(timer); }
-}
-
 const fail = (res, status, code, error) => res.status(status).json({ error, code });
 
 /* POST /api/learn/research  { topic, lang, context: { domains[], professions[], strengths[] }, force? } */
@@ -136,23 +121,18 @@ router.post('/research', async (req, res, next) => {
         WHERE user_id = $1 AND topic_key = $2 AND lang = $3 AND created_at > NOW() - INTERVAL '7 days' ORDER BY created_at DESC LIMIT 1`, [user.id, key, lang]);
       if (hit) return res.json({ ok: true, cached: true, research: hit });
     }
-    if (!c.token) return fail(res, 503, 'AI_UNAVAILABLE', 'The AI research service is not configured yet.');
+    if (!llm.configured()) return fail(res, 503, 'AI_UNAVAILABLE', 'The AI research service is not configured yet.');
     const used = await db.getOne(`SELECT count(*)::int AS n FROM learning_research WHERE user_id = $1 AND created_at > NOW() - INTERVAL '1 day'`, [user.id]);
     if ((used && used.n) >= c.limit) return fail(res, 429, 'AI_LIMIT', 'You reached today’s research limit. Please try again tomorrow.');
     const ctx = b.context || {};
     const messages = prompts(topic, lang, { domains: list(ctx.domains, 5, 80), professions: list(ctx.professions, 6, 80), strengths: list(ctx.strengths, 4, 60), age });
     let out = null, model = c.model;
-    try {
-      let r = await callAI(messages, c);
-      model = r.model;
-      out = normalize(parseJson(r.text), topic);
-      if (!out) { // one repair attempt
-        r = await callAI([...messages, { role: 'assistant', content: clip(r.text, 6000) }, { role: 'user', content: 'That was not valid JSON in the requested shape. Reply again with ONLY the JSON object.' }], c);
-        model = r.model;
-        out = normalize(parseJson(r.text), topic);
-      }
+    try { // v20261026: every free provider configured on the server (lib/llm.js), rotated with fail-over
+      const r = await llm.chatJSON(messages, { validate: (x) => normalize(x, topic), maxTokens: 3000 });
+      out = r.data; model = r.provider + '/' + r.model;
     } catch (err) {
-      console.warn('[learn] AI call failed:', err.name === 'AbortError' ? 'timeout' : err.message);
+      console.warn('[learn] AI call failed:', err.message);
+      if (err.code === 'AI_BAD_OUTPUT') return fail(res, 502, 'AI_BAD_OUTPUT', 'The AI answer could not be read. Please try again.');
       return fail(res, 502, 'AI_FAILED', 'The AI could not answer right now. Please try again in a moment.');
     }
     if (!out) return fail(res, 502, 'AI_BAD_OUTPUT', 'The AI answer could not be read. Please try again.');
@@ -168,7 +148,7 @@ router.get('/research', async (req, res, next) => {
     const user = await requireUser(req, res);
     if (!user) return;
     const r = await db.query(`SELECT id, topic, lang, created_at FROM learning_research WHERE user_id = $1 ORDER BY created_at DESC LIMIT 12`, [user.id]);
-    res.json({ ok: true, items: r.rows, configured: !!cfg().token });
+    res.json({ ok: true, items: r.rows, configured: llm.configured() });
   } catch (err) { next(err); }
 });
 

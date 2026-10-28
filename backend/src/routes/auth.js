@@ -15,6 +15,8 @@ const { setSessionCookie, clearSessionCookie } = require('../lib/pageGuard');
 const { sendMail } = require('../lib/mailer');
 const i18n = require('../i18n');
 const { parseBirthDate, toIso } = require('../lib/birthdate');
+const { isCountry } = require('../lib/countries');
+const { countryFromRequest } = require('../lib/geo');
 
 /* language for emails: the account's saved locale, else the request's */
 function userLang(user, req) { return i18n.normalize(user && user.locale) || i18n.fromRequest(req); }
@@ -83,6 +85,9 @@ router.post('/signup', async (req, res, next) => {
     const locale = i18n.fromRequest(req);
     const { captcha_id, captcha_answer } = req.body;
     const birth = parseBirthDate(req.body.birth_date); // optional
+    // country of residence: pre-filled from the visitor's IP on the form, the user can change it (v20261028b)
+    const rcIn = String(req.body.residence_country || '').trim().toUpperCase();
+    const residence = isCountry(rcIn) ? rcIn : (req.body.residence_country === undefined ? countryFromRequest(req).country : null);
 
     if (!EMAIL_RE.test(email)) {
       return res.status(400).json({ error: 'Please enter a valid email address.', code: 'BAD_EMAIL' });
@@ -127,16 +132,16 @@ router.post('/signup', async (req, res, next) => {
       await db.query(
         `UPDATE users SET name = COALESCE(NULLIF($2,''), name), locale = $3, email_enc = $4,
                 password_hash = $5, password_updated_at = NOW(), updated_at = NOW(),
-                birth_date = COALESCE($6::date, birth_date)
+                birth_date = COALESCE($6::date, birth_date), residence_country = COALESCE($7, residence_country)
          WHERE id = $1`,
-        [userId, name, locale, enc.enc, pwHash, birth.value]
+        [userId, name, locale, enc.enc, pwHash, birth.value, residence]
       );
     } else {
       const created = await db.getOne(
-        `INSERT INTO users (email_hash, email_enc, name, locale, email_verified, provider, password_hash, password_updated_at, birth_date)
-         VALUES ($1, $2, $3, $4, false, 'password', $5, NOW(), $6::date)
+        `INSERT INTO users (email_hash, email_enc, name, locale, email_verified, provider, password_hash, password_updated_at, birth_date, residence_country)
+         VALUES ($1, $2, $3, $4, false, 'password', $5, NOW(), $6::date, $7)
          RETURNING id`,
-        [emailHash, enc.enc, name || email.split('@')[0], locale, pwHash, birth.value]
+        [emailHash, enc.enc, name || email.split('@')[0], locale, pwHash, birth.value, residence]
       );
       userId = created.id;
     }
@@ -184,7 +189,7 @@ router.post('/verify', async (req, res, next) => {
       'UPDATE users SET email_verified = true, last_login_at = NOW(), updated_at = NOW() WHERE id = $1',
       [user.id]
     );
-    await ensureResultsRow(emailHash, user.name);
+    await ensureResultsRow(user.id, emailHash, user.name);
 
     const token = createSessionToken(user.id);
     setSessionCookie(req, res, token); // lets the server open member pages (dashboard…) for this browser
@@ -297,7 +302,7 @@ router.post('/login', async (req, res, next) => {
       'UPDATE users SET last_login_at = NOW(), failed_logins = 0, locked_until = NULL WHERE id = $1',
       [user.id]
     );
-    await ensureResultsRow(emailHash, user.name);
+    await ensureResultsRow(user.id, emailHash, user.name);
 
     const token = createSessionToken(user.id);
     setSessionCookie(req, res, token); // lets the server open member pages (dashboard…) for this browser
@@ -455,7 +460,8 @@ async function requireUser(req, res) {
     return null;
   }
   const row = await db.getOne(
-    `SELECT id, name, locale, email_verified, provider, birth_date,
+    `SELECT id, name, locale, email_verified, provider, birth_date, residence_country, target_countries,
+            CASE WHEN phone_enc IS NULL THEN NULL ELSE pgp_sym_decrypt(phone_enc, current_setting('app.survey_encryption_key')) END AS phone,
             pgp_sym_decrypt(email_enc, current_setting('app.survey_encryption_key')) AS email
      FROM users WHERE id = $1`,
     [payload.sub]
@@ -472,20 +478,26 @@ async function requireUser(req, res) {
     verified: row.email_verified,
     provider: row.provider,
     birthDate: toIso(row.birth_date),
+    residenceCountry: row.residence_country || null,
+    targetCountries: Array.isArray(row.target_countries) ? row.target_countries : [],
+    phone: row.phone || null,
   };
 }
 
-async function ensureResultsRow(emailHash, name) {
+/* every account has one results row, linked to its permanent id (users.id) — v20261028b */
+async function ensureResultsRow(userId, emailHash, name) {
   const existing = await db.getOne(
-    'SELECT id FROM user_results WHERE user_email = $1 ORDER BY created_at DESC LIMIT 1',
-    [emailHash]
+    'SELECT id, user_id FROM user_results WHERE user_id = $1 OR (user_id IS NULL AND user_email = $2) ORDER BY created_at DESC LIMIT 1',
+    [userId, emailHash]
   );
   if (!existing) {
     await db.query(
-      `INSERT INTO user_results (user_email, user_name, stage, results)
-       VALUES ($1, $2, 1, '{}'::jsonb)`,
-      [emailHash, name || '']
+      `INSERT INTO user_results (user_email, user_id, user_name, stage, results)
+       VALUES ($1, $2, $3, 1, '{}'::jsonb)`,
+      [emailHash, userId, name || '']
     );
+  } else if (!existing.user_id) {
+    await db.query('UPDATE user_results SET user_id = $1 WHERE id = $2', [userId, existing.id]);
   }
 }
 
@@ -515,7 +527,7 @@ function pinEmailHtml(pin, name, kind = 'verify', lang = 'en') {
     <p style="color:#94a3b8;margin:0 0 24px;font-size:13px">${escapeHtml(t('tagline'))}</p>
     <div style="background:#1e293b;border-radius:16px;padding:28px;color:#e2e8f0">
       <p style="margin:0 0 8px">${escapeHtml(t('hi', { name }))}</p>
-      <p style="margin:0 0 20px;color:#cbd5e1;font-size:14px">${escapeHtml(t(kind === 'reset' ? 'bodyReset' : 'bodyVerify'))}</p>
+      <p style="margin:0 0 20px;color:#cbd5e1;font-size:14px">${escapeHtml(t(kind === 'reset' ? 'bodyReset' : kind === 'change' ? 'bodyEmailChange' : 'bodyVerify'))}</p>
       <div style="font-size:34px;letter-spacing:8px;font-weight:700;color:#fff;background:#0f172a;border-radius:12px;padding:18px;text-align:center">${pin}</div>
       <p style="margin:20px 0 0;color:#64748b;font-size:12px">${escapeHtml(t('ignore'))}</p>
     </div>
@@ -526,6 +538,74 @@ function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c]));
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Change email (Account page) — v20261028b. The account keeps its id (users.id), so results,
+ * plans and saved videos stay. Step 1 sends a 6-digit code to the NEW address; step 2 confirms it.
+ * POST /api/auth/email-change/start    { newEmail, password }   (signed in)
+ * POST /api/auth/email-change/confirm  { newEmail, pin }        (signed in)
+ * ───────────────────────────────────────────────────────────── */
+router.post('/email-change/start', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const newEmail = normalizeEmail(req.body && req.body.newEmail);
+    if (!EMAIL_RE.test(newEmail)) return res.status(400).json({ error: 'Please enter a valid email address.', code: 'BAD_EMAIL' });
+    if (newEmail === normalizeEmail(user.email)) return res.status(400).json({ error: 'This is already your email.', code: 'SAME_EMAIL' });
+    const row = await db.getOne('SELECT password_hash FROM users WHERE id = $1', [user.id]);
+    if (row && row.password_hash && !verifyPassword(String((req.body && req.body.password) || ''), row.password_hash)) {
+      return res.status(401).json({ error: 'Incorrect password.', code: 'EMAIL_BAD_PASSWORD' });
+    }
+    const newHash = hashEmail(newEmail);
+    const taken = await db.getOne('SELECT id FROM users WHERE email_hash = $1 AND email_verified = true AND id <> $2', [newHash, user.id]);
+    if (taken) return res.status(409).json({ error: 'This email is already used by another Wikigai account.', code: 'EMAIL_TAKEN' });
+    const pin = await issuePin(newHash, 'email_change');
+    const lang = userLang(user, req);
+    await sendMail({ to: newEmail, subject: i18n.t(lang, 'email.subjectEmailChange'), html: pinEmailHtml(pin, user.name || newEmail.split('@')[0], 'change', lang) });
+    res.json({ ok: true, email: newEmail, ...(process.env.EXPOSE_PINS === 'true' ? { dev_pin: pin } : {}) });
+  } catch (err) { next(err); }
+});
+
+router.post('/email-change/confirm', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const newEmail = normalizeEmail(req.body && req.body.newEmail);
+    if (!EMAIL_RE.test(newEmail)) return res.status(400).json({ error: 'Please enter a valid email address.', code: 'BAD_EMAIL' });
+    const newHash = hashEmail(newEmail), oldHash = hashEmail(user.email), oldEmail = user.email;
+    const check = await verifyPin(newHash, req.body && req.body.pin, 'email_change');
+    if (!check.ok) return pinError(res, check);
+    const taken = await db.getOne('SELECT id FROM users WHERE email_hash = $1 AND email_verified = true AND id <> $2', [newHash, user.id]);
+    if (taken) return res.status(409).json({ error: 'This email is already used by another Wikigai account.', code: 'EMAIL_TAKEN' });
+    const enc = await encryptEmail(newEmail);
+    await db.transaction(async (c) => {
+      // an unfinished (never verified) sign-up with the new address would block the unique email — remove it
+      await c.query('DELETE FROM users WHERE email_hash = $1 AND email_verified = false AND id <> $2', [newHash, user.id]);
+      await c.query('UPDATE users SET email_hash = $1, email_enc = $2, email_verified = true, updated_at = NOW() WHERE id = $3', [newHash, enc.enc, user.id]);
+      await c.query('UPDATE user_results SET user_email = $1, user_id = $2 WHERE user_id = $2 OR (user_id IS NULL AND user_email = $3)', [newHash, user.id, oldHash]);
+      await c.query('DELETE FROM auth_pins WHERE email_hash IN ($1, $2)', [oldHash, newHash]);
+    });
+    console.log('[auth] email changed for an account');
+    // heads-up to the old address (security), never blocks the change
+    try {
+      const lang = userLang(user, req);
+      await sendMail({ to: oldEmail, subject: i18n.t(lang, 'email.subjectEmailChanged'), html: noticeEmailHtml(user.name || oldEmail.split('@')[0], i18n.t(lang, 'email.bodyEmailChanged', { email: newEmail }), lang) });
+    } catch (e) { console.warn('[auth] email-change notice not sent:', e.message); }
+    res.json({ ok: true, email: newEmail });
+  } catch (err) { next(err); }
+});
+
+function noticeEmailHtml(name, body, lang = 'en') {
+  const t = (k, v) => i18n.t(lang, 'email.' + k, v);
+  return `<!doctype html><html lang="${escapeHtml(lang)}"><body style="margin:0;background:#0f172a;font-family:-apple-system,Segoe UI,Roboto,sans-serif">
+  <div style="max-width:480px;margin:0 auto;padding:32px">
+    <h1 style="color:#fff;font-size:20px;margin:0 0 4px">${t('brand')}</h1>
+    <div style="background:#1e293b;border-radius:16px;padding:28px;color:#e2e8f0;margin-top:20px">
+      <p style="margin:0 0 8px">${escapeHtml(t('hi', { name }))}</p>
+      <p style="margin:0;color:#cbd5e1;font-size:14px">${escapeHtml(body)}</p>
+    </div>
+  </div></body></html>`;
 }
 
 module.exports = router;

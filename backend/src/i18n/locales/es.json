@@ -7,6 +7,10 @@
     "hi": "Hola, {name}:",
     "bodyVerify": "Usa este código de verificación para continuar. Caduca en 10 minutos.",
     "bodyReset": "Usa este código de restablecimiento para continuar. Caduca en 10 minutos.",
-    "ignore": "Si no lo has solicitado tú, puedes ignorar este correo."
+    "ignore": "Si no lo has solicitado tú, puedes ignorar este correo.",
+    "subjectEmailChange": "Confirma tu nuevo correo de Wikigai",
+    "bodyEmailChange": "Usa este código para confirmar esta dirección como tu nuevo correo de Wikigai. Caduca en 10 minutos.",
+    "subjectEmailChanged": "Se ha cambiado el correo de tu cuenta Wikigai",
+    "bodyEmailChanged": "El correo de tu cuenta Wikigai se ha cambiado a {email}. Tus resultados y elementos guardados se conservan. Si no has sido tú, responde a este correo o restablece tu contraseña de inmediato."
   }
 }

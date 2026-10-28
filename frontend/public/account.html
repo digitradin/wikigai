@@ -41,8 +41,30 @@
           </div>
         </div>
         <div class="ac-row">
+          <div><label for="acRes" data-i18n="account.residence">Country of residence</label><small data-i18n="account.residenceHelp">Where you live now — helps us show pay, demand and studies that apply to you.</small></div>
+          <div style="flex:1 1 260px;max-width:420px">
+            <select id="acRes" class="ac-select"><option value="" data-i18n="account.chooseCountry">Choose a country…</option></select>
+            <div class="ac-msg" id="acResMsg" role="status"></div>
+          </div>
+        </div>
+        <div class="ac-row">
+          <div><label for="acTgtAdd" data-i18n="account.targets">Where would you like to study or work?</label><small data-i18n="account.targetsHelp">Pick up to 10 countries. You can change them any time.</small></div>
+          <div style="flex:1 1 260px;max-width:420px">
+            <div class="ac-chips" id="acTgtChips"></div>
+            <select id="acTgtAdd" class="ac-select"><option value="" data-i18n="account.addCountry">+ Add a country…</option></select>
+            <div class="ac-msg" id="acTgtMsg" role="status"></div>
+          </div>
+        </div>
+        <div class="ac-row">
           <div><span class="ac-k" data-i18n="account.email">Email</span></div>
           <div class="ac-v"><span id="acEmail">—</span><span class="ac-badge" id="acVerified" hidden></span></div>
+        </div>
+        <div class="ac-row">
+          <div><label for="acPhone" data-i18n="account.phone">Phone</label><small data-i18n="account.phoneHelp">Optional — international format, e.g. +34 600 000 000. Only you can see it.</small></div>
+          <div style="flex:1 1 260px;max-width:420px">
+            <form class="ac-name" id="acPhoneForm"><input id="acPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+34 600 000 000"><button class="ac-btn primary" type="submit" data-i18n="account.save">Save</button><button class="ac-btn" type="button" id="acPhoneClear" data-i18n="account.clear">Clear</button></form>
+            <div class="ac-msg" id="acPhoneMsg" role="status"></div>
+          </div>
         </div>
         <div class="ac-row">
           <div><span class="ac-k" data-i18n="account.language">Language</span><small data-i18n="account.languageHelp">Wikigai and our emails will use this language.</small></div>
@@ -51,6 +73,30 @@
       </section>
       <section class="ik-card">
         <h2 data-i18n="account.security">Password &amp; sign-in</h2>
+        <div class="ac-row">
+          <div><span class="ac-k" data-i18n="account.changeEmail">Change email</span><small data-i18n="account.changeEmailHelp">We’ll send a 6-digit code to your new address. Your results, plans and saved videos stay with your account.</small></div>
+          <button class="ac-btn" type="button" id="acEmOpen" data-i18n="account.changeEmailBtn">Change email…</button>
+        </div>
+        <div class="ac-msg" id="acEmDone" role="status"></div>
+        <form id="acEmForm" class="ac-delform ac-emform" hidden autocomplete="off">
+          <div id="acEmStep1">
+            <label for="acEmNew" data-i18n="account.newEmail">New email</label>
+            <input id="acEmNew" type="email" autocomplete="email" spellcheck="false" maxlength="200">
+            <label for="acEmPass" data-i18n="account.currentPassword">Your current password</label>
+            <input id="acEmPass" type="password" autocomplete="current-password">
+          </div>
+          <div id="acEmStep2" hidden>
+            <p class="ac-note" id="acEmSent"></p>
+            <label for="acEmPin" data-i18n="account.emailCode">6-digit code</label>
+            <input id="acEmPin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*">
+          </div>
+          <div class="ac-msg" id="acEmMsg" role="alert"></div>
+          <div class="ac-delbtns">
+            <button class="ac-btn" type="button" id="acEmCancel" data-i18n="account.deleteCancel">Cancel</button>
+            <button class="ac-btn" type="button" id="acEmResend" hidden data-i18n="account.resendCode">Send a new code</button>
+            <button class="ac-btn primary" type="submit" id="acEmGo" data-i18n="account.sendCode">Send code</button>
+          </div>
+        </form>
         <div class="ac-row">
           <div><small data-i18n="account.passwordHelp">We’ll email you a 6-digit code to choose a new password.</small></div>
           <a class="ac-btn" id="acPassword" href="/forgot" data-i18n="account.changePassword">Change password</a>
@@ -88,6 +134,7 @@
 </main>
 <script src="/assets/app.js"></script>
 <script src="/assets/site.js"></script>
+<script src="/assets/countries.js"></script>
 <script>
 (function () {
   const { api, Store } = window.CPS;
@@ -106,7 +153,8 @@
     Store.user = user;
     $('acName').value = user.name || '';
     $('acBirth').value = user.birthDate || '';
-    paint();
+    $('acPhone').value = user.phone || '';
+    paint(); paintCountries();
   }
   $('acNameForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -159,8 +207,92 @@
       $('acDelPass').value = ''; delReady();
     }
   });
+  // ── change email (v20261028b): code to the NEW address, then confirm; same account id ──
+  const em = { step: 1, email: '' };
+  function emReset() {
+    em.step = 1; em.email = ''; $('acEmForm').reset(); $('acEmForm').hidden = true; $('acEmOpen').hidden = false;
+    $('acEmStep1').hidden = false; $('acEmStep2').hidden = true; $('acEmResend').hidden = true;
+    $('acEmGo').textContent = T('account.sendCode'); $('acEmMsg').textContent = '';
+  }
+  async function emSend() {
+    const msg = $('acEmMsg'); msg.className = 'ac-msg'; msg.textContent = '';
+    const newEmail = $('acEmNew').value.trim();
+    try {
+      const r = await api('/api/auth/email-change/start', { method: 'POST', body: { newEmail, password: $('acEmPass').value } });
+      em.step = 2; em.email = r.email || newEmail;
+      $('acEmStep1').hidden = true; $('acEmStep2').hidden = false; $('acEmResend').hidden = false;
+      $('acEmSent').textContent = T('account.emailCodeSent', { email: em.email });
+      $('acEmGo').textContent = T('account.confirmEmail');
+      if (r.dev_pin) $('acEmPin').value = r.dev_pin; // local tests only (codes shown on screen)
+      $('acEmPin').focus();
+    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
+  }
+  async function emConfirm() {
+    const msg = $('acEmMsg'); msg.className = 'ac-msg'; msg.textContent = '';
+    try {
+      const r = await api('/api/auth/email-change/confirm', { method: 'POST', body: { newEmail: em.email, pin: $('acEmPin').value.trim() } });
+      user.email = r.email; user.verified = true; Store.user = user; paint();
+      emReset();
+      const done = $('acEmDone'); done.className = 'ac-msg ok'; done.textContent = T('account.emailChanged', { email: r.email });
+    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
+  }
+  $('acEmOpen').addEventListener('click', () => { $('acEmForm').hidden = false; $('acEmOpen').hidden = true; $('acEmDone').textContent = ''; $('acEmNew').focus(); });
+  $('acEmCancel').addEventListener('click', emReset);
+  $('acEmResend').addEventListener('click', () => { $('acEmStep1').hidden = false; $('acEmStep2').hidden = true; $('acEmResend').hidden = true; em.step = 1; $('acEmGo').textContent = T('account.sendCode'); $('acEmPass').focus(); });
+  $('acEmForm').addEventListener('submit', (e) => { e.preventDefault(); if (em.step === 1) emSend(); else emConfirm(); });
+
+  // ── phone (v20261028b): optional, international format, stored encrypted ──
+  async function savePhone(value) {
+    const msg = $('acPhoneMsg'); msg.className = 'ac-msg'; msg.textContent = '';
+    try {
+      const r = await api('/api/user/profile', { method: 'PUT', body: { phone: value } });
+      user.phone = r.phone || null; Store.user = user; $('acPhone').value = user.phone || '';
+      msg.className = 'ac-msg ok'; msg.textContent = T(user.phone ? 'account.saved' : 'account.phoneCleared');
+    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
+  }
+  $('acPhoneForm').addEventListener('submit', (e) => { e.preventDefault(); savePhone($('acPhone').value.trim()); });
+  $('acPhoneClear').addEventListener('click', () => savePhone(''));
+  // ── countries (v20261028b): residence + where to study / work (max 10), saved on change ──
+  const MAX_TGT = 10;
+  const flag = (c) => (c === 'XK' ? '🏳️' : String.fromCodePoint(...[...c].map((x) => 0x1f1a5 + x.charCodeAt(0))));
+  const cName = (c) => { try { return new Intl.DisplayNames([I.lang || 'en'], { type: 'region' }).of(c); } catch { return c; } };
+  const escH = (t) => String(t).replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+  function countryOptions(skip) {
+    return (window.WK_COUNTRIES || []).filter((c) => !skip.has(c)).map((c) => [c, cName(c)])
+      .sort((a, b) => a[1].localeCompare(b[1], I.lang || 'en')).map(([c, n]) => `<option value="${c}">${flag(c)} ${escH(n)}</option>`).join('');
+  }
+  function paintCountries() {
+    if (!user) return;
+    const tg = user.targetCountries || [];
+    $('acRes').innerHTML = `<option value="">${escH(T('account.chooseCountry'))}</option>` + countryOptions(new Set());
+    $('acRes').value = user.residenceCountry || '';
+    $('acTgtChips').innerHTML = tg.map((c) => `<span class="ac-chip">${flag(c)} ${escH(cName(c))}<button type="button" data-rmc="${c}" aria-label="${escH(T('account.removeCountry', { country: cName(c) }))}">×</button></span>`).join('');
+    const add = $('acTgtAdd');
+    add.innerHTML = `<option value="">${escH(T(tg.length >= MAX_TGT ? 'account.maxCountries' : 'account.addCountry', { n: MAX_TGT }))}</option>` + countryOptions(new Set(tg));
+    add.disabled = tg.length >= MAX_TGT;
+  }
+  async function saveCountries(body, msgId) {
+    const msg = $(msgId); msg.className = 'ac-msg'; msg.textContent = '';
+    try {
+      const r = await api('/api/user/profile', { method: 'PUT', body });
+      if ('residenceCountry' in r) user.residenceCountry = r.residenceCountry;
+      if ('targetCountries' in r) user.targetCountries = r.targetCountries;
+      Store.user = user; msg.className = 'ac-msg ok'; msg.textContent = T('account.saved');
+    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
+    paintCountries();
+  }
+  $('acRes').addEventListener('change', (e) => saveCountries({ residenceCountry: e.target.value }, 'acResMsg'));
+  $('acTgtAdd').addEventListener('change', (e) => {
+    const c = e.target.value; if (!c) return;
+    saveCountries({ targetCountries: [...(user.targetCountries || []), c].slice(0, MAX_TGT) }, 'acTgtMsg');
+  });
+  $('acTgtChips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rmc]'); if (!b) return;
+    saveCountries({ targetCountries: (user.targetCountries || []).filter((x) => x !== b.dataset.rmc) }, 'acTgtMsg');
+  });
+
   I.ready.then(load);
-  I.onChange(paint);
+  I.onChange(() => { paint(); paintCountries(); });
 })();
 </script>
 </body>

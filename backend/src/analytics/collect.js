@@ -16,7 +16,7 @@ const EVENTS = new Set([
   'signup_submit', 'verify_done', 'login_done',
   'stage1_start', 'stage1_done', 'stage2_start', 'stage2_parta_done', 'stage2_done',
   'grades_saved', 'grades_skipped',
-  'share_click', 'donate_click', 'lang_change', 'retake', 'refresh_optin', 'research_start', 'research_done', 'video_search', 'video_play', 'video_save', 'account_deleted',
+  'share_click', 'donate_click', 'lang_change', 'retake', 'refresh_optin', 'research_start', 'research_done', 'video_search', 'video_play', 'video_save', 'plan_outlook', 'plan_create', 'plan_download', 'plan_print', 'account_deleted',
 ]);
 const BOT_RE = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|embedly|quora link|whatsapp|telegrambot|discordbot|preview|headless|lighthouse|pingdom|uptime|monitor|curl|wget|python-requests|axios|node-fetch|go-http|java\/|httpclient|semrush|ahrefs|mj12|dotbot|petalbot|yandex|baidu|applebot|duckduckbot/i;
 const SELF_HOSTS = (process.env.ANALYTICS_SELF_HOSTS || 'wikigai.digitradin.cloud,survey.digitradin.cloud,wikigai.com,www.wikigai.com,localhost,127.0.0.1').split(',').map((s) => s.trim());

@@ -21,7 +21,7 @@ if lsof -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
 fi
 
 # one-time installs (kept inside this version folder)
-[ -d "$ROOT/backend/node_modules" ] || { echo "▶ Installing backend packages (first run only)…"; (cd "$ROOT/backend" && npm install --no-audit --no-fund --loglevel=error) || { pause; exit 1; }; }
+[ -d "$ROOT/backend/node_modules/geoip-country" ] || { echo "▶ Installing backend packages (first run only)…"; (cd "$ROOT/backend" && npm install --no-audit --no-fund --loglevel=error) || { pause; exit 1; }; }
 [ -d "$LOCAL/node_modules" ]        || { echo "▶ Installing local database (first run only)…";  (cd "$LOCAL" && npm install --no-audit --no-fund --loglevel=error) || { pause; exit 1; }; }
 
 # local-only settings (never used on the server). Edit tools/local/local.env to change them.
@@ -59,6 +59,21 @@ AI_ROUTER_TOKEN=
 AI_ROUTER_MODEL=auto
 CONF
 fi
+# Free AI providers for Plans — added once to older local.env files too (list checked Oct 2026)
+if ! grep -q '^CLOUDFLARE_API_TOKEN=' "$LOCAL/local.env"; then
+  cat >> "$LOCAL/local.env" <<'CONF'
+
+# FREE AI models for My learning › Plans — fill in any you have (all optional, no credit card).
+# Wikigai spreads the work across every key filled in and switches to the next one
+# if a provider is busy or out of free quota. How to get each key: deploy/AI_RESEARCH_SETUP.md
+GROQ_API_KEY=
+OPENROUTER_API_KEY=
+MISTRAL_API_KEY=
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
+ZAI_API_KEY=
+CONF
+fi
 set -a; . "$LOCAL/local.env"; set +a
 export DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres"
 export PORT NODE_ENV=development EXPOSE_PINS=true SMTP_HOST=
@@ -87,8 +102,8 @@ if curl -s -o /dev/null "http://localhost:$PORT/health"; then
      — paste the STATS_API_TOKEN from tools/local/local.env
    • Your local data stays in tools/local/.data (delete that folder to reset).
    • French / Spanish: http://localhost:$PORT/fr/  ·  http://localhost:$PORT/es/
-   • AI research (My learning › Plans): add your router token to tools/local/local.env
-     (AI_ROUTER_TOKEN=…) and restart this window.
+   • AI plans (My learning › Plans): add your router token and/or any free AI keys
+     (GROQ_API_KEY, GEMINI_API_KEY, …) to tools/local/local.env and restart this window.
    • WikiVids (My learning › Videos): add a YouTube Data API key to tools/local/local.env
      (YOUTUBE_API_KEY=…) and restart this window.
 

@@ -109,7 +109,7 @@
    "ev_video_search": "Video search",
    "ev_account_deleted": "Account deleted",
    "ev_video_play": "Video played",
-   "ev_video_save": "Video saved"
+   "ev_video_save": "Video saved", "ev_plan_outlook": "Plan step 1 (skills)", "ev_plan_create": "Plan created", "ev_plan_download": "Plan saved as HTML", "ev_plan_print": "Plan printed / PDF"
   },
   "page": {
    "title": "Wikigai statistics",
@@ -236,7 +236,7 @@
    "ev_video_search": "Recherche de vidéos",
    "ev_account_deleted": "Compte supprimé",
    "ev_video_play": "Vidéo regardée",
-   "ev_video_save": "Vidéo enregistrée"
+   "ev_video_save": "Vidéo enregistrée", "ev_plan_outlook": "Plan étape 1 (compétences)", "ev_plan_create": "Plan créé", "ev_plan_download": "Plan enregistré en HTML", "ev_plan_print": "Plan imprimé / PDF"
   },
   "page": {
    "title": "Statistiques Wikigai",
@@ -363,7 +363,7 @@
    "ev_video_search": "Búsqueda de vídeos",
    "ev_account_deleted": "Cuenta eliminada",
    "ev_video_play": "Vídeo reproducido",
-   "ev_video_save": "Vídeo guardado"
+   "ev_video_save": "Vídeo guardado", "ev_plan_outlook": "Plan paso 1 (competencias)", "ev_plan_create": "Plan creado", "ev_plan_download": "Plan guardado en HTML", "ev_plan_print": "Plan impreso / PDF"
   },
   "page": {
    "title": "Estadísticas de Wikigai",

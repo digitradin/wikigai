@@ -19,6 +19,7 @@ const healthRoute = require('./routes/health');
 const adminRoutes = require('./routes/admin');
 const learnRoutes = require('./routes/learn');
 const videoRoutes = require('./routes/videos');
+const planRoutes = require('./routes/plans');
 const analytics = require('./analytics/collect');
 const seo = require('./seo');
 const { guardMemberPages } = require('./lib/pageGuard');
@@ -125,6 +126,10 @@ app.get('/widget*', (req, res, next) => {
 app.use('/health', healthRoute);
 // Public runtime config: pricing is on hold (free + optional donations).
 // PRICING_MODE: 'free' (default) | 'donation' — the SMS paywall is not active.
+// Visitor country for the sign-up form (pre-filled, user can change it) — v20261028b
+const { countryFromRequest } = require('./lib/geo');
+app.get('/api/geo', (req, res) => { res.set('Cache-Control', 'private, no-store'); res.json({ ok: true, ...countryFromRequest(req) }); });
+
 app.get('/api/config', (req, res) => {
   res.json({
     ok: true,
@@ -133,7 +138,7 @@ app.get('/api/config', (req, res) => {
       donationUrl: process.env.DONATION_URL || '',
       paywall: false,
     },
-    shareUrl: process.env.PUBLIC_URL || 'https://wikigai.digitradin.cloud',
+    shareUrl: process.env.PUBLIC_URL || 'https://wikigai.com',
     data: { version: '2B-0.1', refreshCadenceMonths: 6 },
   });
 });
@@ -154,6 +159,8 @@ if (process.env.NODE_ENV !== 'production') {
 app.use('/api/learn', learnRoutes);
 // My learning › Videos (filtered YouTube search + saved WikiVids)
 app.use('/api/videos', videoRoutes);
+// My learning › Plans v2: profession → outlook + 10 skills → 30d / 3m / 1y plan (free LLM providers, lib/llm.js)
+app.use('/api/plans', planRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount

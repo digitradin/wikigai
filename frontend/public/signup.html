@@ -46,6 +46,11 @@
           <div class="hint" data-i18n="auth.birthHelp">Helps us adapt your learning plans to your age. Only you can see it.</div>
           <div class="err-msg" id="eBirth"></div>
         </div>
+        <div class="field" id="fCountry">
+          <label for="country" data-i18n="auth.countryLabel">Country of residence</label>
+          <select class="input" id="country" autocomplete="country"><option value="" data-i18n="account.chooseCountry">Choose a country…</option></select>
+          <div class="hint" id="countryHint" data-i18n="auth.countryHelp">Keep it or change it — it helps us show pay, demand and studies for where you live.</div>
+        </div>
 
         <div class="field" id="fPassword">
           <label for="password" data-i18n="auth.passwordLabel">Password</label>
@@ -80,6 +85,7 @@
 </div>
 
 <script src="/assets/app.js"></script>
+<script src="/assets/countries.js"></script>
 <script>
   const { api, Captcha, showAlert, hideAlert, Store } = window.CPS;
   const alertEl = document.getElementById('alert');
@@ -142,7 +148,7 @@
     try {
       const res = await api('/api/auth/signup', {
         method: 'POST', auth: false,
-        body: { email, email2, password, password2, name, birth_date: document.getElementById('birth').value || '', locale: WK.i18n.lang, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
+        body: { email, email2, password, password2, name, birth_date: document.getElementById('birth').value || '', residence_country: document.getElementById('country').value || '', locale: WK.i18n.lang, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
       });
       sessionStorage.setItem('cps_pending_email', email);
       if (res.dev_pin) sessionStorage.setItem('cps_dev_pin', res.dev_pin);
@@ -156,6 +162,30 @@
   });
 </script>
 <script>
+/* country of residence (v20261028b): pre-filled from the visitor's connection (GET /api/geo), user can change it */
+(function () {
+  var sel = document.getElementById('country'); if (!sel || !window.WK_COUNTRIES) return;
+  var I = WK.i18n, guessed = null, touched = false;
+  function flag(c) { return c === 'XK' ? '\uD83C\uDFF3\uFE0F' : String.fromCodePoint.apply(null, c.split('').map(function (x) { return 0x1f1a5 + x.charCodeAt(0); })); }
+  function name(c) { try { return new Intl.DisplayNames([I.lang || 'en'], { type: 'region' }).of(c); } catch (e) { return c; } }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]; }); }
+  function fill() {
+    var cur = sel.value || guessed || '';
+    var opts = window.WK_COUNTRIES.map(function (c) { return [c, name(c)]; }).sort(function (a, b) { return a[1].localeCompare(b[1], I.lang || 'en'); });
+    sel.innerHTML = '<option value="">' + esc(I.t('account.chooseCountry')) + '</option>' + opts.map(function (o) { return '<option value="' + o[0] + '">' + flag(o[0]) + ' ' + esc(o[1]) + '</option>'; }).join('');
+    sel.value = cur;
+  }
+  sel.addEventListener('change', function () { touched = true; });
+  I.ready.then(function () {
+    fill();
+    var nav = (navigator.language || '').match(/-([A-Za-z]{2})$/);
+    fetch('/api/geo', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).catch(function () { return {}; }).then(function (g) {
+      guessed = (g && g.country) || (nav && window.WK_COUNTRIES.indexOf(nav[1].toUpperCase()) >= 0 ? nav[1].toUpperCase() : null);
+      if (guessed && !touched) { sel.value = guessed; }
+    });
+  });
+  if (I.onChange) I.onChange(fill);
+})();
 /* birthday picker: no future dates, minimum age 8 */
 (function () { var el = document.getElementById('birth'); if (!el) return; var d = new Date(); d.setFullYear(d.getFullYear() - 8); el.max = d.toISOString().slice(0, 10); })();
 </script>

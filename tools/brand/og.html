@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:I;src:url(file:///usr/share/fonts/opentype/inter/Inter-Regular.otf);font-weight:400}
+@font-face{font-family:I;src:url(file:///usr/share/fonts/opentype/inter/Inter-SemiBold.otf);font-weight:600}
+@font-face{font-family:I;src:url(file:///usr/share/fonts/opentype/inter/Inter-ExtraBold.otf);font-weight:800}
+html,body{margin:0}
+.c{width:1200px;height:630px;position:relative;overflow:hidden;font-family:I;
+ background:radial-gradient(520px 420px at 1080px 120px,rgba(140,50,200,.38),transparent 70%),
+ radial-gradient(520px 380px at 80px 640px,rgba(200,40,110,.22),transparent 70%),
+ radial-gradient(520px 420px at 1150px 600px,rgba(20,90,140,.32),transparent 70%),#0b0a17}
+.logo{position:absolute;left:88px;top:69px;width:280px}
+.mark{position:absolute;left:868px;top:78px;width:290px}
+h1{position:absolute;left:72px;top:196px;margin:0;font-weight:800;font-size:80px;line-height:92px;letter-spacing:-1.5px;color:#f1f5f9}
+h1 span{background:linear-gradient(90deg,#c44dff,#ff6b9d);-webkit-background-clip:text;color:transparent}
+.sub{position:absolute;left:75px;top:404px;font-size:30px;color:#94a3b8}
+.chips{position:absolute;left:74px;top:476px;display:flex;gap:12px}
+.chips b{font-weight:600;font-size:22px;color:#fff;border:1.5px solid #c44dff;border-radius:22px;padding:7px 17px;background:rgba(30,25,45,.6)}
+.dom{position:absolute;left:75px;top:560px;font-weight:600;font-size:22px;color:#64748b}
+</style></head><body><div class="c">
+<img class="logo" src="logo-t.png"><img class="mark" src="mark-t.png">
+<h1 id="h"></h1><div class="sub" id="s"></div><div class="chips" id="ch"></div><div class="dom">wikigai.com</div>
+</div><script>
+const L={en:['Discover your','perfect path','Career guidance for students and career changers',['Love','Skills','Needs','Pay']],
+es:['Descubre tu','camino ideal','Orientación profesional para estudiantes y cambios de carrera',['Pasión','Talento','Necesidad','Ingresos']],
+fr:['Découvrez votre','voie idéale','Orientation professionnelle pour étudiants et reconversions',['Passion','Talents','Besoins','Revenus']]}[location.search.slice(1)];
+h.innerHTML=L[0]+'<br><span>'+L[1]+'</span>';s.textContent=L[2];ch.innerHTML=L[3].map(x=>'<b>'+x+'</b>').join('');
+</script></body></html>

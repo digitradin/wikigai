@@ -112,11 +112,9 @@
 /* circles */
 .ik-circles{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:center;margin-bottom:18px}
 @media (max-width:720px){.ik-circles{grid-template-columns:1fr}.ik-venn{margin:0 auto}}
-.ik-venn{position:relative;width:200px;height:200px}
-.ik-venn i{position:absolute;width:118px;height:118px;border-radius:50%;mix-blend-mode:screen;opacity:.55}
-.ik-venn .v1{left:0;top:0;background:#ff6b9d}.ik-venn .v2{right:0;top:0;background:#c44dff}
-.ik-venn .v3{left:0;bottom:0;background:#10b981;opacity:.3}.ik-venn .v4{right:0;bottom:0;background:#ff8c42;opacity:.3}
-.ik-venn b{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:.95rem;letter-spacing:.5px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.ik-venn{width:200px;height:200px;display:grid;place-items:center}
+/* v20261028b: the official Wikigai mark, no text on it */
+.ik-venn img{width:100%;height:auto;display:block}
 .ik-cgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:480px){.ik-cgrid{grid-template-columns:1fr}}
 .ik-ccard{display:block;text-decoration:none;color:var(--text);padding:14px 16px;border-radius:14px;border:1px solid var(--border-glass);background:var(--bg-glass);transition:transform .15s,border-color .15s}
@@ -255,3 +253,24 @@ details.ik-edit[open]>summary::after{transform:rotate(180deg)}
 .ik-ds small{display:block;color:var(--t3);font-size:.75rem;line-height:1.4;margin-bottom:4px}
 .ik-ds .ik-ds-sub{margin-top:2px;color:var(--t2)}
 @media (max-width:640px){.ik-table.lovetab .ik-tr{grid-template-columns:24px 1fr 46px}.ik-table.lovetab .ik-tr>span:nth-child(3){grid-column:2/4;grid-row:2}.ik-table.lovetab .ik-tr>span:nth-child(4){display:block;grid-column:3;grid-row:1}}
+
+/* v20261028b — Passions: select / deselect areas, subfields and professions */
+.ik-row.tg{grid-template-columns:minmax(150px,1.2fr) 1fr 44px 128px}
+.ik-tgl{font:600 .74rem var(--font,inherit);padding:6px 10px;border-radius:14px;cursor:pointer;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);color:var(--t2,#a7a3b8);white-space:nowrap;justify-self:end}
+.ik-tgl.on{background:rgba(196,77,255,.16);border-color:rgba(196,77,255,.55);color:#fff}
+.ik-tgl:hover{border-color:rgba(196,77,255,.8)}
+.ik-tgl:disabled{opacity:.5;cursor:not-allowed}
+.ik-tglnote{font-size:.72rem;justify-self:end;text-align:right}
+.ik-table.lovetab.tg .ik-tr{grid-template-columns:36px 1.2fr 1.6fr 60px 128px}
+.ik-table.lovetab.tg .ik-tr.off>span:not(:last-child){opacity:.45}
+.ik-row.tg.off{opacity:1}.ik-row.tg.off>*:not(.ik-tgl){opacity:.45}
+.ik-more{text-align:center;margin-top:12px}
+@media (max-width:560px){.ik-row.tg{grid-template-columns:1fr 40px auto}.ik-row.tg .ik-track{display:none}.ik-row.tg>*:last-child{display:initial}}
+@media (max-width:640px){.ik-table.lovetab.tg .ik-tr{grid-template-columns:24px 1fr 40px auto}
+  .ik-table.lovetab.tg .ik-tr>span:nth-child(3){display:block;grid-column:2/5;grid-row:2}
+  .ik-table.lovetab.tg .ik-tr>span:nth-child(4){display:block;grid-column:3;grid-row:1}
+  .ik-table.lovetab.tg .ik-tr>span:nth-child(5){display:block;grid-column:4;grid-row:1}}
+/* v20261028b — My path: the 4 circle cards never underline */
+.ik-ccard,.ik-ccard:hover,.ik-ccard:focus,.ik-ccard:active,.ik-ccard *{text-decoration:none!important}
+.ik-ccard:hover{border-color:rgba(196,77,255,.7)}
+.ik-ccard:focus-visible{outline:2px solid rgba(196,77,255,.8);outline-offset:2px}

@@ -242,3 +242,16 @@
 .area-toggle.on{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:var(--green)}
 .area-toggle.off{background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.3);color:var(--t2)}
 .area-badge-undesired{font-size:.62rem;font-family:var(--mono);color:var(--t3);letter-spacing:.5px}
+
+/* v20261028b: every small 4-circle logo uses the official mark image (circles meet in the middle) */
+.ikigai-mark,.ikigai-logo{background:url(/assets/brand/wikigai-mark-icon.png) center/contain no-repeat}
+.ikigai-mark>*,.ikigai-logo>*{display:none!important}
+
+/* v20261028b: intro — Start on the left, keyboard tip (keys 1-5) on the right */
+.intro-cta{justify-content:space-between;align-items:center;gap:16px}
+.intro-cta-l{display:flex;gap:12px;flex-wrap:wrap}
+.kbd-hint{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.03)}
+.kbd-keys{display:flex;gap:5px}
+.kbd-hint kbd{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 6px;font:700 .85rem var(--font,inherit);color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.22);border-bottom-width:3px;border-radius:8px}
+.kbd-txt{font-size:.85rem;color:var(--muted,#a7a3b8);font-weight:600}
+@media (max-width:640px){.intro-cta{justify-content:center}.intro-cta-l{justify-content:center}.kbd-hint{display:none!important}}

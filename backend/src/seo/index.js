@@ -5,7 +5,7 @@
    and JSON-LD into the HTML, so search engines index every language.
    Private pages (survey, dashboard, hub, account flows, admin) get noindex.
    Configuration (env):
-     PUBLIC_URL                  canonical origin, default https://wikigai.digitradin.cloud
+     PUBLIC_URL                  canonical origin, default https://wikigai.com (production)
      GOOGLE_SITE_VERIFICATION    Search Console token (optional)
      BING_SITE_VERIFICATION      Bing Webmaster token (optional)                    */
 'use strict';
@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://wikigai.digitradin.cloud').replace(/\/+$/, '');
+const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://wikigai.com').replace(/\/+$/, '');
 const CANONICAL_HOST = new URL(PUBLIC_URL).hostname;
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
 

@@ -161,3 +161,7 @@ body.has-langbar nav.top { top: 34px; }
 .area-toggle.on { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); color: #22c55e; }
 .area-toggle.off { background: rgba(148,163,184,.1); border-color: rgba(148,163,184,.3); color: var(--muted); }
 .area-toggle:hover { transform: translateY(-1px); }
+
+/* v20261028b: every small 4-circle logo uses the official mark image (circles meet in the middle) */
+.ikigai-mark,.ikigai-logo{background:url(/assets/brand/wikigai-mark-icon.png) center/contain no-repeat}
+.ikigai-mark>*,.ikigai-logo>*{display:none!important}

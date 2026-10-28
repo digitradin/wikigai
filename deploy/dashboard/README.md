@@ -14,7 +14,7 @@ They live in one self-contained file you host on the Digitradin dashboard:
    STATS_ALLOWED_ORIGINS=https://dashboard.digitradin.cloud
    ```
 3. Open the page, paste the same token in **Connection** → Connect. The token stays only in that browser
-   ("Forget token" removes it). The site defaults to https://wikigai.digitradin.cloud.
+   ("Forget token" removes it). The site defaults to https://wikigai.com.
 
 ## What it shows
 KPIs vs previous period (7/21/30/90 days), daily chart, conversion funnel, sources, pages, UTM campaigns,

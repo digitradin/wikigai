@@ -7,6 +7,10 @@
     "hi": "Hi {name},",
     "bodyVerify": "Use this verification code to continue. It expires in 10 minutes.",
     "bodyReset": "Use this password reset code to continue. It expires in 10 minutes.",
-    "ignore": "If you didn't request this, you can safely ignore this email."
+    "ignore": "If you didn't request this, you can safely ignore this email.",
+    "subjectEmailChange": "Confirm your new Wikigai email",
+    "bodyEmailChange": "Use this code to confirm this address as your new Wikigai email. It expires in 10 minutes.",
+    "subjectEmailChanged": "Your Wikigai email was changed",
+    "bodyEmailChanged": "The email of your Wikigai account was changed to {email}. Your results and saved items are kept. If you didn't do this, reply to this email or reset your password straight away."
   }
 }

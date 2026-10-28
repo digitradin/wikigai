@@ -205,6 +205,7 @@
       $('introSub').textContent = T('survey.' + s + 'Sub');
     }
     $('beginLabel').textContent = T('survey.begin', { n: stage });
+    if ($('kbdHint')) $('kbdHint').style.display = stage < 3 ? '' : 'none'; // keys 1-5 answer the questions in Stages 1 and 2
     $('resultsBadge').textContent = T('survey.resultsBadge', { n: stage });
     $('resultsTitleA').textContent = T('survey.results' + stage + 'A');
     $('resultsTitleB').textContent = T('survey.results' + stage + 'B');
