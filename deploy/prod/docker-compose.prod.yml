@@ -1,0 +1,80 @@
+# Wikigai PROD — wikigai.com (clean, isolated stack)
+services:
+  wikigai-prod-db:
+    image: postgres:16-alpine
+    container_name: wikigai-prod-db
+    restart: unless-stopped
+    env_file:
+      - ../.env.production
+    environment:
+      POSTGRES_USER: wikigai_user
+      POSTGRES_DB: wikigai_db
+    volumes:
+      - wikigai-prod-db-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wikigai_user -d wikigai_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [db]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  wikigai-prod-backend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.backend
+    container_name: wikigai-prod-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MIGRATIONS_DIR: /app/deploy/migrations
+    depends_on:
+      wikigai-prod-db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # wikigai.com
+      - "traefik.http.routers.wikigai-prod-http.entrypoints=web"
+      - "traefik.http.routers.wikigai-prod-http.rule=Host(`wikigai.com`)"
+      - "traefik.http.routers.wikigai-prod-http.middlewares=redirect-https"
+      - "traefik.http.routers.wikigai-prod.entrypoints=websecure"
+      - "traefik.http.routers.wikigai-prod.rule=Host(`wikigai.com`)"
+      - "traefik.http.routers.wikigai-prod.tls=true"
+      - "traefik.http.routers.wikigai-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.wikigai-prod.service=wikigai-prod-svc"
+      # www.wikigai.com
+      - "traefik.http.routers.wikigai-www-http.entrypoints=web"
+      - "traefik.http.routers.wikigai-www-http.rule=Host(`www.wikigai.com`)"
+      - "traefik.http.routers.wikigai-www-http.middlewares=redirect-https"
+      - "traefik.http.routers.wikigai-www.entrypoints=websecure"
+      - "traefik.http.routers.wikigai-www.rule=Host(`www.wikigai.com`)"
+      - "traefik.http.routers.wikigai-www.tls=true"
+      - "traefik.http.routers.wikigai-www.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.wikigai-www.service=wikigai-prod-svc"
+      # shared service + redirect middleware
+      - "traefik.http.services.wikigai-prod-svc.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.permanent=true"
+    networks: [traefik, db]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  wikigai-prod-db-data:
+
+networks:
+  db:
+    name: wikigai-prod-db-net
+    internal: true
+  traefik:
+    external: true
+    name: traefik
+

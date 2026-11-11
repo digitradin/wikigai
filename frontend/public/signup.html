@@ -31,11 +31,6 @@
           <input class="input" type="email" id="email" placeholder="you@example.com" data-i18n-attr="placeholder:auth.emailPh" autocomplete="email" required>
           <div class="err-msg" id="eEmail"></div>
         </div>
-        <div class="field" id="fEmail2">
-          <label for="email2" data-i18n="auth.email2Label">Confirm email address</label>
-          <input class="input" type="email" id="email2" placeholder="you@example.com again" data-i18n-attr="placeholder:auth.email2Ph" autocomplete="email" required>
-          <div class="err-msg" id="eEmail2"></div>
-        </div>
         <div class="field">
           <label for="name"><span data-i18n="auth.nameLabel">Name</span> <span style="color:var(--muted-2);font-weight:500" data-i18n="common.optional">(optional)</span></label>
           <input class="input" type="text" id="name" placeholder="How should we call you?" data-i18n-attr="placeholder:auth.namePh" autocomplete="name" maxlength="80">
@@ -61,14 +56,6 @@
           <div class="pw-meter" id="pwMeter"><span></span></div>
           <div class="err-msg" id="ePassword"></div>
         </div>
-        <div class="field" id="fPassword2">
-          <label for="password2" data-i18n="auth.password2Label">Confirm password</label>
-          <div class="pw-wrap">
-            <input class="input" type="password" id="password2" placeholder="Repeat your password" data-i18n-attr="placeholder:auth.password2Ph" autocomplete="new-password" required>
-            <button type="button" class="pw-toggle" data-target="password2" data-i18n="common.show" data-i18n-attr="aria-label:common.showPassword" aria-label="Show password">Show</button>
-          </div>
-          <div class="err-msg" id="ePassword2"></div>
-        </div>
 
         <div class="field">
           <label data-i18n="auth.signup.human">Human check</label>
@@ -92,7 +79,6 @@
   const form = document.getElementById('signupForm');
   const btn = document.getElementById('submitBtn');
   const pw = document.getElementById('password');
-  const pw2 = document.getElementById('password2');
   const meter = document.getElementById('pwMeter');
   const T = (k, v) => WK.i18n.t(k, v);
   WK.i18n.onChange(() => {}); // static text re-applies itself; keep typed input
@@ -126,21 +112,17 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert(alertEl);
-    ['eEmail','eEmail2','ePassword','ePassword2','eCaptcha'].forEach(id => document.getElementById(id).textContent = '');
+    ['eEmail','ePassword','eCaptcha'].forEach(id => document.getElementById(id).textContent = '');
     document.querySelectorAll('.field').forEach(f => f.classList.remove('field-err','field-ok'));
 
     const email = document.getElementById('email').value.trim().toLowerCase();
-    const email2 = document.getElementById('email2').value.trim().toLowerCase();
     const name = document.getElementById('name').value.trim();
     const password = pw.value;
-    const password2 = pw2.value;
     let bad = false;
 
     if (!validEmail(email)) { document.getElementById('eEmail').textContent = T('auth.errEmail'); document.getElementById('fEmail').classList.add('field-err'); bad = true; }
-    if (email !== email2) { document.getElementById('eEmail2').textContent = T('auth.errEmailMatch'); document.getElementById('fEmail2').classList.add('field-err'); bad = true; }
     if (password.length < 8) { document.getElementById('ePassword').textContent = T('auth.errPwLength'); document.getElementById('fPassword').classList.add('field-err'); bad = true; }
     else if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) { document.getElementById('ePassword').textContent = T('auth.errPwMix'); document.getElementById('fPassword').classList.add('field-err'); bad = true; }
-    if (password !== password2) { document.getElementById('ePassword2').textContent = T('auth.errPwMatch'); document.getElementById('fPassword2').classList.add('field-err'); bad = true; }
     if (!Captcha.isComplete()) { document.getElementById('eCaptcha').textContent = T('auth.errCaptcha'); bad = true; }
     if (bad) return;
 
@@ -148,7 +130,7 @@
     try {
       const res = await api('/api/auth/signup', {
         method: 'POST', auth: false,
-        body: { email, email2, password, password2, name, birth_date: document.getElementById('birth').value || '', residence_country: document.getElementById('country').value || '', locale: WK.i18n.lang, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
+        body: { email, password, name, birth_date: document.getElementById('birth').value || '', residence_country: document.getElementById('country').value || '', locale: WK.i18n.lang, captcha_id: Captcha.id, captcha_answer: Captcha.answer() },
       });
       sessionStorage.setItem('cps_pending_email', email);
       if (res.dev_pin) sessionStorage.setItem('cps_dev_pin', res.dev_pin);

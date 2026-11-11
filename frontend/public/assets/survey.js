@@ -811,7 +811,7 @@
     on('beginBtn', 'click', () => window.startSurvey());
     on('backBtn', 'click', () => { window.location.href = '/dashboard'; });
     on('goDashBtn', 'click', () => { window.location.href = '/dashboard'; });
-    on('retakeBtn', 'click', () => { window.WK?.track?.('retake', { stage }); if (reviewMode) window.location.href = `/survey?stage=${stage}`; else window.startSurvey(); });
+    on('retakeBtn', 'click', async () => { if (stage <= 2 && window.CPS?.confirmRetake && !(await window.CPS.confirmRetake(stage))) return; window.WK?.track?.('retake', { stage }); if (reviewMode) window.location.href = `/survey?stage=${stage}`; else window.startSurvey(); });
     on('nextBtn', 'click', () => {
       if (stage === 2 && s2phase === 'A' && stageComplete) {
         persist2({ partial: true, phase: 'A-done', subPrefs });

@@ -8,12 +8,13 @@
    API: /api/plans (server: routes/plans.js + lib/llm.js — free AI providers, rotated with fail-over).
    Videos = "WikiVids": filtered YouTube search (filters hidden, server side: /api/videos/search),
    play in a privacy-enhanced player, save favourites ("My WikiVids").
-   Tools / Schools are "coming soon". Plans (AI) is shown as "coming soon" while AI_SOON = true
-   (v20261028b; the Plans code stays in place — set AI_SOON = false to switch it back on).
+   Tools / Schools are "coming soon". Plans (AI) is live again in v20261029 (AI_SOON = false;
+   set it to true — and the sidebar badge in site.js — to show "coming soon" again).
    WikiVids (v20261028b): after a search, all option rows fold to max 2 rows + "More options". Text: learn.* (i18n). */
 (function () {
   'use strict';
   const { api, Store } = window.CPS;
+  const CPS = window.CPS;
   if (!Store.token) { location.href = '/login'; return; }
   const I = WK.i18n, T = (k, v) => I.t(k, v), C = (s) => I.tc(s);
   const $ = (id) => document.getElementById(id);
@@ -22,7 +23,7 @@
   const S2 = window.STAGE_DATA_2B || {};
   const SUBJECTS = (S2.config && S2.config.subjectClusters) || {};
   const area = (k) => AREAS[k] || { name: k, icon: '•', color: '#94a3b8' };
-  const AI_SOON = true; // AI learning plans: show as "coming soon" for now
+  const AI_SOON = false; // v20261029: AI learning plans are back on (true = show "coming soon" again)
   const SECTIONS = [
     { id: 'plans', icon: '🗺️', feats: ['🧩', '✅', '🌱'] },
     { id: 'videos', icon: '🎬', feats: ['🕘', '🎤', '🔎'] },
@@ -35,7 +36,11 @@
   /* WikiVids state */
   const wv = { q: null, domain: null, items: null, busy: false, err: '', off: false, tab: 'search', saved: null, auto: false, optsOpen: false, vlang: null };
 
-  const current = () => { const m = location.pathname.match(/^\/learning\/(\w+)/); return SECTIONS.find((s) => s.id === (m && m[1])) || null; };
+  const current = () => {
+    const f = location.pathname.match(/^\/favorites(?:\/(\w+))?/); // v20261101c: My favourites (same page)
+    if (f) return { id: 'favorites', sub: ['plans', 'videos', 'courses'].includes(f[1]) ? f[1] : '' };
+    const m = location.pathname.match(/^\/learning\/(\w+)/); return SECTIONS.find((s) => s.id === (m && m[1])) || null;
+  };
 
   /* ── "Your path at a glance" (shared header) ── */
   function buildPath(r) {
@@ -97,15 +102,21 @@
     </div>`;
   }
 
-  /* ── Plans (v20261026): choose ONE profession → Step 1 outlook (key questions + 10 skills)
-        → Step 2 choose 1-10 skills + 3 quick questions + duration → detailed plan (saved).
+  /* ── Plans (v20261029 "Career & Learning Architect"): choose ONE profession → Step 1 overview
+        (A 1-3 what it is · pros/cons · trends; B 4-7 future · growing/shrinking · AI & robots · career;
+        8 top 10 skills + difficulty) → Step 2 pick 1-10 skills + 3 quick questions + duration
+        (1-2 → 30 days, 3-5 → 3 months, 6-10 → 1 year) → study plan (saved; HTML / print / PDF).
         Hidden filters (never shown): age band (server, from the birthday), country, language. ── */
+  /* v20261101b: Plans is in BETA; saving as HTML and printing / PDF are frozen as upcoming paid extras.
+     Set EXPORT_LOCKED = false to switch them back on; EXPORT_PRICE is the price shown on the buttons. */
+  const EXPORT_LOCKED = true;
+  const EXPORT_PRICE = '1 €';
   const DUR = ['30d', '3m', '1y'];
   const recommendDur = (n) => (n <= 2 ? '30d' : n <= 5 ? '3m' : '1y');
   const ANS = { level: ['new', 'some', 'good'], goal: ['explore', 'study', 'job', 'switch', 'grow'], hours: ['1-2', '3-5', '6-10', '10+'] };
   const pl = {
     step: 'pick', profession: null, outlook: null, sel: [], duration: null, durTouched: false,
-    answers: { level: 'new', goal: 'explore', hours: '3-5' }, busy: '', err: '', plan: null, saved: null, showAll: false,
+    answers: { level: 'new', goal: 'explore', hours: '3-5' }, run: 0, attempt: 0, busy: '', err: '', plan: null, saved: null, showAll: false,
   };
   const learnTo = (s) => (s.videoQuery || T('plan.learnTo', { skill: s.skill })).slice(0, 80);
   const vidHref = (s, abs) => (abs ? location.origin : '') + '/learning/videos?q=' + encodeURIComponent(learnTo(s));
@@ -119,12 +130,18 @@
   }
 
   function steps() {
-    const n = pl.step === 'pick' ? 1 : pl.step === 'outlook' ? 2 : 3;
-    return `<ol class="pl-steps" aria-label="${esc(T('plan.stepsAria'))}">${[1, 2, 3].map((i) => `<li class="${i < n ? 'done' : i === n ? 'on' : ''}"${i === n ? ' aria-current="step"' : ''}><span>${i < n ? '✓' : i}</span>${T('plan.step' + i)}</li>`).join('')}</ol>`;
+    // v20261101: 4 stages — 1 select profession · 2 profession overview · 3 select skills · 4 study plan
+    const n = { pick: 1, outlook: 2, skills: 3, plan: 4 }[pl.step] || 1;
+    const can = (i) => !pl.busy && i !== n && (i === 1 || (i <= 3 && !!pl.outlook) || (i === 4 && !!pl.plan && pl.plan.profession === pl.profession)); // jump to any stage already reached
+    return `<ol class="pl-steps" aria-label="${esc(T('plan.stepsAria'))}">${[1, 2, 3, 4].map((i) => {
+      const inner = `<span>${i < n ? '✓' : i}</span>${T('plan.step' + i)}`;
+      return `<li class="${i < n ? 'done' : i === n ? 'on' : ''}"${i === n ? ' aria-current="step"' : ''}>${can(i) ? `<button type="button" class="pl-stepbtn" data-plstep="${i}">${inner}</button>` : inner}</li>`;
+    }).join('')}</ol>`;
   }
   function busyBlock(kind) {
     return `<section class="ik-card lr-loading" aria-live="polite"><div class="lr-spinner" aria-hidden="true"></div>
-      <div><strong>${T(kind === 'outlook' ? 'plan.loadingOutlook' : 'plan.loadingPlan', { p: esc(C(pl.profession || '')) })}</strong><small>${T('plan.loadingSub')}</small></div></section>`;
+      <div><strong>${T(kind === 'outlook' ? 'plan.loadingOutlook' : 'plan.loadingPlan', { p: esc(C(pl.profession || '')) })}</strong><small>${T('plan.loadingSub')}</small>
+      <small class="pl-keep">📱 ${T('plan.keepOpen')}</small>${pl.attempt > 1 ? `<small class="pl-keep">↻ ${T('plan.retrying', { n: pl.attempt })}</small>` : ''}</div></section>`;
   }
   const errBlock = () => (pl.err ? `<p class="lr-err" role="alert">${esc(pl.err)}</p>` : '') + (!configured ? `<p class="lr-warn">${T('plan.notConfigured')}</p>` : '');
 
@@ -149,30 +166,70 @@
         <button type="button" class="pl-del" data-pldel="${s.id}" aria-label="${esc(T('plan.delete'))}" title="${esc(T('plan.delete'))}">🗑</button></li>`).join('')}</ul></section>`;
   }
 
-  /* Step 1: outlook (simple language) + key questions + the 10 key skills; Step 2 controls below */
-  function outlookView() {
+  /* Step 1 (v20261029): the profession explained simply — A (1-3) understand it, B (4-7) its future,
+     8 the top 10 skills (pick 1-10) — then the plan controls. v20261026 outlooks (summary + key
+     questions) still render for plans saved before. */
+  const lis = (a) => (a || []).map((x) => `<li>${esc(x)}</li>`).join('');
+  const DIRICO = { growing: '📈', stable: '➡️', shrinking: '📉' };
+  const diffBadge = (d, pre) => (d ? `<span class="pl-diff ${d}">${pre ? esc(pre) + ': ' : ''}${T('plan.diff_' + d)}</span>` : '');
+  function legacyOverview(o) {
+    return `${o.summary ? `<p class="lr-summary">${esc(o.summary)}</p>` : ''}${o.outlook ? `<p class="pl-trend">📈 ${esc(o.outlook)}</p>` : ''}
+      ${(o.questions || []).length ? `<h4>${T('plan.questionsTitle')}</h4><ol class="pl-qs">${o.questions.map((q) => `<li><strong>${esc(q.q)}</strong>${q.why ? `<small>${esc(q.why)}</small>` : ''}</li>`).join('')}</ol>` : ''}`;
+  }
+  const sec = (n, title, body) => (body ? `<div class="pl-sec"><h4><span class="pl-n">${n}</span>${title}</h4>${body}</div>` : '');
+  const box = (title, body, cls) => (body ? `<div class="pl-pc${cls ? ' ' + cls : ''}"><b>${title}</b>${body}</div>` : '');
+  const ul = (a) => ((a || []).length ? `<ul class="lr-ul">${lis(a)}</ul>` : '');
+  function overviewCards(o) {
+    if (!o.whatIs) {
+      return `<section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">1</span><div><h3>${T('plan.outlookTitle', { p: esc(C(pl.profession || o.profession || '')) })}</h3><small>${T('plan.outlookSub')}</small></div></div>${legacyOverview(o)}</section>`;
+    }
+    const d = o.demand || {}, ai = o.ai || {}, c = o.career || {}, s = c.salary || {};
+    const sal = [['entry', s.entry], ['mid', s.mid], ['top', s.top]].filter((x) => x[1]);
+    return `<section class="ik-card lr-block pl-part"><div class="pl-part-h"><span class="pl-part-k">A</span><div><h3>${T('plan.partA')}</h3><small>${T('plan.partASub')}</small></div></div>
+        ${sec(1, T('plan.a1'), `<p class="lr-summary pl-eli">🧒 ${esc(o.whatIs)}</p>`)}
+        ${sec(2, T('plan.a2'), (o.pros || []).length || (o.cons || []).length ? `<div class="pl-2col">${box('👍 ' + T('plan.pros'), ul(o.pros), 'pro')}${box('👎 ' + T('plan.cons'), ul(o.cons), 'con')}</div>` : '')}
+        ${sec(3, T('plan.a3'), ul(o.trends))}
+      </section>
+      <section class="ik-card lr-block pl-part"><div class="pl-part-h"><span class="pl-part-k b">B</span><div><h3>${T('plan.partB')}</h3><small>${T('plan.partBSub')}</small></div></div>
+        ${sec(4, T('plan.b4'), o.future ? `<p class="pl-trend">🔭 ${esc(o.future)}</p>` : '')}
+        ${sec(5, T('plan.b5'), d.direction || d.now || d.next ? `${d.direction ? `<span class="pl-dir ${d.direction}">${DIRICO[d.direction]} ${T('plan.dir_' + d.direction)}</span>` : ''}
+          <div class="pl-2col">${box(T('plan.demandNow'), d.now ? `<p>${esc(d.now)}</p>` : '')}${box(T('plan.demandNext'), d.next ? `<p>${esc(d.next)}</p>` : '')}</div>` : '')}
+        ${sec(6, T('plan.b6'), `<div class="pl-3col">${box('🤖 ' + T('plan.aiTake'), ul(ai.takeOver))}${box('🧑 ' + T('plan.aiHumans'), ul(ai.humans))}${box('🔄 ' + T('plan.aiAdapt'), ul(ai.adapt))}</div>`)}
+        ${sec(7, T('plan.b7'), `${(c.paths || []).length ? `<b class="pl-lbl">🧭 ${T('plan.paths')}</b><div class="pl-tags">${c.paths.map((x) => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+          ${sal.length ? `<b class="pl-lbl">💶 ${T('plan.salary')}</b><div class="pl-sal">${sal.map(([k, v]) => `<div><small>${T('plan.sal_' + k)}</small><strong>${esc(v)}</strong></div>`).join('<span class="pl-arr" aria-hidden="true">→</span>')}</div>
+            <p class="ik-dim pl-note">${s.note ? esc(s.note) + ' ' : ''}${T('plan.salEstimate')} <a href="/ikigai/pay">${T('plan.salLink')} →</a></p>` : ''}
+          ${c.lifestyle ? `<b class="pl-lbl">🌴 ${T('plan.lifestyle')}</b><p class="pl-p">${esc(c.lifestyle)}</p>` : ''}`)}
+      </section>`;
+  }
+  /* Stage 2: the profession overview only (A + B), then "Next: select skills" */
+  function overviewView() {
+    return `<div class="pl-head"><button type="button" class="ac-btn" data-act="plpick">← ${T('plan.otherPro')}</button></div>
+      <div class="pl-protitle"><span class="ik-dim">${T('plan.overviewOf')}</span><h2>${esc(C(pl.profession))}</h2></div>
+      ${overviewCards(pl.outlook)}
+      <div class="cta-row pl-next"><button type="button" class="btn-primary" data-act="plnext">${T('plan.nextSkills')} →</button></div>`;
+  }
+  /* Stage 3: select 1-10 skills + duration + 3 quick questions → create */
+  function skillsView() {
     const o = pl.outlook;
+    const v2 = !!o.whatIs;
     const sel = new Set(pl.sel);
     const rec = recommendDur(pl.sel.length || 1);
     const dur = pl.duration || rec;
     const chipGroup = (k) => `<div class="pl-q"><span class="pl-q-l">${T('plan.q_' + k)}</span><div class="pl-seg" role="radiogroup" aria-label="${esc(T('plan.q_' + k))}">${ANS[k].map((v) => `<button type="button" role="radio" aria-checked="${pl.answers[k] === v}" class="${pl.answers[k] === v ? 'on' : ''}" data-plans="${k}:${v}">${T('plan.a_' + k + '_' + v.replace('+', 'p').replace('-', '_'))}</button>`).join('')}</div></div>`;
-    return `<div class="pl-head"><button type="button" class="ac-btn" data-act="plback">← ${T('plan.otherPro')}</button></div>
-      <section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">1</span><div><h3>${T('plan.outlookTitle', { p: esc(C(pl.profession)) })}</h3><small>${T('plan.outlookSub')}</small></div></div>
-        ${o.summary ? `<p class="lr-summary">${esc(o.summary)}</p>` : ''}
-        ${o.outlook ? `<p class="pl-trend">📈 ${esc(o.outlook)}</p>` : ''}
-        <h4>${T('plan.questionsTitle')}</h4>
-        <ol class="pl-qs">${o.questions.map((q) => `<li><strong>${esc(q.q)}</strong>${q.why ? `<small>${esc(q.why)}</small>` : ''}</li>`).join('')}</ol>
-      </section>
-      <section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">2</span><div><h3>${T('plan.skillsTitle')}</h3><small>${T('plan.skillsSub')}</small></div></div>
+    return `<div class="pl-head"><button type="button" class="ac-btn" data-act="plback">← ${T('plan.backOverview')}</button></div>
+      <div class="pl-protitle"><span class="ik-dim">${T('plan.skillsOf')}</span><h2>${esc(C(pl.profession))}</h2></div>
+      <section class="ik-card lr-block" id="plSkills"><div class="lr-bh"><span class="lr-bn">🎯</span><div><h3>${T(v2 ? 'plan.b8' : 'plan.skillsTitle')}</h3><small>${T('plan.b8Sub')}</small></div></div>
         <div class="pl-quick"><span class="ik-dim">${T('plan.quick')}</span>
           <button type="button" class="lr-sug" data-plquick="2">${T('plan.top', { n: 2 })}</button><button type="button" class="lr-sug" data-plquick="5">${T('plan.top', { n: 5 })}</button><button type="button" class="lr-sug" data-plquick="10">${T('plan.all10')}</button><button type="button" class="lr-sug" data-plquick="0">${T('plan.none')}</button></div>
         <ol class="lr-skills pl-skills">${o.skills.map((s, i) => `<li class="${sel.has(s.skill) ? 'sel' : ''}">
-          <label class="pl-check"><input type="checkbox" data-plskill="${esc(s.skill)}" ${sel.has(s.skill) ? 'checked' : ''}><span class="lr-rank">${i + 1}</span></label>
-          <div class="lr-sk"><strong>${esc(s.skill)}</strong>${s.level ? ` <span class="pl-lvl ${s.level}">${T('plan.lvl_' + s.level)}</span>` : ''}${s.why ? `<small>${esc(s.why)}</small>` : ''}</div>
+          <label class="pl-check"><input type="checkbox" data-plskill="${esc(s.skill)}" ${sel.has(s.skill) ? 'checked' : ''} aria-label="${esc(s.skill)}"><span class="lr-rank">${i + 1}</span></label>
+          <div class="lr-sk"><strong>${esc(s.skill)}</strong>${s.difficulty ? ' ' + diffBadge(s.difficulty) : s.level ? ` <span class="pl-lvl ${s.level}">${T('plan.lvl_' + s.level)}</span>` : ''}${s.why ? `<small>${esc(s.why)}</small>` : ''}</div>
           <a class="lr-vid" href="${esc(vidHref(s))}" title="${esc(learnTo(s))}">▶ ${esc(T('plan.learnBtn'))}</a></li>`).join('')}</ol>
+        <p class="pl-callout">👉 ${T('plan.selectPrompt')}</p>
       </section>
-      <section class="ik-card lr-block pl-build" id="plBuild"><div class="lr-bh"><span class="lr-bn">3</span><div><h3>${T('plan.buildTitle')}</h3><small>${T('plan.buildSub')}</small></div></div>
+      <section class="ik-card lr-block pl-build" id="plBuild"><div class="lr-bh"><span class="lr-bn">✨</span><div><h3>${T('plan.buildTitle')}</h3><small>${T('plan.buildSub')}</small></div></div>
         <p class="pl-count">${pl.sel.length ? T('plan.selected', { n: pl.sel.length }) + ' — ' + T('plan.recommend', { d: durLabel(rec) }) : T('plan.selectFirst')}</p>
+        <p class="ik-dim pl-rules">${T('plan.rules')}</p>
         <div class="pl-q"><span class="pl-q-l">${T('plan.durTitle')}</span><div class="pl-seg pl-dur" role="radiogroup" aria-label="${esc(T('plan.durTitle'))}">${DUR.map((d) => `<button type="button" role="radio" aria-checked="${dur === d}" class="${dur === d ? 'on' : ''}" data-pldur="${d}">${durLabel(d)}${d === rec ? ` <em>${T('plan.recShort')}</em>` : ''}</button>`).join('')}</div></div>
         <p class="ik-dim pl-3q">${T('plan.threeQ')}</p>
         ${chipGroup('level')}${chipGroup('goal')}${chipGroup('hours')}
@@ -181,60 +238,127 @@
       </section>`;
   }
 
-  /* Step 3: the plan */
+  /* Step 2: the study plan. v2 (v20261029): overview · strategy · phases · weekly/monthly schedule ·
+     tracking · advice. v1 (v20261026 plans): blocks with actions / practice / checkpoint. */
   function phaseHtml(p) {
     return `<li><span class="lr-tl-k">${esc(p.label || '')}</span><div><strong>${esc(p.title)}</strong>
       ${p.skills && p.skills.length ? `<div class="pl-tags">${p.skills.map((s) => `<span>${esc(s)}</span>`).join('')}</div>` : ''}
       ${p.goal ? `<p class="pl-goal">🎯 ${esc(p.goal)}</p>` : ''}
-      ${p.actions.length ? `<ul class="lr-ul">${p.actions.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
+      ${(p.actions || []).length ? `<ul class="lr-ul">${lis(p.actions)}</ul>` : ''}
       ${p.practice ? `<p class="pl-pr">🛠 <b>${T('plan.practice')}</b> ${esc(p.practice)}</p>` : ''}
       ${p.checkpoint ? `<p class="pl-pr">✅ <b>${T('plan.checkpoint')}</b> ${esc(p.checkpoint)}</p>` : ''}</div></li>`;
   }
-  function planView() {
-    const row = pl.plan, p = row.plan || {}, o = row.outlook || {};
-    const chosen = new Set(row.skills || []);
-    const skillsUsed = (o.skills || []).filter((s) => chosen.has(s.skill));
-    return `<div class="pl-head"><button type="button" class="ac-btn" data-act="plback">← ${T('plan.otherPro')}</button>
-        <div class="pl-actions"><button type="button" class="ac-btn primary" data-act="plhtml">⬇ ${T('plan.saveHtml')}</button>
-        <button type="button" class="ac-btn" data-act="plprint">🖨 ${T('plan.printPdf')}</button>
-        <button type="button" class="ac-btn" data-act="pledit">✎ ${T('plan.change')}</button></div></div>
-      <div class="lr-result" id="lrResult">
-      <div class="lr-result-h"><h2>${esc(p.title || C(row.profession))}</h2><span class="ik-dim">${esc(C(row.profession))} · ${esc(durLabel(row.duration))}${p.weeklyHours ? ' · ⏱ ' + esc(p.weeklyHours) : ''} · ${esc(I.fmt.date(row.created_at, { day: 'numeric', month: 'long', year: 'numeric' }))}</span></div>
-      ${p.intro ? `<p class="lr-summary">${esc(p.intro)}</p>` : ''}
+  function blockHtml(b) {
+    return `<li><span class="lr-tl-k">${esc(b.label || '')}</span><div><strong>${esc(b.title)}</strong>
+      ${(b.skills || []).length ? `<div class="pl-tags">${b.skills.map((s) => `<span>${esc(s)}</span>`).join('')}</div>` : ''}
+      ${(b.activities || []).length ? `<ul class="lr-ul">${lis(b.activities)}</ul>` : ''}
+      ${(b.resources || []).length ? `<p class="pl-pr">📚 <b>${T('plan.resources')}</b> ${b.resources.map(esc).join(' · ')}</p>` : ''}
+      ${b.project ? `<p class="pl-pr">🛠 <b>${T('plan.project')}</b> ${esc(b.project)}</p>` : ''}
+      ${b.review ? `<p class="pl-pr">🔁 <b>${T('plan.review')}</b> ${esc(b.review)}</p>` : ''}</div></li>`;
+  }
+  /* the chosen skills with their target level, rank from step 1 and a WikiVids link */
+  function planSkills(row) {
+    const p = row.plan || {}, o = row.outlook || {};
+    const rank = new Map((o.skills || []).map((s, i) => [s.skill, { s, i: i + 1 }]));
+    const t = new Map((p.skills || []).map((x) => [x.skill, x]));
+    return (row.skills || []).map((k) => { const r = rank.get(k) || {}, x = t.get(k) || {}; return { skill: k, rank: r.i || '', src: r.s || { skill: k }, target: x.target || '', outcome: x.outcome || '', why: (r.s || {}).why || '' }; });
+  }
+  function planBody(row) {
+    const p = row.plan || {};
+    if (p.v !== 2) {
+      const skillsUsed = planSkills(row);
+      return `${p.intro ? `<p class="lr-summary">${esc(p.intro)}</p>` : ''}
       <section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">✓</span><div><h3>${T('plan.yourSkills')}</h3><small>${T('plan.yourSkillsSub')}</small></div></div>
-        <ol class="lr-skills">${skillsUsed.map((s) => `<li><span class="lr-rank">${(o.skills || []).indexOf(s) + 1}</span><div class="lr-sk"><strong>${esc(s.skill)}</strong>${s.why ? `<small>${esc(s.why)}</small>` : ''}</div><a class="lr-vid" href="${esc(vidHref(s))}">▶ ${esc(T('plan.learnBtn'))}</a></li>`).join('')}</ol></section>
+        <ol class="lr-skills">${skillsUsed.map((s) => `<li><span class="lr-rank">${s.rank}</span><div class="lr-sk"><strong>${esc(s.skill)}</strong>${s.why ? `<small>${esc(s.why)}</small>` : ''}</div><a class="lr-vid" href="${esc(vidHref(s.src))}">▶ ${esc(T('plan.learnBtn'))}</a></li>`).join('')}</ol></section>
       <section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">🗺️</span><div><h3>${T('plan.planTitle', { d: esc(durLabel(row.duration)) })}</h3><small>${T('plan.planSub')}</small></div></div>
         <ol class="lr-tl pl-tl">${(p.phases || []).map(phaseHtml).join('')}</ol></section>
-      ${p.routine && p.routine.length ? `<section class="ik-card lr-block"><h3>🔁 ${T('plan.routine')}</h3><ul class="lr-ul">${p.routine.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+      ${(p.routine || []).length ? `<section class="ik-card lr-block"><h3>🔁 ${T('plan.routine')}</h3><ul class="lr-ul">${lis(p.routine)}</ul></section>` : ''}
       ${p.finalProject ? `<section class="ik-card lr-block"><h3>🏁 ${T('plan.final')}</h3><p>${esc(p.finalProject)}</p></section>` : ''}
-      ${p.nextSteps && p.nextSteps.length ? `<section class="ik-card lr-block"><h3>➡️ ${T('plan.next')}</h3><ul class="lr-ul">${p.nextSteps.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
-      <details class="ik-card pl-more"><summary>${T('plan.outlookAgain')}</summary>
-        ${o.summary ? `<p>${esc(o.summary)}</p>` : ''}${o.outlook ? `<p>📈 ${esc(o.outlook)}</p>` : ''}
-        <ol class="pl-qs">${(o.questions || []).map((q) => `<li><strong>${esc(q.q)}</strong>${q.why ? `<small>${esc(q.why)}</small>` : ''}</li>`).join('')}</ol></details>
+      ${(p.nextSteps || []).length ? `<section class="ik-card lr-block"><h3>➡️ ${T('plan.next')}</h3><ul class="lr-ul">${lis(p.nextSteps)}</ul></section>` : ''}`;
+    }
+    const st = p.strategy || {}, tr = p.tracking || {}, ad = p.advice || {};
+    return `<section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">📋</span><div><h3>${T('plan.ovTitle')}</h3><small>${T('plan.ovSub')}</small></div></div>
+        <div class="pl-ov"><div><small>${T('plan.ovDuration')}</small><strong>${esc(durLabel(row.duration))}</strong></div>
+          <div><small>${T('plan.ovWeekly')}</small><strong>⏱ ${esc(p.weeklyHours || '—')}</strong></div>
+          ${p.goal ? `<div class="wide"><small>${T('plan.ovGoal')}</small><strong>🎯 ${esc(p.goal)}</strong></div>` : ''}</div>
+        <h4>${T('plan.ovSkills')}</h4>
+        <ol class="lr-skills">${planSkills(row).map((s) => `<li><span class="lr-rank">${s.rank}</span><div class="lr-sk"><strong>${esc(s.skill)}</strong>${s.target ? ' ' + diffBadge(s.target, T('plan.target')) : ''}${s.outcome ? `<small>${esc(s.outcome)}</small>` : ''}</div><a class="lr-vid" href="${esc(vidHref(s.src))}">▶ ${esc(T('plan.learnBtn'))}</a></li>`).join('')}</ol></section>
+      ${st.combine || st.sequence ? `<section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">🧠</span><div><h3>${T('plan.stratTitle')}</h3></div></div>
+        <div class="pl-2col">${box('🔗 ' + T('plan.stratCombine'), st.combine ? `<p>${esc(st.combine)}</p>` : '')}${box('🪜 ' + T('plan.stratSequence'), st.sequence ? `<p>${esc(st.sequence)}</p>` : '')}</div></section>` : ''}
+      ${(p.phases || []).length ? `<section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">🧩</span><div><h3>${T('plan.phasesTitle')}</h3></div></div>
+        <div class="pl-phases">${p.phases.map((x, i) => `<div class="pl-phase"><span class="pl-phase-n">${i + 1}</span><strong>${esc(x.name)}</strong>${x.period ? `<small>${esc(x.period)}</small>` : ''}${x.focus ? `<p>${esc(x.focus)}</p>` : ''}${x.outcome ? `<p class="pl-goal">🎯 ${esc(x.outcome)}</p>` : ''}</div>`).join('')}</div></section>` : ''}
+      <section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">🗓️</span><div><h3>${T(row.duration === '1y' ? 'plan.schedMonthly' : 'plan.schedWeekly')}</h3><small>${T('plan.schedSub')}</small></div></div>
+        <ol class="lr-tl pl-tl">${(p.schedule || []).map(blockHtml).join('')}</ol></section>
+      ${(tr.measure || []).length || (tr.milestones || []).length ? `<section class="ik-card lr-block"><div class="lr-bh"><span class="lr-bn">📊</span><div><h3>${T('plan.trackTitle')}</h3></div></div>
+        <div class="pl-2col">${box('📏 ' + T('plan.trackMeasure'), ul(tr.measure))}${box('🏁 ' + T('plan.milestones'), (tr.milestones || []).length ? `<ol class="pl-ms">${tr.milestones.map((m) => `<li>${m.when ? `<b>${esc(m.when)}</b> ` : ''}${esc(m.milestone)}</li>`).join('')}</ol>` : '')}</div></section>` : ''}
+      ${(ad.motivation || []).length || (ad.consistency || []).length ? `<section class="ik-card lr-block pl-advice"><div class="lr-bh"><span class="lr-bn">💬</span><div><h3>${T('plan.adviceTitle')}</h3></div></div>
+        <div class="pl-2col">${box('🔥 ' + T('plan.motivation'), ul(ad.motivation))}${box('📅 ' + T('plan.consistency'), ul(ad.consistency))}</div></section>` : ''}`;
+  }
+  function planView() {
+    const row = pl.plan, p = row.plan || {}, o = row.outlook || {};
+    return `<div class="pl-head"><button type="button" class="ac-btn" data-act="plback">← ${T('plan.otherPro')}</button>
+        <div class="pl-actions">${EXPORT_LOCKED
+          ? `<button type="button" class="ac-btn pl-locked" data-act="pllocked" aria-disabled="true" title="${esc(T('plan.paidSoon', { price: EXPORT_PRICE }))}">🔒 ${T('plan.saveHtml')} <span class="pl-price">${esc(EXPORT_PRICE)}</span></button>
+        <button type="button" class="ac-btn pl-locked" data-act="pllocked" aria-disabled="true" title="${esc(T('plan.paidSoon', { price: EXPORT_PRICE }))}">🔒 ${T('plan.printPdf')} <span class="pl-price">${esc(EXPORT_PRICE)}</span></button>`
+          : `<button type="button" class="ac-btn primary" data-act="plhtml">⬇ ${T('plan.saveHtml')}</button>
+        <button type="button" class="ac-btn" data-act="plprint">🖨 ${T('plan.printPdf')}</button>`}
+        <button type="button" class="ac-btn" data-act="pledit">✎ ${T('plan.change')}</button></div></div>
+      <div class="pl-savebar${row.saved ? ' on' : ''}">${row.saved
+        ? `<span>★ ${T('plan.savedFav')}</span><a href="/favorites/plans">${T('plan.openFav')} →</a><button type="button" class="pl-unsave" data-act="plunsave">${T('plan.unsave')}</button>`
+        : `<span>${T('plan.saveHint')}</span><button type="button" class="btn-primary" data-act="plsave">⭐ ${T('plan.saveFav')}</button>`}</div>
+      ${EXPORT_LOCKED && pl.lockMsg ? `<p class="pl-lockmsg" role="status">🔒 ${T('plan.paidSoon', { price: esc(EXPORT_PRICE) })}</p>` : ''}
+      <div class="lr-result" id="lrResult">
+      <div class="lr-result-h"><h2>${esc(p.title || C(row.profession))}</h2><span class="ik-dim">${esc(C(row.profession))} · ${esc(durLabel(row.duration))}${p.weeklyHours ? ' · ⏱ ' + esc(p.weeklyHours) : ''} · ${esc(I.fmt.date(row.created_at, { day: 'numeric', month: 'long', year: 'numeric' }))}</span></div>
+      ${planBody(row)}
+      <details class="ik-card pl-more"><summary>${T(o.whatIs ? 'plan.overviewAgain' : 'plan.outlookAgain')}</summary>${o.whatIs ? overviewCards(o) : legacyOverview(o)}</details>
       <p class="ik-dim lr-disclaimer">${T('learn.disclaimer')}</p></div>`;
   }
 
   function pagePlans() {
     let body;
     if (pl.busy) body = busyBlock(pl.busy);
-    else if (pl.step === 'outlook' && pl.outlook) body = outlookView();
+    else if (pl.step === 'outlook' && pl.outlook && (!pl.outlook.__for || pl.outlook.__for === pl.profession)) body = overviewView();
+    else if (pl.step === 'outlook' && pl.profession && pl.err) body = outlookErrorView();
+    else if (pl.step === 'skills' && pl.outlook) body = skillsView();
     else if (pl.step === 'plan' && pl.plan) body = planView();
     else body = path === null ? `<p class="ik-dim">${T('common.loading')}</p>` : pickView();
     return `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')} · ${T('side.plans')}</div>
-      <h1>${T('plan.title')}</h1><p>${T('plan.lead')}</p></header>${steps()}${body}`;
+      <h1>${T('plan.title')} <span class="lr-badge pl-beta">${T('plan.beta')}</span></h1><p>${T('plan.lead')}</p></header>${steps()}${body}`;
   }
 
+  /* v20261108 (mobile fix): the overview can take 10-60 s. On phones the request is often cut (screen locks,
+     app switch, mobile network) — before, the page then jumped back to the long profession list with the error
+     printed below the last profession, so nothing seemed to happen. Now: stay on stage 2, wait until the page is
+     visible again, retry automatically (the server finishes and caches the overview, so the retry is instant),
+     and if it still fails show a clear error with "Try again" right where the user is looking. */
+  const waitVisible = () => (document.hidden ? new Promise((ok) => { const f = () => { if (!document.hidden) { document.removeEventListener('visibilitychange', f); ok(); } }; document.addEventListener('visibilitychange', f); }) : Promise.resolve());
+  const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  const retryable = (err) => err.code === 'NETWORK' || err.status === 0 || err.status === 502 || err.status === 503 && err.code !== 'AI_UNAVAILABLE' || err.status === 504; // connection cut / gateway timeout — the server keeps going and caches the overview
   async function plOutlook(profession, force) {
-    pl.profession = profession; pl.busy = 'outlook'; pl.err = ''; pl.step = 'outlook'; render(); window.scrollTo(0, 0);
-    try {
-      const r = await api('/api/plans/outlook', { method: 'POST', body: { profession, lang: I.lang, country: userCountry(), force: !!force } });
-      pl.outlook = r.outlook; pl.sel = r.outlook.skills.slice(0, 2).map((s) => s.skill); pl.duration = null; pl.durTouched = false;
-      window.WK?.track?.('plan_outlook', { cached: !!r.cached });
-    } catch (err) {
-      if (err.code === 'AI_UNAVAILABLE') configured = false;
-      pl.err = err.code === 'AI_UNAVAILABLE' ? '' : err.message; pl.step = 'pick';
+    if (pl.busy) return;
+    const run = ++pl.run;
+    pl.profession = profession; pl.busy = 'outlook'; pl.err = ''; pl.step = 'outlook'; pl.attempt = 1; render(); window.scrollTo(0, 0);
+    for (;;) {
+      try {
+        const r = await api('/api/plans/outlook', { method: 'POST', body: { profession, lang: I.lang, country: userCountry(), force: !!force && pl.attempt === 1 } });
+        if (run !== pl.run) return; // the user chose something else meanwhile
+        pl.outlook = Object.assign(r.outlook, { __for: profession }); pl.sel = []; pl.duration = null; pl.durTouched = false; // the user picks 1-10 skills in stage 3
+        window.WK?.track?.('plan_outlook', { cached: !!r.cached });
+        break;
+      } catch (err) {
+        if (run !== pl.run) return;
+        if (err.code === 'AI_UNAVAILABLE') { configured = false; pl.err = T('plan.notConfigured'); break; }
+        if (retryable(err) && pl.attempt < 3) { pl.attempt++; render(); await waitVisible(); await sleep(2500); continue; }
+        pl.err = err.message || T('errors.network'); break;
+      }
     }
-    pl.busy = ''; render();
+    pl.busy = ''; pl.attempt = 0; render(); window.scrollTo(0, 0);
+  }
+  function outlookErrorView() {
+    return `<div class="pl-head"><button type="button" class="ac-btn" data-act="plpick">← ${T('plan.otherPro')}</button></div>
+      <div class="pl-protitle"><span class="ik-dim">${T('plan.overviewOf')}</span><h2>${esc(C(pl.profession))}</h2></div>
+      <section class="ik-card pl-errcard" role="alert"><strong>⚠️ ${T('plan.outlookFailed')}</strong><p class="lr-err">${esc(pl.err)}</p>
+        <div class="cta-row"><button type="button" class="btn-primary" data-act="plretry">↻ ${T('plan.tryAgain')}</button></div></section>`;
   }
   async function plCreate() {
     if (!pl.sel.length || pl.busy) return;
@@ -244,22 +368,35 @@
     try {
       const r = await api('/api/plans', { method: 'POST', body: { profession: pl.profession, lang: I.lang, country: userCountry(), skills: order, duration, answers: pl.answers, outlook: pl.outlook } });
       pl.plan = r.plan; pl.step = 'plan';
-      pl.saved = [{ id: r.plan.id, profession: r.plan.profession, duration: r.plan.duration, skills: r.plan.skills, created_at: r.plan.created_at }, ...(pl.saved || [])];
+      // v20261101c: not in "My favourites" until the user taps ⭐ Save
       window.WK?.track?.('plan_create', { duration, skills: order.length });
     } catch (err) {
       if (err.code === 'AI_UNAVAILABLE') configured = false;
       pl.err = err.code === 'AI_UNAVAILABLE' ? '' : err.message;
     }
     pl.busy = ''; render();
-    if (pl.step === 'outlook' && $('plBuild')) $('plBuild').scrollIntoView({ block: 'start' });
+    if (pl.step === 'skills' && $('plBuild')) $('plBuild').scrollIntoView({ block: 'start' });
   }
   async function plOpen(id) {
-    try { pl.plan = (await api('/api/plans/' + id)).plan; pl.profession = pl.plan.profession; pl.outlook = pl.plan.outlook; pl.step = 'plan'; pl.err = ''; }
+    try { pl.plan = (await api('/api/plans/' + id)).plan; pl.profession = pl.plan.profession; pl.outlook = pl.plan.outlook; pl.sel = (pl.plan.skills || []).slice(); pl.duration = pl.plan.duration; pl.durTouched = true; pl.step = 'plan'; pl.err = ''; }
     catch (err) { pl.err = err.message; }
     render(); window.scrollTo(0, 0);
   }
+  /* ⭐ Save / remove a plan from "My favourites" */
+  async function plSetSaved(id, saved) {
+    if (!saved && !(await CPS.confirm({ icon: '⭐', title: T('confirm.unsaveTitle'), text: T('confirm.unsavePlan'), ok: T('confirm.removeOk'), cancel: T('confirm.keep') }))) return;
+    try {
+      const r = await api('/api/plans/' + id + '/save', { method: 'POST', body: { saved } });
+      if (pl.plan && pl.plan.id === id) pl.plan.saved = saved;
+      const item = { id: r.plan.id, profession: r.plan.profession, duration: r.plan.duration, skills: r.plan.skills, created_at: r.plan.created_at };
+      pl.saved = saved ? [item, ...(pl.saved || []).filter((x) => x.id !== id)] : (pl.saved || []).filter((x) => x.id !== id);
+      if (saved) window.WK?.track?.('plan_save', {});
+      pl.err = '';
+    } catch (err) { pl.err = err.message; }
+    render();
+  }
   async function plDelete(id) {
-    if (!window.confirm(T('plan.deleteConfirm'))) return;
+    if (!(await CPS.confirm({ icon: '🗑', title: T('plan.delete'), text: T('plan.deleteConfirm'), ok: T('confirm.deleteOk'), cancel: T('confirm.keep') }))) return;
     try { await api('/api/plans/' + id + '/delete', { method: 'POST' }); pl.saved = (pl.saved || []).filter((s) => s.id !== id); if (pl.plan && pl.plan.id === id) { pl.plan = null; pl.step = 'pick'; } }
     catch (err) { pl.err = err.message; }
     render();
@@ -270,40 +407,79 @@
     const p = row.plan || {}, o = row.outlook || {};
     const chosen = new Set(row.skills || []);
     const title = p.title || C(row.profession);
-    const li = (a) => a.map((x) => `<li>${esc(x)}</li>`).join('');
-    const skills = (o.skills || []).map((s, i) => `<li class="${chosen.has(s.skill) ? 'on' : ''}"><b>${i + 1}. ${esc(s.skill)}</b>${chosen.has(s.skill) ? ` <span class="tag">${esc(T('plan.inPlan'))}</span>` : ''}${s.why ? `<br><span class="muted">${esc(s.why)}</span>` : ''}<br><a href="${esc(vidHref(s, true))}">▶ ${esc(learnTo(s))}</a></li>`).join('');
-    const phases = (p.phases || []).map((x) => `<div class="ph"><div class="ph-k">${esc(x.label || '')}</div><div><h3>${esc(x.title)}</h3>
-      ${x.skills && x.skills.length ? `<p class="muted">${esc(x.skills.join(' · '))}</p>` : ''}${x.goal ? `<p>🎯 ${esc(x.goal)}</p>` : ''}
-      ${x.actions.length ? `<ul>${li(x.actions)}</ul>` : ''}${x.practice ? `<p>🛠 <b>${esc(T('plan.practice'))}</b> ${esc(x.practice)}</p>` : ''}${x.checkpoint ? `<p>✅ <b>${esc(T('plan.checkpoint'))}</b> ${esc(x.checkpoint)}</p>` : ''}</div></div>`).join('');
+    const li = (a) => (a || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    const ulx = (a) => ((a || []).length ? `<ul>${li(a)}</ul>` : '');
+    const dl = (d) => (d ? ` <span class="tag lt">${esc(T('plan.diff_' + d))}</span>` : '');
+    const h3 = (n, t, body) => (body ? `<h3>${n}. ${esc(t)}</h3>${body}` : '');
+    const two = (a, b) => `<div class="cols">${a ? `<div class="box">${a}</div>` : ''}${b ? `<div class="box">${b}</div>` : ''}</div>`;
+    const lab = (t, body) => (body ? `<b>${esc(t)}</b>${body}` : '');
+    const skills = (o.skills || []).map((s, i) => `<li class="${chosen.has(s.skill) ? 'on' : ''}"><b>${i + 1}. ${esc(s.skill)}</b>${dl(s.difficulty)}${chosen.has(s.skill) ? ` <span class="tag">${esc(T('plan.inPlan'))}</span>` : ''}${s.why ? `<br><span class="muted">${esc(s.why)}</span>` : ''}<br><a href="${esc(vidHref(s, true))}">▶ ${esc(learnTo(s))}</a></li>`).join('');
+    let overview;
+    if (o.whatIs) {
+      const d = o.demand || {}, ai = o.ai || {}, c = o.career || {}, sa = c.salary || {};
+      overview = `<h2>A · ${esc(T('plan.partA'))}</h2>
+${h3(1, T('plan.a1'), `<p>${esc(o.whatIs)}</p>`)}
+${h3(2, T('plan.a2'), two(lab('👍 ' + T('plan.pros'), ulx(o.pros)), lab('👎 ' + T('plan.cons'), ulx(o.cons))))}
+${h3(3, T('plan.a3'), ulx(o.trends))}
+<h2>B · ${esc(T('plan.partB'))}</h2>
+${h3(4, T('plan.b4'), o.future ? `<p>${esc(o.future)}</p>` : '')}
+${h3(5, T('plan.b5'), `${d.direction ? `<p><b>${DIRICO[d.direction]} ${esc(T('plan.dir_' + d.direction))}</b></p>` : ''}${two(lab(T('plan.demandNow'), d.now ? `<p>${esc(d.now)}</p>` : ''), lab(T('plan.demandNext'), d.next ? `<p>${esc(d.next)}</p>` : ''))}`)}
+${h3(6, T('plan.b6'), `<div class="cols c3"><div class="box">${lab('🤖 ' + T('plan.aiTake'), ulx(ai.takeOver))}</div><div class="box">${lab('🧑 ' + T('plan.aiHumans'), ulx(ai.humans))}</div><div class="box">${lab('🔄 ' + T('plan.aiAdapt'), ulx(ai.adapt))}</div></div>`)}
+${h3(7, T('plan.b7'), `${lab('🧭 ' + T('plan.paths'), ulx(c.paths))}${sa.entry || sa.top ? `<p><b>💶 ${esc(T('plan.salary'))}</b> ${[['entry', sa.entry], ['mid', sa.mid], ['top', sa.top]].filter((x) => x[1]).map(([k, v]) => `${esc(T('plan.sal_' + k))}: ${esc(v)}`).join(' → ')}</p><p class="muted">${sa.note ? esc(sa.note) + ' ' : ''}${esc(T('plan.salEstimate'))}</p>` : ''}${c.lifestyle ? `<p><b>🌴 ${esc(T('plan.lifestyle'))}</b> ${esc(c.lifestyle)}</p>` : ''}`)}
+<h3>8. ${esc(T('plan.b8'))}</h3><ol class="sk">${skills}</ol>`;
+    } else {
+      overview = `<h2>1 · ${esc(T('plan.outlookTitle', { p: C(row.profession) }))}</h2>
+${o.summary ? `<p>${esc(o.summary)}</p>` : ''}${o.outlook ? `<p>📈 ${esc(o.outlook)}</p>` : ''}
+<div class="box"><b>${esc(T('plan.questionsTitle'))}</b><ol>${(o.questions || []).map((q) => `<li><b>${esc(q.q)}</b>${q.why ? `<br><span class="muted">${esc(q.why)}</span>` : ''}</li>`).join('')}</ol></div>
+<h2>2 · ${esc(T('plan.skillsTitle'))}</h2><ol class="sk">${skills}</ol>`;
+    }
+    let planHtml;
+    if (p.v === 2) {
+      const st = p.strategy || {}, tr = p.tracking || {}, ad = p.advice || {};
+      const blocks = (p.schedule || []).map((x) => `<div class="ph"><div class="ph-k">${esc(x.label || '')}</div><div><h4>${esc(x.title)}</h4>
+      ${(x.skills || []).length ? `<p class="muted">${esc(x.skills.join(' · '))}</p>` : ''}${ulx(x.activities)}
+      ${(x.resources || []).length ? `<p>📚 <b>${esc(T('plan.resources'))}</b> ${esc(x.resources.join(' · '))}</p>` : ''}${x.project ? `<p>🛠 <b>${esc(T('plan.project'))}</b> ${esc(x.project)}</p>` : ''}${x.review ? `<p>🔁 <b>${esc(T('plan.review'))}</b> ${esc(x.review)}</p>` : ''}</div></div>`).join('');
+      planHtml = `<h2>📋 ${esc(T('plan.ovTitle'))}</h2>
+<div class="box"><p><b>${esc(T('plan.ovDuration'))}:</b> ${esc(durLabel(row.duration))} · <b>${esc(T('plan.ovWeekly'))}:</b> ${esc(p.weeklyHours || '—')}</p>${p.goal ? `<p><b>${esc(T('plan.ovGoal'))}:</b> ${esc(p.goal)}</p>` : ''}
+<b>${esc(T('plan.ovSkills'))}</b><ul>${planSkills(row).map((s) => `<li><b>${esc(s.skill)}</b>${s.target ? ` — ${esc(T('plan.target'))}: ${esc(T('plan.diff_' + s.target))}` : ''}${s.outcome ? `<br><span class="muted">${esc(s.outcome)}</span>` : ''}</li>`).join('')}</ul></div>
+${st.combine || st.sequence ? `<h2>🧠 ${esc(T('plan.stratTitle'))}</h2>${two(lab(T('plan.stratCombine'), st.combine ? `<p>${esc(st.combine)}</p>` : ''), lab(T('plan.stratSequence'), st.sequence ? `<p>${esc(st.sequence)}</p>` : ''))}` : ''}
+${(p.phases || []).length ? `<h2>🧩 ${esc(T('plan.phasesTitle'))}</h2><ol>${p.phases.map((x) => `<li><b>${esc(x.name)}</b>${x.period ? ` <span class="muted">(${esc(x.period)})</span>` : ''}${x.focus ? `<br>${esc(x.focus)}` : ''}${x.outcome ? `<br>🎯 ${esc(x.outcome)}` : ''}</li>`).join('')}</ol>` : ''}
+<h2>🗓️ ${esc(T(row.duration === '1y' ? 'plan.schedMonthly' : 'plan.schedWeekly'))}</h2>${blocks}
+${(tr.measure || []).length || (tr.milestones || []).length ? `<h2>📊 ${esc(T('plan.trackTitle'))}</h2>${two(lab(T('plan.trackMeasure'), ulx(tr.measure)), lab(T('plan.milestones'), (tr.milestones || []).length ? `<ol>${tr.milestones.map((m) => `<li>${m.when ? `<b>${esc(m.when)}</b> ` : ''}${esc(m.milestone)}</li>`).join('')}</ol>` : ''))}` : ''}
+${(ad.motivation || []).length || (ad.consistency || []).length ? `<h2>💬 ${esc(T('plan.adviceTitle'))}</h2>${two(lab('🔥 ' + T('plan.motivation'), ulx(ad.motivation)), lab('📅 ' + T('plan.consistency'), ulx(ad.consistency)))}` : ''}`;
+    } else {
+      const phases = (p.phases || []).map((x) => `<div class="ph"><div class="ph-k">${esc(x.label || '')}</div><div><h4>${esc(x.title)}</h4>
+      ${(x.skills || []).length ? `<p class="muted">${esc(x.skills.join(' · '))}</p>` : ''}${x.goal ? `<p>🎯 ${esc(x.goal)}</p>` : ''}
+      ${ulx(x.actions)}${x.practice ? `<p>🛠 <b>${esc(T('plan.practice'))}</b> ${esc(x.practice)}</p>` : ''}${x.checkpoint ? `<p>✅ <b>${esc(T('plan.checkpoint'))}</b> ${esc(x.checkpoint)}</p>` : ''}</div></div>`).join('');
+      planHtml = `${p.intro ? `<p>${esc(p.intro)}</p>` : ''}<h2>🗺️ ${esc(T('plan.planTitle', { d: durLabel(row.duration) }))}</h2>${phases}
+${(p.routine || []).length ? `<h2>🔁 ${esc(T('plan.routine'))}</h2><ul>${li(p.routine)}</ul>` : ''}
+${p.finalProject ? `<h2>🏁 ${esc(T('plan.final'))}</h2><p>${esc(p.finalProject)}</p>` : ''}
+${(p.nextSteps || []).length ? `<h2>➡️ ${esc(T('plan.next'))}</h2><ul>${li(p.nextSteps)}</ul>` : ''}`;
+    }
     return `<!DOCTYPE html><html lang="${esc(I.lang)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} — Wikigai</title><style>
 :root{--ink:#1d1630;--muted:#5d5873;--line:#e4def0;--acc:#8a2be2;--acc2:#e8590c}
 *{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:15px/1.55 Inter,-apple-system,Segoe UI,Roboto,sans-serif}
 .w{max-width:820px;margin:0 auto;padding:32px 24px 48px}
-.brand{font-weight:800;color:var(--acc);letter-spacing:.3px}h1{font-size:28px;line-height:1.2;margin:6px 0 4px}h2{font-size:19px;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}h3{font-size:16px;margin:0 0 4px}
+.brand{font-weight:800;color:var(--acc);letter-spacing:.3px}h1{font-size:28px;line-height:1.2;margin:6px 0 4px}h2{font-size:19px;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}h3{font-size:16px;margin:16px 0 4px}h4{font-size:15px;margin:0 0 4px}
 .meta,.muted{color:var(--muted);font-size:13px}p{margin:6px 0}ul,ol{margin:6px 0 6px 20px;padding:0}li{margin:3px 0}
-.box{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:10px 0;background:#faf8fe}
+.box{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;background:#faf8fe}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cols.c3{grid-template-columns:1fr 1fr 1fr}.cols .box{margin:0}
 .sk{list-style:none;margin:0;padding:0}.sk li{padding:8px 0;border-bottom:1px solid var(--line)}.sk li.on b{color:var(--acc)}
-.tag{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--acc);border-radius:10px;padding:1px 8px}
+.tag{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--acc);border-radius:10px;padding:1px 8px}.tag.lt{background:#efe7fb;color:var(--acc)}
 .ph{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);break-inside:avoid}.ph-k{font-weight:800;color:var(--acc2);font-size:13px}
 a{color:var(--acc)}.foot{margin-top:28px;font-size:12px;color:var(--muted)}
 .bar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.bar button{font:600 13px inherit;border:1px solid var(--line);background:#fff;border-radius:18px;padding:7px 14px;cursor:pointer}
-@media print{.bar{display:none}.w{padding:0}a{color:var(--ink);text-decoration:none}h2{break-after:avoid}}
-@media (max-width:560px){.ph{grid-template-columns:1fr;gap:4px}}
+@media print{.bar{display:none}.w{padding:0}a{color:var(--ink);text-decoration:none}h2,h3{break-after:avoid}.box{break-inside:avoid}}
+@media (max-width:560px){.ph{grid-template-columns:1fr;gap:4px}.cols,.cols.c3{grid-template-columns:1fr}}
 </style></head><body><div class="w">
 <div class="brand">Wikigai · ${esc(T('side.plans'))}</div>
 <h1>${esc(title)}</h1>
 <div class="meta">${esc(C(row.profession))} · ${esc(durLabel(row.duration))}${p.weeklyHours ? ' · ' + esc(p.weeklyHours) : ''} · ${esc(I.fmt.date(row.created_at, { day: 'numeric', month: 'long', year: 'numeric' }))}</div>
 <div class="bar"><button onclick="window.print()">🖨 ${esc(T('plan.printPdf'))}</button></div>
-${p.intro ? `<p>${esc(p.intro)}</p>` : ''}
-<h2>1 · ${esc(T('plan.outlookTitle', { p: C(row.profession) }))}</h2>
-${o.summary ? `<p>${esc(o.summary)}</p>` : ''}${o.outlook ? `<p>📈 ${esc(o.outlook)}</p>` : ''}
-<div class="box"><b>${esc(T('plan.questionsTitle'))}</b><ol>${(o.questions || []).map((q) => `<li><b>${esc(q.q)}</b>${q.why ? `<br><span class="muted">${esc(q.why)}</span>` : ''}</li>`).join('')}</ol></div>
-<h2>2 · ${esc(T('plan.skillsTitle'))}</h2><ol class="sk">${skills}</ol>
-<h2>3 · ${esc(T('plan.planTitle', { d: durLabel(row.duration) }))}</h2>${phases}
-${p.routine && p.routine.length ? `<h2>🔁 ${esc(T('plan.routine'))}</h2><ul>${li(p.routine)}</ul>` : ''}
-${p.finalProject ? `<h2>🏁 ${esc(T('plan.final'))}</h2><p>${esc(p.finalProject)}</p>` : ''}
-${p.nextSteps && p.nextSteps.length ? `<h2>➡️ ${esc(T('plan.next'))}</h2><ul>${li(p.nextSteps)}</ul>` : ''}
+${planHtml}
+<h2 style="margin-top:40px">${esc(T('plan.overviewOf'))} ${esc(C(row.profession))}</h2>
+${overview}
 <p class="foot">${esc(T('plan.footer'))} · ${esc(location.origin)}</p>
 </div></body></html>`;
   }
@@ -494,6 +670,7 @@ ${p.nextSteps && p.nextSteps.length ? `<h2>➡️ ${esc(T('plan.next'))}</h2><ul
     const ids = savedIds();
     const v = (wv.items || []).concat(wv.saved || []).find((x) => x.id === id);
     if (!v) return;
+    if (ids.has(id) && !(await CPS.confirm({ icon: '🎬', title: T('confirm.unsaveTitle'), text: T('confirm.unsaveVideo', { title: v.title || '' }), ok: T('confirm.removeOk'), cancel: T('confirm.keep') }))) return;
     try {
       if (ids.has(id)) { await api('/api/videos/saved/remove', { method: 'POST', body: { id } }); wv.saved = wv.saved.filter((x) => x.id !== id); }
       else { await api('/api/videos/saved', { method: 'POST', body: { video: v, domain: wv.domain, query: wv.q } }); wv.saved = [{ ...v, savedAt: new Date().toISOString() }, ...(wv.saved || [])]; window.WK?.track?.('video_save', {}); }
@@ -532,9 +709,58 @@ ${p.nextSteps && p.nextSteps.length ? `<h2>➡️ ${esc(T('plan.next'))}</h2><ul
         ${sectionCards(s.id)}`;
   }
 
+  /* ── My favourites (v20261101c): saved plans (premium), saved WikiVids (thumbnails), courses & more (soon) ── */
+  function favPlans(limit) {
+    if (pl.saved === null || pl.saved === undefined) return `<p class="ik-dim">${T('common.loading')}</p>`;
+    if (!pl.saved.length) return `<p class="fv-empty">${T('fav.plansEmpty')} <a href="/learning/plans">${T('fav.makePlan')} →</a></p>`;
+    const list = limit ? pl.saved.slice(0, limit) : pl.saved;
+    return `<ul class="pl-saved-ul">${list.map((x) => `<li><a class="pl-saved-open" href="/learning/plans?open=${x.id}"><strong>🗺️ ${esc(C(x.profession))}</strong>
+        <small>${esc(durLabel(x.duration))} · ${T('plan.nSkills', { n: (x.skills || []).length })} · ${esc(I.fmt.date(x.created_at, { day: 'numeric', month: 'short', year: 'numeric' }))}</small></a>
+        <button type="button" class="wv-save on pl-favon" data-plunfav="${x.id}" aria-pressed="true" title="${esc(T('plan.unsave'))}">★ ${T('learn.vSaved')}</button></li>`).join('')}</ul>
+      ${limit && pl.saved.length > limit ? `<a class="fv-all" href="/favorites/plans">${T('fav.seeAll', { n: pl.saved.length })} →</a>` : ''}`;
+  }
+  function favVideos(limit) {
+    if (wv.saved === null || wv.saved === undefined) return `<p class="ik-dim">${T('common.loading')}</p>`;
+    if (!wv.saved.length) return `<p class="fv-empty">${T('learn.vSavedEmpty')} <a href="/learning/videos">${T('fav.findVideos')} →</a></p>`;
+    const list = limit ? wv.saved.slice(0, limit) : wv.saved;
+    return `<div class="wv-grid">${list.map((v) => videoCard(v, true)).join('')}</div>
+      ${limit && wv.saved.length > limit ? `<a class="fv-all" href="/favorites/videos">${T('fav.seeAll', { n: wv.saved.length })} →</a>` : ''}`;
+  }
+  function favSoon(key, icon) {
+    return `<div class="fv-soon"><span class="fv-soon-ico">${icon}</span><div><strong>${T('fav.' + key + 'Title')} <span class="lr-soon">${T('learn.soon')}</span></strong><small>${T('fav.' + key + 'Lead')}</small></div></div>`;
+  }
+  function favSection(id, icon, badge, body) {
+    const n = id === 'plans' ? (pl.saved || []).length : id === 'videos' ? (wv.saved || []).length : null;
+    return `<section class="ik-card fv-sec" id="fv-${id}"><div class="fv-h"><h2>${icon} ${T('fav.' + id)}${n ? ` <span class="fv-n">${n}</span>` : ''}${badge || ''}</h2>
+      ${id === 'plans' ? `<a href="/learning/plans">+ ${T('fav.newPlan')}</a>` : id === 'videos' ? `<a href="/learning/videos">+ ${T('fav.moreVideos')}</a>` : ''}</div>${body}</section>`;
+  }
+  function pageFavorites(sub) {
+    const premium = `<span class="wk-badge premium fv-badge">💎 ${T('side.premium')}</span>`;
+    const secs = {
+      plans: () => favSection('plans', '🗺️', premium, favPlans(sub ? 0 : 4)),
+      videos: () => favSection('videos', '🎬', '', favVideos(sub ? 0 : 6)),
+      courses: () => favSection('courses', '🎓', '', `<div class="fv-soon-grid">${favSoon('courses', '🎓')}</div>`),
+      more: () => favSection('more', '➕', '', `<div class="fv-soon-grid">${favSoon('schools', '🏛️')}${favSoon('tools', '🔧')}${favSoon('jobs', '💼')}</div>`),
+    };
+    const body = sub ? secs[sub]() : secs.plans() + secs.videos() + secs.courses() + secs.more();
+    return `<header class="ik-head"><div class="ik-kicker">⭐ ${T('side.favorites')}${sub ? ' · ' + T('fav.' + sub) : ''}</div>
+      <h1>${T('fav.title')}</h1><p>${T('fav.lead')}</p></header>
+      <div class="fv-tabs">${[['', '⭐', 'fav.all'], ['plans', '🗺️', 'fav.plans'], ['videos', '🎬', 'fav.videos'], ['courses', '🎓', 'fav.courses']].map(([k, ico, l]) => `<a class="fv-tab${sub === k ? ' on' : ''}" href="/favorites${k ? '/' + k : ''}"${sub === k ? ' aria-current="page"' : ''}>${ico} ${T(l)}</a>`).join('')}</div>
+      ${body}`;
+  }
+
   function render() {
     const s = current();
     const view = $('lrView');
+    if (s && s.id === 'favorites') {
+      document.title = `${T('side.favorites')} — Wikigai`;
+      view.innerHTML = pageFavorites(s.sub);
+      if (pl.saved === null) { pl.saved = undefined; api('/api/plans').then((r) => { pl.saved = r.items || []; configured = r.configured !== false; render(); }).catch(() => { pl.saved = []; render(); }); }
+      if (wv.saved === null) { wv.saved = undefined; wvLoadSaved().then(() => render()); }
+      return;
+    }
+    const openId = s && s.id === 'plans' && new URLSearchParams(location.search).get('open');
+    if (openId && !pl.busy && (!pl.plan || pl.plan.id !== openId) && pl.opening !== openId) { pl.opening = openId; plOpen(openId); }
     if (!s) {
       document.title = T('meta.learning');
       view.innerHTML = `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')}</div><h1>${T('side.myLearning')}</h1></header>${pathBox()}${sectionCards()}`;
@@ -562,7 +788,7 @@ ${p.nextSteps && p.nextSteps.length ? `<h2>➡️ ${esc(T('plan.next'))}</h2><ul
 
   /* ── events ── */
   document.addEventListener('click', async (e) => {
-    const a = e.target.closest && e.target.closest('a[href^="/learning"]');
+    const a = e.target.closest && e.target.closest('a[href^="/learning"], a[href^="/favorites"]');
     if (a && !e.metaKey && !e.ctrlKey && !a.target) {
       e.preventDefault();
       history_push(a.getAttribute('href'));
@@ -624,11 +850,21 @@ ${p.nextSteps && p.nextSteps.length ? `<h2>➡️ ${esc(T('plan.next'))}</h2><ul
     }
     const act = e.target.closest && e.target.closest('[data-act]');
     if (act && act.dataset.act === 'plmore') { pl.showAll = true; render(); return; }
-    if (act && act.dataset.act === 'plback') { pl.step = 'pick'; pl.err = ''; render(); window.scrollTo(0, 0); return; }
+    const stp = e.target.closest && e.target.closest('[data-plstep]');
+    if (stp && !pl.busy) { pl.step = ['', 'pick', 'outlook', 'skills', 'plan'][+stp.dataset.plstep]; pl.err = ''; render(); window.scrollTo(0, 0); return; }
+    if (act && act.dataset.act === 'plpick') { pl.step = 'pick'; pl.err = ''; render(); window.scrollTo(0, 0); return; }
+    if (act && act.dataset.act === 'plback') { pl.step = pl.step === 'skills' ? 'outlook' : 'pick'; pl.err = ''; render(); window.scrollTo(0, 0); return; }
+    if (act && act.dataset.act === 'plretry' && pl.profession && !pl.busy) { plOutlook(pl.profession); return; }
+    if (act && act.dataset.act === 'plnext' && pl.outlook) { pl.step = 'skills'; pl.err = ''; render(); window.scrollTo(0, 0); return; }
     if (act && act.dataset.act === 'plcreate') { plCreate(); return; }
-    if (act && act.dataset.act === 'plhtml') { plDownload(); return; }
-    if (act && act.dataset.act === 'plprint') { plPrint(); return; }
-    if (act && act.dataset.act === 'pledit' && pl.plan) { pl.outlook = pl.plan.outlook; pl.profession = pl.plan.profession; pl.sel = (pl.plan.skills || []).slice(); pl.duration = pl.plan.duration; pl.durTouched = true; pl.answers = Object.assign({}, pl.answers, pl.plan.answers || {}); pl.step = 'outlook'; render(); window.scrollTo(0, 0); return; }
+    if (act && act.dataset.act === 'plsave' && pl.plan) { plSetSaved(pl.plan.id, true); return; }
+    if (act && act.dataset.act === 'plunsave' && pl.plan) { plSetSaved(pl.plan.id, false); return; }
+    const unf = e.target.closest && e.target.closest('[data-plunfav]');
+    if (unf) { plSetSaved(unf.dataset.plunfav, false); return; }
+    if (act && act.dataset.act === 'pllocked') { pl.lockMsg = true; window.WK?.track?.('plan_export_locked', {}); render(); return; }
+    if (act && act.dataset.act === 'plhtml' && !EXPORT_LOCKED) { plDownload(); return; }
+    if (act && act.dataset.act === 'plprint' && !EXPORT_LOCKED) { plPrint(); return; }
+    if (act && act.dataset.act === 'pledit' && pl.plan) { pl.outlook = pl.plan.outlook; pl.profession = pl.plan.profession; pl.sel = (pl.plan.skills || []).slice(); pl.duration = pl.plan.duration; pl.durTouched = true; pl.answers = Object.assign({}, pl.answers, pl.plan.answers || {}); pl.step = 'skills'; render(); window.scrollTo(0, 0); return; }
     const vid = e.target.closest && e.target.closest('.lr-vid');
     if (vid) window.WK?.track?.('video_search', {});
   });
@@ -637,6 +873,7 @@ ${p.nextSteps && p.nextSteps.length ? `<h2>➡️ ${esc(T('plan.next'))}</h2><ul
   });
   function history_push(href) {
     window.history.pushState({}, '', href);
+    if (/[?&]open=/.test(href)) pl.opening = null; // open this saved plan (from My favourites)
     if (/^\/learning\/videos\?/.test(href)) { wv.q = null; wv.domain = null; wv.items = null; } // a new "▶ Videos" search from Plans
     render(); window.scrollTo(0, 0);
   }

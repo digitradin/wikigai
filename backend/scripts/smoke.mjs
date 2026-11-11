@@ -53,7 +53,7 @@ check('password mismatch rejected', pwdMismatch.status === 400 && pwdMismatch.da
 
 const solC = await j('/api/captcha/_debug/solve');
 const signup = await j('/api/auth/signup', { method: 'POST', body: {
-  email, email2: email, password: PASSWORD, password2: PASSWORD, name: 'Smoke Tester',
+  email, password: PASSWORD, name: 'Smoke Tester', // v20261031: single email + single password
   captcha_id: solC.data.captcha_id, captcha_answer: solC.data.answer,
 }});
 check('signup succeeds', signup.status === 201 && !!signup.data.dev_pin, JSON.stringify(signup.data));

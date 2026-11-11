@@ -71,14 +71,17 @@ async function verifyPin(emailHash, pin, purpose) {
 
 /* ─────────────────────────────────────────────────────────────
  * POST /api/auth/signup
- * Body: { email, email2, password, password2, name?, locale?,
+ * Body: { email, password, name?, locale?,
  *         captcha_id, captcha_answer[] }
  * Creates an unverified user with a password and emails a 6-digit PIN.
+ * v20261031 (smooth onboarding): no confirm-email / confirm-password fields on the form.
+ * The emailed PIN proves the address; "Forgot password" covers a mistyped password.
+ * email2 / password2 are still checked if an older cached page sends them.
  * ───────────────────────────────────────────────────────────── */
 router.post('/signup', async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body.email);
-    const email2 = normalizeEmail(req.body.email2);
+    const email2 = req.body.email2 === undefined ? email : normalizeEmail(req.body.email2);
     const password = String(req.body.password || '');
     const password2 = String(req.body.password2 ?? req.body.password ?? '');
     const name = typeof req.body.name === 'string' ? req.body.name.trim().slice(0, 80) : '';

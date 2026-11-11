@@ -1,10 +1,16 @@
-/* Wikigai — My learning › Plans (v20261026): pick ONE profession, then a 2-step plan.
+/* Wikigai — My learning › Plans (v20261029: "Career & Learning Architect"). Pick ONE profession, then 2 steps.
      Step 1  POST /api/plans/outlook   { profession, lang, country }
-             → simple-language outlook: key questions to think about + the 10 key skills
-               (most → least relevant), each with a "learn to …" video search for WikiVids.
+             → the profession explained simply: A1 what it is (like you're 12), A2 pros & cons,
+               A3 current trends; B4 future 2030-2035, B5 growing or shrinking, B6 AI & robots,
+               B7 career perspectives (paths, salary entry → top, lifestyle), B8 top 10 skills
+               ranked (why + difficulty), each with a "learn to …" video search for WikiVids.
+             (v20261026 outlooks — key questions + skills — are still read for saved plans.)
      Step 2  POST /api/plans           { profession, lang, country, skills[1..10], duration, answers }
-             → a detailed plan on the chosen skills: 30d (1-2 skills), 3m (3-5), 1y (6+);
-               the user may override the duration before confirming. Saved for the user.
+             → personalised study plan on the chosen skills: 30d (1-2 skills), 3m (3-5), 1y (6-10);
+               overview (title, duration, weekly time, goal, skills + target level), learning strategy,
+               phase breakdown, weekly / monthly schedule (activities, free resources, project, review),
+               progress tracking (measures + milestones), final advice. Never before skills are chosen.
+               The user may override the duration before confirming. Saved for the user.
      GET  /api/plans            the user's saved plans (titles) + whether AI is configured
      GET  /api/plans/:id        one saved plan (outlook snapshot + plan)
      POST /api/plans/:id/delete remove a saved plan
@@ -45,9 +51,9 @@ const cfg = () => ({
 /* 1-2 skills → 30 days · 3-5 → 3 months · 6+ → 1 year */
 const recommend = (n) => (n <= 2 ? '30d' : n <= 5 ? '3m' : '1y');
 const SHAPE = {
-  '30d': { n: 4, unit: 'four blocks labelled with day ranges: days 1-7, 8-14, 15-21, 22-30', actions: '3-5', tokens: 2800 },
-  '3m': { n: 6, unit: 'six two-week blocks labelled weeks 1-2, 3-4, 5-6, 7-8, 9-10, 11-12', actions: '3-5', tokens: 3800 },
-  '1y': { n: 12, unit: 'twelve blocks, one per month, labelled month 1 to month 12', actions: '2-4', tokens: 5200 },
+  '30d': { n: 4, unit: 'four weekly blocks labelled Week 1 (days 1-7), Week 2 (days 8-14), Week 3 (days 15-21), Week 4 (days 22-30)', example: 'Week 1', actions: '3-5', tokens: 3400 },
+  '3m': { n: 6, unit: 'six two-week blocks labelled Weeks 1-2, 3-4, 5-6, 7-8, 9-10, 11-12', example: 'Weeks 1-4', actions: '3-5', tokens: 4600 },
+  '1y': { n: 12, unit: 'twelve monthly blocks labelled Month 1 to Month 12', example: 'Months 1-3', actions: '2-4', tokens: 6400 },
 };
 
 /* ── hidden filters → how to talk to this person ── */
@@ -74,29 +80,70 @@ function context(user, b) {
   return { age, band, lang, language: LANGS[lang], cc, country };
 }
 const placeLine = (x) => (x.country
-  ? `They live in ${x.country}: make examples, study routes and workplace culture fit ${x.country} (its education system, typical qualifications, how people get hired there). Do not invent school names, salaries, statistics or URLs.`
-  : 'Keep examples international. Do not invent school names, salaries, statistics or URLs.');
+  ? `They live in ${x.country}: make examples, study routes and workplace culture fit ${x.country} (its education system, typical qualifications, how people get hired there). Do not invent school names, statistics or URLs.`
+  : 'Keep examples international. Do not invent school names, statistics or URLs.');
 
-/* ── Step 1: outlook (key questions + 10 key skills) ── */
+/* ── Step 1: profession overview (A1-A3 understand it, B4-B7 its future) + top 10 skills ── */
+const OUTLOOK_V = 2;
 function outlookPrompt(profession, x) {
-  const system = `You are Wikigai's career coach. Answer ONLY with one JSON object — no markdown, no text before or after.
-Write every text value in ${x.language}, speaking directly to the reader as "you".
+  const money = x.country ? `the local currency of ${x.country}` : 'US dollars and euros (e.g. "$40,000–55,000 / €30,000–40,000")';
+  const system = `You are Wikigai's elite Career & Learning Architect. You help people understand a profession in the simplest possible way.
+Answer ONLY with one JSON object — no markdown, no text before or after.
+Write every text value in ${x.language}, speaking directly to the reader as "you". Use simple, clear, friendly language.
 Your reader is ${AUDIENCE[x.band]}. ${placeLine(x)}
 JSON shape (keys exactly as written, in English):
 {
   "profession": "the profession name",
-  "summary": "2-3 simple sentences: what this job really is, day to day",
-  "outlook": "2-3 simple sentences: how this job is changing (technology, AI, demand) and what that means for someone starting now; no numbers unless you are certain",
-  "questions": [{"q": "a key question you need to think about", "why": "one sentence: why it matters"}],
-  "skills": [{"skill": "short action-style name, 2-6 words", "why": "one simple sentence", "level": "core | important | useful", "videoQuery": "a short ${x.language} video search that starts with \\"${LEARN_TO[x.lang]}\\""}]
+  "whatIs": "Explain the profession like the reader is 12 years old: 3-5 short friendly sentences, no jargon — what these people do all day, where, with whom and why it matters",
+  "pros": ["3 to 5 advantages: what people love about this job"],
+  "cons": ["3 to 5 disadvantages: what people dislike"],
+  "trends": ["3 to 5 things that are changing right now in this profession"],
+  "future": "2-4 simple sentences: how this profession will look in 2030-2035",
+  "demand": {"direction": "growing | stable | shrinking", "now": "1-2 sentences: the current situation", "next": "1-2 sentences: future demand in the next 5-10 years"},
+  "ai": {"takeOver": ["2 to 4 tasks AI and robots will take over"], "humans": ["2 to 4 things humans will still need to do"], "adapt": ["2 to 4 ways professionals must adapt"]},
+  "career": {"paths": ["3 to 5 best possible career paths"], "salary": {"entry": "yearly gross range at entry level", "mid": "yearly gross range after about 5 years", "top": "yearly gross range at the top level", "note": "one short sentence: what makes pay go up"}, "lifestyle": "1-2 sentences: freedom and lifestyle possibilities (hours, remote work, freelancing, travel)"},
+  "skills": [{"skill": "short skill name, 2-6 words", "why": "ONE short sentence: why it is important", "difficulty": "beginner | intermediate | advanced", "videoQuery": "a short ${x.language} video search that starts with \\"${LEARN_TO[x.lang]}\\""}]
 }
-Rules: "questions" has 6 to 8 items covering personal fit, daily life, study/training route, money and time, risks and the impact of AI.
-"skills" has EXACTLY 10 items ordered from the MOST relevant to the LEAST relevant for this profession today; mix hard and soft skills.`;
+Rules: "skills" has EXACTLY 10 items, ranked from the MOST important to the LEAST important to become a top professional in the FUTURE; mix hard skills, soft skills and, when relevant, AI/digital skills.
+Salaries are realistic estimates written as ranges in ${money}; when unsure, give a wider range rather than a precise number.
+The values of "direction" and "difficulty" stay in English, lowercase, exactly one of the listed words.`;
   const user = `Profession: ${profession}.`;
   return [{ role: 'system', content: system }, { role: 'user', content: user }];
 }
-function validOutlook(raw) {
+const pickWord = (v, words, alias = {}) => {
+  const s = String(v || '').toLowerCase();
+  const hit = words.find((w) => s.includes(w)) || Object.keys(alias).find((a) => s.includes(a));
+  return hit ? (alias[hit] || hit) : '';
+};
+const DIFF = ['beginner', 'intermediate', 'advanced'];
+const DIRS = ['growing', 'stable', 'shrinking'];
+const DIR_ALIAS = { grow: 'growing', rising: 'growing', increas: 'growing', declin: 'shrinking', shrink: 'shrinking', decreas: 'shrinking', steady: 'stable' };
+const DIFF_ALIAS = { basic: 'beginner', easy: 'beginner', medium: 'intermediate', moderate: 'intermediate', hard: 'advanced', expert: 'advanced' };
+function cleanSkills(a) {
+  const skills = (Array.isArray(a) ? a : []).map((s) => (typeof s === 'string' ? { skill: s } : s || {}))
+    .map((s) => ({ skill: clip(s.skill || s.name, 80), why: clip(s.why || s.reason, 300), difficulty: pickWord(s.difficulty || s.level, DIFF, DIFF_ALIAS), level: '', videoQuery: clip(s.videoQuery, 90) }))
+    .filter((s) => s.skill);
+  const seen = new Set();
+  return skills.filter((s) => { const k = s.skill.toLowerCase(); return !seen.has(k) && seen.add(k); }).slice(0, 10);
+}
+/* v2 (this version): the full overview. Strict: exactly 10 skills. */
+function validOutlookV2(raw) {
   if (!raw || typeof raw !== 'object') return null;
+  const skills = cleanSkills(raw.skills);
+  const d = raw.demand || {}, ai = raw.ai || {}, c = raw.career || {}, sal = c.salary || {};
+  const out = {
+    v: OUTLOOK_V, profession: clip(raw.profession, 120), whatIs: clip(raw.whatIs || raw.summary, 900),
+    pros: list(raw.pros, 6, 240), cons: list(raw.cons, 6, 240), trends: list(raw.trends, 6, 260), future: clip(raw.future, 800),
+    demand: { direction: pickWord(d.direction, DIRS, DIR_ALIAS), now: clip(d.now, 400), next: clip(d.next, 400) },
+    ai: { takeOver: list(ai.takeOver, 5, 240), humans: list(ai.humans, 5, 240), adapt: list(ai.adapt, 5, 240) },
+    career: { paths: list(c.paths, 6, 200), salary: { entry: clip(sal.entry, 90), mid: clip(sal.mid, 90), top: clip(sal.top, 90), note: clip(sal.note, 240) }, lifestyle: clip(c.lifestyle, 400) },
+    skills,
+  };
+  if (!out.whatIs || skills.length !== 10 || out.pros.length < 2 || out.cons.length < 2) return null;
+  return out;
+}
+/* v1 (v20261026 plans already saved by users): summary + key questions + skills */
+function validOutlookV1(raw) {
   const skills = (Array.isArray(raw.skills) ? raw.skills : []).map((s) => (typeof s === 'string' ? { skill: clip(s, 80) } : s || {}))
     .map((s) => ({ skill: clip(s.skill || s.name, 80), why: clip(s.why, 300), level: ['core', 'important', 'useful'].includes(String(s.level || '').toLowerCase()) ? String(s.level).toLowerCase() : '', videoQuery: clip(s.videoQuery, 90) }))
     .filter((s) => s.skill);
@@ -106,45 +153,66 @@ function validOutlook(raw) {
   if (uniq.length < 6 || questions.length < 3) return null;
   return { profession: clip(raw.profession, 120), summary: clip(raw.summary, 700), outlook: clip(raw.outlook, 700), questions, skills: uniq };
 }
+function validOutlook(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  return raw.whatIs || raw.v === OUTLOOK_V ? validOutlookV2(raw) : validOutlookV1(raw);
+}
 
-/* ── Step 2: detailed plan on the chosen skills ── */
+/* ── Step 2: personalised study plan on the chosen skills ── */
 function planPrompt(profession, skills, duration, ans, x) {
   const s = SHAPE[duration];
-  const system = `You are Wikigai's learning coach. Answer ONLY with one JSON object — no markdown, no text before or after.
+  const system = `You are Wikigai's elite Career & Learning Architect. You create highly effective multi-skill study plans.
+Answer ONLY with one JSON object — no markdown, no text before or after.
 Write every text value in ${x.language}, speaking directly to the reader as "you".
 Your reader is ${AUDIENCE[x.band]}. ${placeLine(x)}
-Build the plan with the skill-mastery method:
-- break each skill into its sub-skills and start with the few that give most of the results (80/20);
-- every block mixes a little learning, a lot of hands-on practice, feedback (from a person, a community or self-checking) and a small proof of progress;
-- follow the skill priority order (first skill first), revisit earlier skills so nothing is forgotten, and finish with a real project;
-- be realistic for the time available; prefer free resources and describe them by type (e.g. "a free beginner course", "YouTube tutorials") — never invent URLs, brands of courses or prices.
+Important rules:
+- use simple and clear language; make the plan motivating and practical;
+- be realistic with time: everything must fit the time per week the reader can give;
+- focus on high-leverage actions: break each skill into sub-skills and start with the few that give most of the results (80/20);
+- combine the skills so they reinforce each other, follow their priority order (first skill first) and revisit earlier skills so nothing is forgotten;
+- every block mixes a little learning, a lot of hands-on practice, a practice project and a review point; finish with a real project;
+- prefer free or accessible resources: name well-known free platforms or resource types (e.g. "Khan Academy", "freeCodeCamp", "YouTube tutorials", "your local library", "a free online course"); never write URLs or prices.
 JSON shape (keys exactly as written, in English):
 {
   "title": "short motivating plan title",
-  "intro": "2 simple sentences: what you will be able to do at the end",
-  "weeklyHours": "the time per week this plan expects",
-  "phases": [{"label": "", "title": "", "skills": ["exact skill names from the list"], "goal": "one sentence", "actions": ["concrete action"], "practice": "one hands-on exercise or mini-project", "checkpoint": "how you know this block is done"}],
-  "routine": ["3 to 5 simple habits that keep you going"],
-  "finalProject": "one project that proves the skills at the end",
-  "nextSteps": ["2 to 4 things to do after this plan"]
+  "weeklyHours": "realistic time per week, e.g. \\"4-5 hours per week\\"",
+  "goal": "one sentence: the main goal of this plan",
+  "skills": [{"skill": "exact skill name from the list", "target": "beginner | intermediate | advanced", "outcome": "one sentence: what you will be able to do at the end"}],
+  "strategy": {"combine": "2-3 sentences: how the skills will be combined", "sequence": "2-3 sentences: why this sequence"},
+  "phases": [{"name": "phase name", "period": "e.g. ${s.example}", "focus": "one sentence", "outcome": "one sentence: what you can do at the end of the phase"}],
+  "schedule": [{"label": "", "title": "", "skills": ["exact skill names from the list"], "activities": ["specific activity"], "resources": ["free resource"], "project": "one practice project or exercise", "review": "the review point: how you check this block"}],
+  "tracking": {"measure": ["3 to 5 simple ways to measure progress"], "milestones": [{"when": "e.g. ${s.example}", "milestone": "what you can show"}]},
+  "advice": {"motivation": ["2 or 3 motivation tips"], "consistency": ["2 or 3 consistency tips"]}
 }
-"phases" has ${s.unit} (${s.n} items), each with ${s.actions} concrete actions.`;
+"skills" lists every chosen skill once. "phases" has between 2 and 4 items. "milestones" has 3 to 5 items.
+"schedule" has ${s.unit} (${s.n} items), each with ${s.actions} specific activities and 1 to 3 free resources.
+The value of "target" stays in English, lowercase.`;
   const user = `Profession: ${profession}.
-Skills to work on, in priority order: ${skills.map((k, i) => `${i + 1}. ${k}`).join('; ')}.
-Plan length: ${duration === '30d' ? '30 days' : duration === '3m' ? '3 months' : '1 year'}.
+Skills I selected, in priority order: ${skills.map((k, i) => `${i + 1}. ${k}`).join('; ')}.
+Plan duration: ${duration === '30d' ? '30 days' : duration === '3m' ? '3 months' : '1 year'}.
 About me — current level: ${LEVELS[ans.level]}; my goal: ${GOALS[ans.goal]}; time I can give: ${HOURS[ans.hours]}.`;
   return [{ role: 'system', content: system }, { role: 'user', content: user }];
 }
-function validPlan(duration) {
+function validPlan(duration, chosen) {
   const want = SHAPE[duration].n;
+  const names = new Map((chosen || []).map((k) => [k.toLowerCase(), k]));
   return (raw) => {
     if (!raw || typeof raw !== 'object') return null;
-    const phases = (Array.isArray(raw.phases) ? raw.phases : []).map((p) => ({
-      label: clip(p && (p.label || p.period || p.days), 40), title: clip(p && p.title, 140), skills: list(p && p.skills, 6, 80),
-      goal: clip(p && p.goal, 300), actions: list(p && p.actions, 6, 300), practice: clip(p && p.practice, 400), checkpoint: clip(p && p.checkpoint, 300),
-    })).filter((p) => p.title || p.actions.length).slice(0, want + 2);
-    if (phases.length < Math.ceil(want / 2)) return null;
-    return { title: clip(raw.title, 140), intro: clip(raw.intro, 600), weeklyHours: clip(raw.weeklyHours, 60), phases, routine: list(raw.routine, 6, 240), finalProject: clip(raw.finalProject, 500), nextSteps: list(raw.nextSteps, 5, 240) };
+    const schedule = (Array.isArray(raw.schedule) ? raw.schedule : []).map((p) => ({
+      label: clip(p && (p.label || p.period || p.week || p.month), 40), title: clip(p && p.title, 140), skills: list(p && p.skills, 6, 80),
+      activities: list(p && (p.activities || p.actions), 6, 300), resources: list(p && p.resources, 4, 200), project: clip(p && (p.project || p.practice), 400), review: clip(p && (p.review || p.checkpoint), 300),
+    })).filter((p) => p.title || p.activities.length).slice(0, want + 2);
+    const phases = (Array.isArray(raw.phases) ? raw.phases : []).map((p) => ({ name: clip(p && (p.name || p.title), 120), period: clip(p && (p.period || p.label), 60), focus: clip(p && p.focus, 300), outcome: clip(p && p.outcome, 300) })).filter((p) => p.name).slice(0, 5);
+    if (schedule.length < Math.ceil(want / 2) || !phases.length) return null;
+    const sk = (Array.isArray(raw.skills) ? raw.skills : []).map((s) => (typeof s === 'string' ? { skill: s } : s || {}))
+      .map((s) => ({ skill: names.get(clip(s.skill, 80).toLowerCase()) || clip(s.skill, 80), target: pickWord(s.target, DIFF, DIFF_ALIAS), outcome: clip(s.outcome, 300) })).filter((s) => s.skill);
+    const st = raw.strategy || {}, tr = raw.tracking || {}, ad = raw.advice || {};
+    return {
+      v: 2, title: clip(raw.title, 140), weeklyHours: clip(raw.weeklyHours, 60), goal: clip(raw.goal || raw.intro, 400), skills: sk,
+      strategy: { combine: clip(st.combine, 600), sequence: clip(st.sequence, 600) }, phases, schedule,
+      tracking: { measure: list(tr.measure, 6, 240), milestones: (Array.isArray(tr.milestones) ? tr.milestones : []).map((m) => (typeof m === 'string' ? { when: '', milestone: clip(m, 240) } : { when: clip(m && m.when, 60), milestone: clip(m && (m.milestone || m.what), 240) })).filter((m) => m.milestone).slice(0, 6) },
+      advice: { motivation: list(ad.motivation, 4, 240), consistency: list(ad.consistency, 4, 240) },
+    };
   };
 }
 
@@ -170,7 +238,7 @@ router.post('/outlook', async (req, res, next) => {
     const profession = clip(b.profession, 120);
     if (profession.length < 2) return fail(res, 400, 'BAD_PROFESSION', 'Please choose a profession.');
     const x = context(user, b);
-    const key = crypto.createHash('sha256').update([profession.toLowerCase(), x.lang, x.band, x.cc].join('|')).digest('hex');
+    const key = crypto.createHash('sha256').update(['v' + OUTLOOK_V, profession.toLowerCase(), x.lang, x.band, x.cc].join('|')).digest('hex');
     if (!b.force) {
       const hit = await db.getOne(`SELECT result, created_at FROM plan_outlook_cache WHERE cache_key = $1 AND created_at > NOW() - make_interval(days => $2)`, [key, cfg().cacheDays]);
       if (hit) return res.json({ ok: true, cached: true, profession, outlook: hit.result, recommend: { '1-2': '30d', '3-5': '3m', '6+': '1y' } });
@@ -178,7 +246,7 @@ router.post('/outlook', async (req, res, next) => {
     if (!llm.configured()) return fail(res, 503, 'AI_UNAVAILABLE', 'The AI planning service is not configured yet.');
     if (!(await underLimit(user.id))) return fail(res, 429, 'AI_LIMIT', 'You reached today’s planning limit. Please try again tomorrow.');
     let r;
-    try { r = await llm.chatJSON(outlookPrompt(profession, x), { validate: validOutlook, maxTokens: 2400 }); } catch (err) { return aiError(res, err); }
+    try { r = await llm.chatJSON(outlookPrompt(profession, x), { validate: validOutlookV2, maxTokens: 3600 }); } catch (err) { return aiError(res, err); }
     const out = r.data;
     out.profession = profession; // keep the user's profession name (the model may rephrase it)
     out.skills.forEach((s) => { if (!s.videoQuery) s.videoQuery = `${LEARN_TO[x.lang]} ${s.skill}`.slice(0, 90); });
@@ -210,23 +278,23 @@ router.post('/', async (req, res, next) => {
     if (!llm.configured()) return fail(res, 503, 'AI_UNAVAILABLE', 'The AI planning service is not configured yet.');
     if (!(await underLimit(user.id))) return fail(res, 429, 'AI_LIMIT', 'You reached today’s planning limit. Please try again tomorrow.');
     let r;
-    try { r = await llm.chatJSON(planPrompt(profession, skills, duration, ans, x), { validate: validPlan(duration), maxTokens: SHAPE[duration].tokens }); } catch (err) { return aiError(res, err); }
+    try { r = await llm.chatJSON(planPrompt(profession, skills, duration, ans, x), { validate: validPlan(duration, skills), maxTokens: SHAPE[duration].tokens }); } catch (err) { return aiError(res, err); }
     // keep the profession, the outlook the user saw (with the skills they picked) and the plan together
     outlook.profession = profession;
-    const row = await db.getOne(`INSERT INTO learning_plans (user_id, profession, lang, duration, skills, answers, outlook, plan, model)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, profession, lang, duration, skills, answers, outlook, plan, created_at`,
+    const row = await db.getOne(`INSERT INTO learning_plans (user_id, profession, lang, duration, skills, answers, outlook, plan, model, saved)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE) RETURNING id, profession, lang, duration, skills, answers, outlook, plan, saved, created_at`,
     [user.id, profession, x.lang, duration, JSON.stringify(skills), JSON.stringify(ans), JSON.stringify(outlook), JSON.stringify(r.data), r.provider + '/' + r.model]);
     await logUse(user.id, 'plan', r.provider);
     res.json({ ok: true, plan: row, recommended: recommend(skills.length) });
   } catch (err) { next(err); }
 });
 
-/* GET /api/plans — saved plans */
+/* GET /api/plans — the plans the user saved to "My favourites" (v20261101c: step 4 → ⭐ Save) */
 router.get('/', async (req, res, next) => {
   try {
     const user = await requireUser(req, res);
     if (!user) return;
-    const r = await db.query(`SELECT id, profession, duration, skills, created_at FROM learning_plans WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`, [user.id]);
+    const r = await db.query(`SELECT id, profession, duration, skills, saved_at, created_at FROM learning_plans WHERE user_id = $1 AND saved ORDER BY saved_at DESC NULLS LAST, created_at DESC LIMIT 100`, [user.id]);
     res.json({ ok: true, items: r.rows, configured: llm.configured() });
   } catch (err) { next(err); }
 });
@@ -237,7 +305,25 @@ router.get('/:id', async (req, res, next) => {
     const user = await requireUser(req, res);
     if (!user) return;
     if (!isId(req.params.id)) return fail(res, 404, 'NOT_FOUND', 'Not found');
-    const row = await db.getOne(`SELECT id, profession, lang, duration, skills, answers, outlook, plan, created_at FROM learning_plans WHERE id = $1 AND user_id = $2`, [req.params.id, user.id]);
+    const row = await db.getOne(`SELECT id, profession, lang, duration, skills, answers, outlook, plan, saved, created_at FROM learning_plans WHERE id = $1 AND user_id = $2`, [req.params.id, user.id]);
+    if (!row) return fail(res, 404, 'NOT_FOUND', 'Not found');
+    res.json({ ok: true, plan: row });
+  } catch (err) { next(err); }
+});
+/* POST /api/plans/:id/save { saved: true|false } — add to / remove from "My favourites" */
+router.post('/:id/save', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    if (!isId(req.params.id)) return fail(res, 404, 'NOT_FOUND', 'Not found');
+    const saved = !(req.body && req.body.saved === false);
+    if (saved) { // cap My favourites › My plans (PLAN_SAVED_MAX, default 100)
+      const max = parseInt(process.env.PLAN_SAVED_MAX || '100', 10);
+      const c = await db.getOne(`SELECT count(*)::int AS n FROM learning_plans WHERE user_id = $1 AND saved AND id <> $2`, [user.id, req.params.id]);
+      if ((c && c.n) >= max) return fail(res, 400, 'PLANS_FULL', `You can save up to ${max} plans. Remove some first.`);
+    }
+    const row = await db.getOne(`UPDATE learning_plans SET saved = $3, saved_at = CASE WHEN $3 THEN COALESCE(saved_at, NOW()) ELSE NULL END
+      WHERE id = $1 AND user_id = $2 RETURNING id, profession, duration, skills, saved, saved_at, created_at`, [req.params.id, user.id, saved]);
     if (!row) return fail(res, 404, 'NOT_FOUND', 'Not found');
     res.json({ ok: true, plan: row });
   } catch (err) { next(err); }
@@ -253,4 +339,4 @@ router.post('/:id/delete', async (req, res, next) => {
 });
 
 module.exports = router;
-module.exports._test = { recommend, validOutlook, validPlan, outlookPrompt, planPrompt, ageBand, context };
+module.exports._test = { recommend, validOutlook, validOutlookV2, validPlan, outlookPrompt, planPrompt, ageBand, context };

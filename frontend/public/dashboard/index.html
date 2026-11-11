@@ -82,7 +82,7 @@
       const pct = isD ? 100 : partial && s.total ? Math.min(99, Math.round(st.answered / s.total * 100)) : 0;
       const progLabel = isD ? T('dash.progDone') : partial && s.total ? `${st.answered}/${s.total}` : (unlocked ? T('dash.progNot') : '—');
       const actions = isD
-        ? `<a class="wk-btn primary sm" href="${s.review}">${T('dash.viewResults')}</a><a class="wk-btn ghost sm" href="${s.start}">${T('dash.retake')}</a>`
+        ? `<a class="wk-btn primary sm" href="${s.review}">${T('dash.viewResults')}</a><a class="wk-btn ghost sm" href="${s.start}"${s.n <= 2 ? ` data-wk-confirm="retake" data-stage="${s.n}"` : ''}>${T('dash.retake')}</a>`
         : unlocked
           ? `<a class="wk-btn primary block" href="${s.start}">${T(partial ? 'dash.continueBtn' : 'dash.startBtn', { n: s.n })}</a>`
           : `<span class="wk-btn ghost block" aria-disabled="true">${T('dash.unlock', { n: s.n - 1 })}</span>`;

@@ -19,7 +19,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [traefik]
+    networks: [db]
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -39,8 +39,13 @@ services:
     depends_on:
       cps-db:
         condition: service_healthy
+    volumes:
+      # Preprod has no SMTP provider, so the mailer writes .eml files here instead of
+      # sending. Mounted so sign-up PINs survive a redeploy and can be read on the host.
+      - /opt/cps/outbox:/data/outbox
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
       # wikigai.digitradin.cloud (public) — own router so its cert is issued
       # independently of any other hostname.
       - "traefik.http.routers.cps-main-http.entrypoints=web"
@@ -73,7 +78,7 @@ services:
       - "traefik.http.services.cps-svc.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-https.redirectscheme.permanent=true"
-    networks: [traefik]
+    networks: [traefik, db]
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -82,6 +87,9 @@ volumes:
   cps-db-data:
 
 networks:
+  db:
+    name: wikigai-preprod-db-net
+    internal: true
   traefik:
     external: true
     name: traefik

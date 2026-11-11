@@ -385,7 +385,7 @@
   }
   function stepCard(n, t, d, done, href, review) {
     return `<div class="ik-stepcard ${done ? 'done' : ''}"><div class="ik-stepn">${done ? '✓' : n}</div><div><strong>${T('hub.stepTitle', { n, title: t })}</strong><small>${d}</small></div>
-      <div class="ik-stepact">${review ? `<a class="btn-ghost sm" href="${review}">${T('hub.review')}</a>` : ''}${href ? `<a class="${done ? 'btn-ghost' : 'btn-primary'} sm" href="${href}">${T(done ? 'hub.retake' : 'hub.start')}</a>` : `<span class="ik-dim">${T('hub.afterS1')}</span>`}</div></div>`;
+      <div class="ik-stepact">${review ? `<a class="btn-ghost sm" href="${review}">${T('hub.review')}</a>` : ''}${href ? `<a class="${done ? 'btn-ghost' : 'btn-primary'} sm" href="${href}"${done && n <= 2 ? ` data-wk-confirm="retake" data-stage="${n}"` : ''}>${T(done ? 'hub.retake' : 'hub.start')}</a>` : `<span class="ik-dim">${T('hub.afterS1')}</span>`}</div></div>`;
   }
   function nextLink(href, label) { return `<div class="ik-next"><a class="btn-primary" href="${href}" data-nav>${label} →</a></div>`; }
 

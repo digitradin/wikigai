@@ -164,7 +164,7 @@ app.use('/api/plans', planRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount
-const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/account': 'account.html', '/learning': 'learning.html', '/dashboard': 'dashboard/index.html' };
+const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/account': 'account.html', '/learning': 'learning.html', '/favorites': 'learning.html', '/dashboard': 'dashboard/index.html' };
 const sendPrivate = (file) => (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderPrivate(file));
 for (const [route, file] of Object.entries(privatePages)) app.get(route, sendPrivate(file));
 app.get('/dashboard/*', sendPrivate('dashboard/index.html'));
@@ -172,6 +172,8 @@ app.get('/dashboard/*', sendPrivate('dashboard/index.html'));
 app.get('/ikigai/*', sendPrivate('ikigai.html'));
 // My learning (client-side routed): /learning/plans|videos|tools|schools
 app.get('/learning/*', sendPrivate('learning.html'));
+// My favourites (v20261101c, same client-routed page): /favorites/plans|videos|courses
+app.get('/favorites/*', sendPrivate('learning.html'));
 
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'assets', 'brand', 'favicon.png')));
 
@@ -185,6 +187,7 @@ async function start() {
     console.error('[startup] migrations failed:', e.message);
   }
   analytics.startRetention();
+  require('./lib/retention').startLearningRetention(); // v20261101e: unsaved plans, caches, limit logs
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[cps-backend] Running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
   });

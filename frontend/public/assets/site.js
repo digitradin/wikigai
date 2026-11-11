@@ -1,6 +1,7 @@
 /* Shared Wikigai chrome: top bar (#wkNav) + left menu for signed-in users.
    Left menu: My path · My learning · My profile (see MENU below).
    Desktop (>960px): fixed sidebar. Smaller screens: slide-in drawer from the ☰ button.
+   v20261111: after each sign-in only "My path" is expanded; other groups show "+" to expand ("−" to collapse).
    Text comes from the i18n dictionary (nav.*, side.*); re-renders on language change.
    Pages can opt out of the left menu with <body data-no-side>. */
 (function () {
@@ -21,10 +22,15 @@
       { href: '/ikigai/pay', icon: '💰', label: 'side.payRanges' },
     ] },
     { id: 'learn', icon: '📚', label: 'side.myLearning', href: '/learning', items: [
-      { href: '/learning/plans', icon: '🗺️', label: 'side.plans', badge: 'soon' }, // AI plans: coming soon (v20261028b)
+      { href: '/learning/plans', icon: '🗺️', label: 'side.plans', badge: 'ai', beta: true }, // v20261101b: Plans in beta; AI plans live again (v20261029); 'soon' hides them
       { href: '/learning/videos', icon: '🎬', label: 'side.videos' },
       { href: '/learning/tools', icon: '🔧', label: 'side.tools', badge: 'soon' },
       { href: '/learning/schools', icon: '🎓', label: 'side.schools', badge: 'soon' },
+    ] },
+    { id: 'fav', icon: '⭐', label: 'side.favorites', href: '/favorites', items: [ // v20261101c: My favourites
+      { href: '/favorites/plans', icon: '🗺️', label: 'side.favPlans', badge: 'premium' },
+      { href: '/favorites/videos', icon: '🎬', label: 'side.favVideos' },
+      { href: '/favorites/courses', icon: '🎓', label: 'side.favCourses', badge: 'soon' },
     ] },
     { id: 'profile', icon: '👤', label: 'side.myProfile', items: [
       { href: '/dashboard', icon: '🏠', label: 'side.dashboard' },
@@ -36,7 +42,16 @@
   const path = () => location.pathname.replace(/\/+$/, '') || '/';
   const isActive = (href) => path() === href || (href === '/dashboard' && path().startsWith('/dashboard'));
   const groupActive = (g) => (g.href && (path() === g.href)) || g.items.some((i) => isActive(i.href));
-  const collapsed = () => { try { return JSON.parse(ls.get('wk_side_collapsed') || '[]'); } catch { return []; } };
+  /* v20261111: on every sign-in (phone and web) only "My path" is open; the other groups start collapsed (+ to expand).
+     What the user opens / closes is remembered until the next sign-in (a new sign-in = a new token). */
+  const DEFAULT_OPEN = ['path'];
+  const SIDE_KEY = 'wk_side_open';
+  const loginMark = () => String(Store?.token || '').slice(-24);
+  const openGroups = () => {
+    try { const o = JSON.parse(ls.get(SIDE_KEY) || 'null'); if (o && o.t === loginMark() && Array.isArray(o.open)) return o.open; } catch { /* default */ }
+    return DEFAULT_OPEN.slice();
+  };
+  const saveOpenGroups = (list) => ls.set(SIDE_KEY, JSON.stringify({ t: loginMark(), open: list }));
 
   let side = null, backdrop = null;
   const wantsSide = () => !!Store?.token && !document.body.hasAttribute('data-no-side');
@@ -50,17 +65,18 @@
       document.body.appendChild(backdrop); document.body.appendChild(side);
       document.body.classList.add('wk-has-side');
     }
-    const shut = collapsed();
+    const opened = openGroups();
     side.setAttribute('aria-label', T('side.label'));
     side.innerHTML = `<nav class="wk-side-nav">${MENU.map((g) => {
       const items = g.items;
-      const open = groupActive(g) || !shut.includes(g.id);
+      const open = opened.includes(g.id);
+      const here = !open && groupActive(g); // collapsed group that holds the current page: highlighted, not opened
       const head = g.href
         ? `<a class="wk-side-head${path() === g.href ? ' active' : ''}" href="${g.href}"><span class="ico">${g.icon}</span><span class="lbl">${T(g.label)}${g.soon ? `<span class="wk-soon">${T('side.soon')}</span>` : ''}</span></a>`
         : `<span class="wk-side-head"><span class="ico">${g.icon}</span><span class="lbl">${T(g.label)}</span></span>`;
-      return `<div class="wk-side-group${open ? ' open' : ''}" data-group="${g.id}">
-        <div class="wk-side-row">${head}<button type="button" class="wk-side-tog" data-tog="${g.id}" aria-expanded="${open}" aria-controls="wkSide-${g.id}" aria-label="${esc(T('side.toggle', { name: T(g.label) }))}"><span aria-hidden="true">▾</span></button></div>
-        <ul class="wk-side-list" id="wkSide-${g.id}">${items.map((i) => `<li><a href="${i.href}" class="${isActive(i.href) ? 'active' : ''}"${isActive(i.href) ? ' aria-current="page"' : ''}><span class="ico">${i.icon}</span><span class="lbl">${T(i.label)}</span>${i.badge ? `<span class="wk-badge ${i.badge}">${T(i.badge === 'ai' ? 'learn.aiBadge' : 'side.soon')}</span>` : ''}</a></li>`).join('')}</ul>
+      return `<div class="wk-side-group${open ? ' open' : ''}${here ? ' here' : ''}" data-group="${g.id}">
+        <div class="wk-side-row">${head}<button type="button" class="wk-side-tog" data-tog="${g.id}" aria-expanded="${open}" aria-controls="wkSide-${g.id}" aria-label="${esc(T('side.toggle', { name: T(g.label) }))}"><span aria-hidden="true">${open ? '−' : '+'}</span></button></div>
+        <ul class="wk-side-list" id="wkSide-${g.id}">${items.map((i) => `<li><a href="${i.href}" class="${isActive(i.href) ? 'active' : ''}"${isActive(i.href) ? ' aria-current="page"' : ''}><span class="ico">${i.icon}</span><span class="lbl">${T(i.label)}</span>${i.badge ? `<span class="wk-badge ${i.badge}">${T(i.badge === 'ai' ? 'learn.aiBadge' : i.badge === 'premium' ? 'side.premium' : 'side.soon')}${i.beta ? ' · ' + T('plan.beta') : ''}</span>` : ''}</a></li>`).join('')}</ul>
       </div>`;
     }).join('')}</nav>`;
   }
@@ -122,8 +138,10 @@
       if (g) {
         const open = !g.classList.contains('open');
         g.classList.toggle('open', open); tog.setAttribute('aria-expanded', String(open));
-        const list = collapsed().filter((x) => x !== id); if (!open) list.push(id);
-        ls.set('wk_side_collapsed', JSON.stringify(list));
+        g.classList.toggle('here', !open && !!g.querySelector('.wk-side-list a.active'));
+        const sym = tog.querySelector('span'); if (sym) sym.textContent = open ? '−' : '+';
+        const list = openGroups().filter((x) => x !== id); if (open) list.push(id);
+        saveOpenGroups(list);
       }
       return;
     }

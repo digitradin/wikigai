@@ -193,5 +193,49 @@
     window.location.href = '/login';
   }
 
-  window.CPS = { API_BASE, api, Store, Captcha, setupPinRow, showAlert, hideAlert, requireAuthOrRedirect, logout };
+  /* ── Confirm pop-up (v20261101d) ─────────────────────────────
+     CPS.confirm({ title, text, ok, cancel }) → Promise<boolean>. Used before removing favourites
+     (plans, WikiVids) and before retaking survey stage 1 or 2. Links/buttons with
+     data-wk-confirm="retake" (+ data-stage="1|2") ask first, then continue. Esc / backdrop = cancel. */
+  function confirmBox(o) {
+    return new Promise((resolve) => {
+      if (!document.getElementById('wkConfirmCss')) {
+        const st = document.createElement('style'); st.id = 'wkConfirmCss';
+        st.textContent = `.wk-cf{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,3,15,.72);backdrop-filter:blur(3px)}
+.wk-cf-box{width:100%;max-width:420px;background:#1a1530;color:#f1ecff;border:1px solid rgba(196,77,255,.35);border-radius:18px;padding:22px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.5);font-family:Inter,system-ui,sans-serif}
+.wk-cf-ico{font-size:1.8rem;line-height:1}
+.wk-cf-box h2{font-size:1.12rem;margin:10px 0 6px;font-weight:800}
+.wk-cf-box p{margin:0 0 18px;color:#c8c0dc;font-size:.92rem;line-height:1.5}
+.wk-cf-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.wk-cf-acts button{font:700 .88rem Inter,system-ui,sans-serif;border-radius:22px;padding:10px 18px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#f1ecff}
+.wk-cf-acts .wk-cf-ok{background:#ef4444;border-color:transparent;color:#fff}
+.wk-cf-acts button:focus-visible{outline:2px solid #c44dff;outline-offset:2px}`;
+        document.head.appendChild(st);
+      }
+      const prev = document.activeElement;
+      const wrap = document.createElement('div');
+      wrap.className = 'wk-cf'; wrap.setAttribute('role', 'alertdialog'); wrap.setAttribute('aria-modal', 'true');
+      wrap.setAttribute('aria-labelledby', 'wkCfT'); wrap.setAttribute('aria-describedby', 'wkCfD');
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      wrap.innerHTML = `<div class="wk-cf-box"><div class="wk-cf-ico" aria-hidden="true">${o.icon || '⚠️'}</div><h2 id="wkCfT">${esc(o.title)}</h2><p id="wkCfD">${esc(o.text)}</p>
+        <div class="wk-cf-acts"><button type="button" class="wk-cf-no">${esc(o.cancel || T('confirm.cancel'))}</button><button type="button" class="wk-cf-ok">${esc(o.ok || T('confirm.ok'))}</button></div></div>`;
+      const done = (v) => { document.removeEventListener('keydown', onKey, true); wrap.remove(); if (prev && prev.focus) prev.focus(); resolve(v); };
+      const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); done(false); } };
+      wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
+      wrap.querySelector('.wk-cf-no').addEventListener('click', () => done(false));
+      wrap.querySelector('.wk-cf-ok').addEventListener('click', () => done(true));
+      document.addEventListener('keydown', onKey, true);
+      document.body.appendChild(wrap);
+      wrap.querySelector('.wk-cf-no').focus(); // safe default: keep the content
+    });
+  }
+  const confirmRetake = (n) => confirmBox({ icon: '↺', title: T('confirm.retakeTitle', { n }), text: T('confirm.retakeText', { n }), ok: T('confirm.retakeOk'), cancel: T('confirm.keep') });
+  document.addEventListener('click', async (e) => {
+    const el = e.target.closest && e.target.closest('a[data-wk-confirm="retake"]');
+    if (!el || e.metaKey || e.ctrlKey) return;
+    e.preventDefault(); e.stopPropagation();
+    if (await confirmRetake(el.dataset.stage || '')) window.location.href = el.getAttribute('href');
+  }, true);
+
+  window.CPS = { confirm: confirmBox, confirmRetake, API_BASE, api, Store, Captcha, setupPinRow, showAlert, hideAlert, requireAuthOrRedirect, logout };
 })();

@@ -17,7 +17,7 @@ Age band (from the optional birthday), country (My path region → grading count
 language, and the 3 answers shape vocabulary, examples and pace. Plans follow a skill-mastery method:
 80/20 sub-skills first, learn → practise → feedback → small proof, priority order, final project.
 
-## Free AI providers (backend/src/lib/llm.js) — checked 28 Oct 2026, no credit card
+## Free AI providers (backend/src/lib/llm.js) — checked 31 Oct 2026, no credit card
 Every key that is filled in is used. Requests rotate across providers (so each free quota lasts longer)
 and fail over to the next one on rate limits, errors, timeouts or unreadable answers (provider rests 2 min).
 
@@ -31,6 +31,7 @@ and fail over to the next one on rate limits, errors, timeouts or unreadable ans
 | ZAI_API_KEY | z.ai → API keys | glm-4.5-flash | free model | China-based provider |
 | GEMINI_API_KEY | aistudio.google.com | gemini-flash-latest | ~20 req/day (Flash) | ⚠ Google's free tier is not for apps serving EU/UK users — leave empty for Wikigai |
 | NVIDIA_API_KEY | build.nvidia.com | openai/gpt-oss-120b | ~40 req/min | free endpoints are for prototyping only |
+| OLLAMA_API_KEY | ollama.com → Settings → API keys (free account, no card) | gpt-oss:120b | free tier for individuals (higher limits on cloud plans) | hosted Ollama Cloud models: gpt-oss, glm-5.3-flash, kimi-k3, mistral-large, deepseek-v4.1 |
 
 No longer free (removed): Cerebras (card-only trial since Jul 2026), GitHub Models (retired Jul 2026), SambaNova (no new credits).
 Best start: **Groq + Cloudflare + OpenRouter** (+ your router). Free model names change — if the deploy check shows ✖,

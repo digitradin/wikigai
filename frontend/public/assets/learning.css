@@ -266,3 +266,92 @@ button.wv-fill.lr-dom:hover, button.wv-fill.lr-pro:hover, button.wv-fill.lr-chip
 #acEmStep1[hidden],#acEmStep2[hidden]{display:none}
 .ac-note{margin:0;font-size:.85rem;color:var(--t2)}
 .wv-lbtn-en.btn-ghost{border-color:rgba(255,140,66,.55);box-shadow:0 0 0 3px rgba(255,140,66,.12)} /* EN = most videos: stands out even when not selected */
+
+/* ── Plans v20261029: profession overview (A/B, 1-8) + study plan v2 ── */
+.pl-protitle{margin:4px 0 14px}.pl-protitle h2{margin:2px 0 0;font-size:1.5rem;font-weight:800}
+.pl-part-h{display:flex;gap:14px;align-items:center;margin-bottom:6px}
+.pl-part-h h3{font-size:1.15rem;font-weight:800;margin:0}.pl-part-h small{color:var(--t2);font-size:.84rem}
+.pl-part-k{width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:800 1.1rem var(--font);color:#fff;background:var(--g1)}
+.pl-part-k.b{background:linear-gradient(135deg,#4dc9f6,#8a5cff)}
+.pl-sec{padding:14px 0 4px;border-top:1px solid rgba(255,255,255,.06)}.pl-sec:first-of-type{border-top:0}
+.lr-block .pl-sec h4{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:700 .95rem var(--font);text-transform:none;letter-spacing:0;color:var(--text)}
+.pl-n{width:24px;height:24px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;background:rgba(196,77,255,.18);color:#e0b3ff;font:800 .78rem var(--font)}
+.pl-eli{font-size:1rem;line-height:1.65}
+.pl-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl-3col{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pl-pc{padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--border-glass);font-size:.88rem}
+.pl-pc>b{display:block;font-size:.86rem;margin-bottom:4px}.pl-pc p{margin:0;color:var(--t2);line-height:1.55}
+.pl-pc.pro{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.05)}.pl-pc.con{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.05)}
+.pl-dir{display:inline-flex;align-items:center;gap:6px;font:800 .8rem var(--font);padding:5px 12px;border-radius:16px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.4px}
+.pl-dir.growing{background:rgba(34,197,94,.16);color:#4ade80}.pl-dir.stable{background:rgba(77,201,246,.14);color:#7dd3fc}.pl-dir.shrinking{background:rgba(239,68,68,.15);color:#fca5a5}
+.pl-lbl{display:block;font-size:.84rem;margin:10px 0 6px}.pl-lbl:first-child{margin-top:0}
+.pl-p{margin:0;color:var(--t2);font-size:.9rem;line-height:1.55}
+.pl-sal{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.pl-sal>div{flex:1;min-width:130px;padding:10px 12px;border-radius:12px;background:rgba(255,140,66,.07);border:1px solid rgba(255,140,66,.3)}
+.pl-sal small{display:block;color:var(--t3);font-size:.72rem;text-transform:uppercase;letter-spacing:.4px}.pl-sal strong{font-size:.92rem}
+.pl-arr{align-self:center;color:#ff8c42;font-weight:800}
+.pl-note{font-size:.78rem;margin:8px 0 0}.pl-note a{color:var(--c4,#4dc9f6)}
+.pl-diff{display:inline-block;margin-left:6px;font:700 .62rem var(--font);text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:9px;vertical-align:middle}
+.pl-diff.beginner{background:rgba(34,197,94,.16);color:#4ade80}.pl-diff.intermediate{background:rgba(250,204,21,.15);color:#fde047}.pl-diff.advanced{background:rgba(239,68,68,.15);color:#fca5a5}
+.pl-callout{margin:14px 0 0;padding:12px 14px;border-radius:12px;background:rgba(196,77,255,.10);border:1px solid rgba(196,77,255,.4);font-weight:600;font-size:.92rem}
+.pl-rules{font-size:.8rem;margin:-4px 0 10px}
+.pl-ov{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.pl-ov>div{padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--border-glass)}
+.pl-ov>div.wide{grid-column:1/-1}.pl-ov small{display:block;color:var(--t3);font-size:.72rem;text-transform:uppercase;letter-spacing:.4px}.pl-ov strong{font-size:.95rem}
+.pl-phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.pl-phase{position:relative;padding:14px 14px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--border-glass);font-size:.86rem}
+.pl-phase strong{display:block;font-size:.95rem;padding-right:28px}.pl-phase small{color:#d98bff;font:700 .74rem var(--mono)}.pl-phase p{margin:6px 0 0;color:var(--t2)}
+.pl-phase-n{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--g1);color:#fff;font:800 .76rem var(--font);display:flex;align-items:center;justify-content:center}
+.pl-ms{margin:4px 0 0;padding-left:18px;color:var(--t2);font-size:.88rem}.pl-ms li{margin:4px 0}.pl-ms b{color:var(--text)}
+.pl-advice{border-color:rgba(255,140,66,.35)}
+@media (max-width:760px){.pl-3col{grid-template-columns:1fr}}
+@media (max-width:640px){.pl-2col,.pl-ov{grid-template-columns:1fr}.pl-arr{transform:rotate(90deg);width:100%;text-align:center}}
+@media print{.pl-pc,.pl-phase,.pl-ov>div,.pl-sal>div,.pl-callout{border:1px solid #ccc!important;background:none!important}.pl-callout,.pl-quick{display:none}}
+/* phone: skill text gets the full row, "Learn it" moves under it (v20261029) */
+@media (max-width:640px){.lr-skills li .lr-sk{flex:1 1 calc(100% - 96px)}.pl-skills li .lr-vid{margin-left:68px}}
+
+/* v20261101: 4-stage Plans — clickable completed stages + "Next" button after the overview */
+.pl-stepbtn{all:unset;display:flex;align-items:center;gap:8px;cursor:pointer}
+.pl-stepbtn:focus-visible{outline:2px solid #c44dff;outline-offset:4px;border-radius:14px}
+.pl-steps li.done:hover{border-color:rgba(34,197,94,.45);color:var(--text)}
+.pl-next{justify-content:center;margin:6px 0 24px}
+@media (max-width:640px){.pl-steps{gap:4px}.pl-steps li{font-size:.74rem;padding:5px 10px 5px 5px}}
+
+/* v20261101b: Plans beta tag + frozen (paid) export buttons */
+.pl-beta{background:rgba(77,201,246,.16);color:#8fdcfb;-webkit-text-fill-color:#8fdcfb;text-transform:uppercase}
+.pl-locked{opacity:.6;cursor:not-allowed;border-style:dashed}
+.pl-locked:hover{border-color:rgba(255,255,255,.16)}
+.pl-price{display:inline-block;margin-left:6px;font:800 .7rem var(--font);padding:2px 7px;border-radius:9px;background:rgba(255,140,66,.18);color:#ffb36b}
+.pl-lockmsg{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:rgba(255,140,66,.08);border:1px solid rgba(255,140,66,.35);color:#ffcf9e;font-size:.88rem}
+
+/* v20261101c: step 4 save bar + My favourites */
+.pl-savebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:12px 16px;border-radius:14px;border:1px dashed rgba(245,197,66,.5);background:rgba(245,197,66,.07);font-size:.9rem}
+.pl-savebar>span{flex:1 1 240px;color:var(--t2)}
+.pl-savebar.on{border-style:solid;border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.07)}
+.pl-savebar.on>span{color:var(--green);font-weight:700}
+.pl-savebar a{color:#d98bff;text-decoration:none;font-weight:600;font-size:.85rem}
+.pl-unsave{background:none;border:0;color:var(--t3);font:inherit;font-size:.8rem;cursor:pointer;text-decoration:underline}
+.fv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
+.fv-tab{font:600 .84rem var(--font);color:var(--t2);text-decoration:none;padding:8px 14px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid var(--border-glass)}
+.fv-tab.on{background:var(--g1);color:#fff;border-color:transparent}
+.fv-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.fv-h h2{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fv-h a{font-size:.84rem;color:#d98bff;text-decoration:none;font-weight:600}
+.fv-n{font:700 .72rem var(--font);padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.08);color:var(--t2)}
+.fv-badge{font-size:.62rem;padding:3px 8px}
+.fv-empty{color:var(--t2);font-size:.9rem}.fv-empty a{color:#d98bff}
+.fv-all{display:inline-block;margin-top:12px;font-size:.85rem;color:#d98bff;text-decoration:none;font-weight:600}
+a.pl-saved-open{text-decoration:none}
+.fv-soon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.fv-soon{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px dashed var(--border-glass)}
+.fv-soon-ico{font-size:1.4rem}
+.fv-soon strong{display:block;font-size:.92rem;margin-bottom:3px}
+.fv-soon small{color:var(--t2);font-size:.8rem;line-height:1.45}
+
+/* v20261101d: saved plan in My favourites = yellow ★ Saved (same as WikiVids) */
+.pl-favon{flex:none;align-self:center;white-space:nowrap}
+
+/* v20261108: mobile — loading hints + stage-2 error card */
+.pl-keep{display:block;margin-top:6px;color:var(--t3);font-size:.78rem}
+.pl-errcard strong{display:block;font-size:1rem;margin-bottom:4px}
+.pl-errcard .cta-row{margin-top:12px}

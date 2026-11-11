@@ -13,6 +13,7 @@
      ZAI_API_KEY         (ZAI_MODEL)         z.ai — free GLM Flash models
      GEMINI_API_KEY      (GEMINI_MODEL)      aistudio.google.com — NOTE: Google's free tier is not for apps serving EU/UK users
      NVIDIA_API_KEY      (NVIDIA_MODEL)      build.nvidia.com — free endpoints, prototyping only
+     OLLAMA_API_KEY      (OLLAMA_MODEL)      ollama.com — free account key, hosted cloud models (gpt-oss / glm / kimi / mistral)
    Removed (no longer free): Cerebras (card trial since Jul 2026), GitHub Models (retired Jul 2026), SambaNova.
      AI_PROVIDER_ORDER   e.g. "router,groq,mistral" — limits/orders the providers (default: all, in the order above)
      AI_STRATEGY         "rotate" (default: spread load) or "ordered" (always try the first one first)
@@ -32,6 +33,7 @@ const CATALOG = [
   { id: 'zai', base: () => 'https://api.z.ai/api/paas/v4', key: 'ZAI_API_KEY', model: 'ZAI_MODEL', def: 'glm-4.5-flash' },
   { id: 'gemini', base: () => 'https://generativelanguage.googleapis.com/v1beta/openai', key: 'GEMINI_API_KEY', model: 'GEMINI_MODEL', def: 'gemini-flash-latest' },
   { id: 'nvidia', base: () => 'https://integrate.api.nvidia.com/v1', key: 'NVIDIA_API_KEY', model: 'NVIDIA_MODEL', def: 'openai/gpt-oss-120b' },
+  { id: 'ollama', base: () => 'https://ollama.com/v1', key: 'OLLAMA_API_KEY', model: 'OLLAMA_MODEL', def: 'gpt-oss:120b' },
 ];
 // tests can point any provider at a stand-in: AI_BASE_<ID>=http://127.0.0.1:9999/v1
 const baseOf = (p) => (process.env['AI_BASE_' + p.id.toUpperCase()] || p.base()).replace(/\/+$/, '');
@@ -100,12 +102,17 @@ async function chatJSON(messages, { validate = (x) => x, maxTokens = 3000, tempe
   const now = Date.now();
   const queue = ordered.filter((p) => (resting.get(p.id) || 0) <= now).concat(ordered.filter((p) => (resting.get(p.id) || 0) > now));
   const tried = [];
+  // v20261108: total time budget (AI_TOTAL_MS, default 75 s) — phones and proxies drop very long requests,
+  // so stop trying new providers / repairs once the budget is spent and answer with an error the page can retry.
+  const deadline = Date.now() + parseInt(process.env.AI_TOTAL_MS || '75000', 10);
+  const left = () => deadline - Date.now();
   for (const p of queue.slice(0, maxAttempts)) {
+    if (left() < 8000) { tried.push(p.id + ':skipped_time'); break; }
     try {
-      let r = await callOne(p, messages, { timeout, maxTokens, temperature });
+      let r = await callOne(p, messages, { timeout: Math.min(timeout, left()), maxTokens, temperature });
       let out = validate(parseJson(r.text));
-      if (!out) {
-        r = await callOne(p, [...messages, { role: 'assistant', content: clip(r.text, 6000) }, { role: 'user', content: 'That was not valid JSON in the requested shape. Reply again with ONLY the JSON object, nothing else.' }], { timeout, maxTokens, temperature: 0.2 });
+      if (!out && left() > 8000) {
+        r = await callOne(p, [...messages, { role: 'assistant', content: clip(r.text, 6000) }, { role: 'user', content: 'That was not valid JSON in the requested shape. Reply again with ONLY the JSON object, nothing else.' }], { timeout: Math.min(timeout, left()), maxTokens, temperature: 0.2 });
         out = validate(parseJson(r.text));
       }
       if (out) { resting.delete(p.id); return { data: out, provider: p.id, model: clip(r.model, 80), tried }; }
@@ -118,6 +125,7 @@ async function chatJSON(messages, { validate = (x) => x, maxTokens = 3000, tempe
   }
   const e = new Error('All AI providers failed: ' + tried.join(', '));
   e.code = tried.length && tried.every((t) => t.endsWith(':bad_json')) ? 'AI_BAD_OUTPUT' : 'AI_FAILED';
+  console.warn('[llm] gave up after', Math.round((Date.now() - deadline + parseInt(process.env.AI_TOTAL_MS || '75000', 10)) / 1000) + 's:', tried.join(', '));
   throw e;
 }
 

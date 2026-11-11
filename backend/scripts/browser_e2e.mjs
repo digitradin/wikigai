@@ -60,16 +60,14 @@ async function main() {
 
   // 1. Signup page: fill and solve captcha
   await nav(BASE + '/signup');
-  check('signup page has password fields', await evaluate(`!!document.getElementById('password') && !!document.getElementById('password2')`));
+  check('signup page has one email + one password field', await evaluate(`!!document.getElementById('password') && !document.getElementById('password2') && !document.getElementById('email2')`));
   check('signup page has captcha', await evaluate(`!!document.getElementById('cpGrid')`));
 
   // Fill email + password + name
   await evaluate(`(() => {
     document.getElementById('email').value = ${JSON.stringify(EMAIL)};
-    document.getElementById('email2').value = ${JSON.stringify(EMAIL)};
     document.getElementById('name').value = 'E2E Tester';
     document.getElementById('password').value = ${JSON.stringify(PW)};
-    document.getElementById('password2').value = ${JSON.stringify(PW)};
     return true;
   })()`);
 
