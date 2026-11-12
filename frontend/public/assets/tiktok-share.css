@@ -1,0 +1,20 @@
+/* Wikigai — Share to TikTok screen (v20261112b). Builds on legal.css (dl-*) + oauth.js (oa-*). */
+.ts-card{padding:26px 28px}
+.ts-who{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.ts-who img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(254,44,85,.6)}
+.ts-who small{display:block;color:var(--t2);font-size:.78rem}
+.ts-who strong{font-size:1.05rem}
+.ts-h{font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin:6px 0 8px}
+.ts-preview{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;scroll-snap-type:x mandatory}
+.ts-preview img{height:260px;width:auto;aspect-ratio:9/16;border-radius:12px;border:1px solid rgba(255,255,255,.12);scroll-snap-align:start;flex:none}
+.ts-card select.dl-input{appearance:auto}
+.ts-card textarea.dl-input{resize:vertical;min-height:84px;font-size:.92rem}
+.ts-commercial{margin-top:12px;padding:12px 14px;border:1px solid var(--border-glass);border-radius:12px;background:rgba(255,255,255,.02)}
+.ts-commercial .dl-ack{margin:6px 0}
+.ts-commercial small{color:var(--t2);font-weight:400}
+#tsCommBox{padding-left:28px}
+.ts-label{font-size:.82rem;color:#fcd34d;margin:6px 0 0}
+.ts-decl{font-size:.82rem;color:var(--t2);margin:14px 0 0}
+.ts-decl a{color:#d9a7ff}
+.ts-connect{width:auto;padding:13px 22px}
+@media (max-width:640px){.ts-card{padding:20px 16px}.ts-preview img{height:220px}}

@@ -143,6 +143,7 @@
   </div>
 </main>
 <script src="/assets/app.js"></script>
+<script src="/assets/oauth.js"></script>
 <script src="/assets/site.js"></script>
 <script src="/assets/countries.js"></script>
 <script>
@@ -197,7 +198,13 @@
   // ── delete account: retype email + password ──
   const delForm = $('acDeleteForm'), delGo = $('acDeleteGo'), delMsg = $('acDelMsg');
   const delReady = () => { delGo.disabled = !(user && $('acDelEmail').value.trim().toLowerCase() === String(user.email || '').toLowerCase() && $('acDelPass').value.length > 0); };
-  $('acDeleteOpen').addEventListener('click', () => { delForm.hidden = false; $('acDeleteOpen').hidden = true; $('acDelEmail').focus(); });
+  $('acDeleteOpen').addEventListener('click', () => {
+    delForm.hidden = false; $('acDeleteOpen').hidden = true;
+    // v20261112: an account without a stored email has nothing to retype → password only
+    const noEmail = !(user && user.email);
+    $('acDelEmail').required = !noEmail; $('acDelEmail').hidden = noEmail; delForm.querySelector('label[for="acDelEmail"]').hidden = noEmail;
+    (noEmail ? $('acDelPass') : $('acDelEmail')).focus(); delReady();
+  });
   $('acDeleteCancel').addEventListener('click', () => { delForm.hidden = true; $('acDeleteOpen').hidden = false; delForm.reset(); delMsg.textContent = ''; delReady(); });
   $('acDelEmail').addEventListener('input', delReady);
   $('acDelPass').addEventListener('input', delReady);

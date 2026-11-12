@@ -562,7 +562,7 @@ router.post('/email-change/start', async (req, res, next) => {
     }
     const newHash = hashEmail(newEmail);
     const taken = await db.getOne('SELECT id FROM users WHERE email_hash = $1 AND email_verified = true AND id <> $2', [newHash, user.id]);
-    if (taken) return res.status(409).json({ error: 'This email is already used by another Wikigai account.', code: 'EMAIL_TAKEN' });
+    if (taken) return res.status(409).json({ error: 'This email is already used by another Wikigai account.', code: 'EMAIL_TAKEN', linkHint: !user.email });
     const pin = await issuePin(newHash, 'email_change');
     const lang = userLang(user, req);
     await sendMail({ to: newEmail, subject: i18n.t(lang, 'email.subjectEmailChange'), html: pinEmailHtml(pin, user.name || newEmail.split('@')[0], 'change', lang) });
@@ -576,22 +576,23 @@ router.post('/email-change/confirm', async (req, res, next) => {
     if (!user) return;
     const newEmail = normalizeEmail(req.body && req.body.newEmail);
     if (!EMAIL_RE.test(newEmail)) return res.status(400).json({ error: 'Please enter a valid email address.', code: 'BAD_EMAIL' });
-    const newHash = hashEmail(newEmail), oldHash = hashEmail(user.email), oldEmail = user.email;
+    // v20261112b: accounts created with TikTok have no email yet — this same flow ADDS their first email
+    const oldEmail = user.email || null, oldHash = oldEmail ? hashEmail(oldEmail) : null, newHash = hashEmail(newEmail);
     const check = await verifyPin(newHash, req.body && req.body.pin, 'email_change');
     if (!check.ok) return pinError(res, check);
     const taken = await db.getOne('SELECT id FROM users WHERE email_hash = $1 AND email_verified = true AND id <> $2', [newHash, user.id]);
-    if (taken) return res.status(409).json({ error: 'This email is already used by another Wikigai account.', code: 'EMAIL_TAKEN' });
+    if (taken) return res.status(409).json({ error: 'This email is already used by another Wikigai account.', code: 'EMAIL_TAKEN', linkHint: !oldEmail });
     const enc = await encryptEmail(newEmail);
     await db.transaction(async (c) => {
       // an unfinished (never verified) sign-up with the new address would block the unique email — remove it
       await c.query('DELETE FROM users WHERE email_hash = $1 AND email_verified = false AND id <> $2', [newHash, user.id]);
       await c.query('UPDATE users SET email_hash = $1, email_enc = $2, email_verified = true, updated_at = NOW() WHERE id = $3', [newHash, enc.enc, user.id]);
-      await c.query('UPDATE user_results SET user_email = $1, user_id = $2 WHERE user_id = $2 OR (user_id IS NULL AND user_email = $3)', [newHash, user.id, oldHash]);
-      await c.query('DELETE FROM auth_pins WHERE email_hash IN ($1, $2)', [oldHash, newHash]);
+      await c.query('UPDATE user_results SET user_email = $1, user_id = $2 WHERE user_id = $2 OR (user_id IS NULL AND user_email = $3)', [newHash, user.id, oldHash || ('uid:' + user.id)]);
+      await c.query('DELETE FROM auth_pins WHERE email_hash = $1 OR email_hash = $2', [oldHash || newHash, newHash]);
     });
-    console.log('[auth] email changed for an account');
+    console.log(oldEmail ? '[auth] email changed for an account' : '[auth] email added to an account');
     // heads-up to the old address (security), never blocks the change
-    try {
+    if (oldEmail) try {
       const lang = userLang(user, req);
       await sendMail({ to: oldEmail, subject: i18n.t(lang, 'email.subjectEmailChanged'), html: noticeEmailHtml(user.name || oldEmail.split('@')[0], i18n.t(lang, 'email.bodyEmailChanged', { email: newEmail }), lang) });
     } catch (e) { console.warn('[auth] email-change notice not sent:', e.message); }
@@ -614,4 +615,4 @@ function noticeEmailHtml(name, body, lang = 'en') {
 module.exports = router;
 module.exports.requireUser = requireUser;
 // v20261111b: shared with routes/privacy.js (public data deletion by emailed code)
-Object.assign(module.exports, { issuePin, verifyPin, pinError, pinEmailHtml, noticeEmailHtml, normalizeEmail, EMAIL_RE, userLang });
+Object.assign(module.exports, { issuePin, verifyPin, pinError, pinEmailHtml, noticeEmailHtml, normalizeEmail, EMAIL_RE, userLang, ensureResultsRow });

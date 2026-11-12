@@ -9,7 +9,7 @@ const i18n = require('../i18n');
 
 const { isCountry } = require('../lib/countries'); // Account page countries (v20261028b)
 const { findResultsRow } = require('../lib/results'); // results belong to users.id (v20261028b)
-const { deleteAccount, exportAccount } = require('../lib/accountData'); // v20261111b: privacy (delete + download my data)
+const { deleteAccount, exportAccount, resultsKey } = require('../lib/accountData'); // v20261111b: privacy (delete + download my data)
 const MAX_TARGET_COUNTRIES = 10;
 
 /**
@@ -27,10 +27,22 @@ router.get('/profile', async (req, res, next) => {
     if (!user) return;
 
     const results = await findResultsRow(user);
+    // v20261112b: sign-in methods (Account page) + whether to show the "add your email" card
+    const m = await db.getOne('SELECT (password_hash IS NOT NULL) AS has_password, email_prompt_dismissals FROM users WHERE id = $1', [user.id]) || {};
+    const ids = (await db.query('SELECT provider, display_name, avatar_url, linked_at FROM user_identities WHERE user_id = $1 ORDER BY linked_at', [user.id])).rows;
+    const tt = ids.find((x) => x.provider === 'tiktok');
 
     res.json({
       ok: true,
       user,
+      methods: {
+        email: !!user.email,
+        password: !!m.has_password,
+        tiktok: tt ? { name: tt.display_name || '', avatar: tt.avatar_url || '', linkedAt: tt.linked_at } : null,
+        // v20261112c: every connected sign-in app (TikTok, Google, Facebook, Instagram)
+        providers: ids.map((x) => ({ id: x.provider, name: x.display_name || '', avatar: x.avatar_url || '', linkedAt: x.linked_at })),
+      },
+      emailPrompt: !user.email && (m.email_prompt_dismissals || 0) < 2,
       progress: results
         ? {
             stage: results.stage,
@@ -152,7 +164,8 @@ router.post('/delete-account', async (req, res, next) => {
     if (!user) return;
     const email = String((req.body && req.body.email) || '').trim().toLowerCase();
     const password = String((req.body && req.body.password) || '');
-    if (!email || email !== String(user.email || '').trim().toLowerCase()) {
+    // v20261112: an account without a stored email confirms with the password only (it has no address to retype)
+    if (user.email && (!email || email !== String(user.email).trim().toLowerCase())) {
       return res.status(400).json({ error: 'The email does not match your account.', code: 'DELETE_EMAIL_MISMATCH' });
     }
     const row = await db.getOne('SELECT password_hash FROM users WHERE id = $1', [user.id]);
@@ -165,6 +178,18 @@ router.post('/delete-account', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+/**
+ * POST /api/user/email-prompt/dismiss — "Not now" on the add-your-email card (shown at most twice) — v20261112b
+ */
+router.post('/email-prompt/dismiss', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    await db.query('UPDATE users SET email_prompt_dismissals = email_prompt_dismissals + 1 WHERE id = $1', [user.id]);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
 });
 
 /**
@@ -202,7 +227,7 @@ router.post('/results', async (req, res, next) => {
       return res.status(400).json({ error: 'results object required', code: 'BAD_RESULTS' });
     }
 
-    const emailHash = hashEmail(user.email);
+    const emailHash = resultsKey(user); // v20261112b: "uid:<id>" for accounts without email (TikTok sign-up)
     const existing = await findResultsRow(user, 'id, results');
 
     // Guard: never let a late "partial" autosave overwrite a completed summary

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>Wikigai</title>
+<link rel="icon" href="/assets/brand/favicon.png">
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a1a;color:#f1f5f9;font:600 15px Inter,system-ui,sans-serif}</style>
+</head>
+<body data-no-footer>
+<p id="m">…</p>
+<!-- v20261112b/c: end of "Continue with <app>" / "Confirm with <app>" (TikTok, Google, Facebook, Instagram). The server put the session in the #fragment
+     (never sent to any server, not kept in history): store it like the email sign-in does, then continue. -->
+<script src="/assets/track.js"></script>
+<script src="/assets/app.js"></script>
+<script>
+(function () {
+  const h = new URLSearchParams(location.hash.slice(1));
+  try { history.replaceState(null, '', location.pathname); } catch (e) { /* ignore */ }
+  const { Store } = window.CPS;
+  if (h.get('deleted') === '1') {
+    Store.clear(); try { sessionStorage.clear(); } catch (e) { /* ignore */ }
+    location.replace('/delete-my-data?deleted=1'); return;
+  }
+  const t = h.get('t');
+  if (!t) { location.replace('/login?auth=error&via=' + encodeURIComponent(h.get('via') || '')); return; }
+  Store.token = t;
+  try {
+    const bin = atob(h.get('u').replace(/-/g, '+').replace(/_/g, '/'));
+    Store.user = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)))); // UTF-8 names (é, ñ…)
+  } catch (e) { /* the profile loads on the next page anyway */ }
+  try { window.WK && WK.track && WK.track(h.get('new') === '1' ? 'signup_complete' : 'login', { method: h.get('via') || 'app' }); } catch (e) { /* ignore */ }
+  const n = h.get('n') || '/dashboard';
+  location.replace(/^\/(?!\/)/.test(n) ? n : '/dashboard');
+})();
+</script>
+</body>
+</html>

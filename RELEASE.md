@@ -1,108 +1,102 @@
-# Wikigai — release v20261111b
+# Wikigai — release v20261112c
 
 | | |
 |---|---|
-| Version | v20261111b |
-| Builds on | v20261111 (live on preprod + prod) — everything in it is included; its notes are in `RELEASE_v20261111.md` |
-| Status | **LIVE on production wikigai.com** (2026-11-12 01:08 CET) and preprod — deployed & verified (local ✅ → preprod ✅ → prod ✅) |
-| Why | Phase 7 of the CMO Social Engine: TikTok and Meta developer apps require live **Privacy Policy**, **Terms** and **user data deletion** URLs on the brand domain |
-| Production site | **https://wikigai.com** |
+| Version | v20261112c |
+| Builds on | v20261112b (TikTok login + share, not deployed) → v20261112 → v20261111b (live) — all included; notes in `RELEASE_v20261112b.md`, `RELEASE_v20261112.md`, `RELEASE_v20261111b.md` |
+| Status | **LIVE on preprod wikigai.digitradin.cloud** since 2026-11-12 22:09 CET (TikTok sandbox on, Google/Facebook/Instagram off). Not yet promoted to production. |
+| Ship instead of | v20261112b (same deploy plan; v20261112b no longer needs to ship on its own) |
+| Safe to deploy dark | Every sign-in app is **hidden** (buttons, Account rows, privacy-policy paragraphs) unless its keys **and** `<APP>_LOGIN=true` are set on that stack |
 
-## Changes
+## 1. Share to TikTok — new artwork + emojis
+- Slides use the new **four-circles image** (`frontend/public/assets/brand/ikigai-circles.jpg`, 1024×1024) blended into each slide's colour
+  (canvas "screen" blend, so its black background disappears). Old drawn circles stay only as a fallback if the image fails to load.
+- **Fun emojis tied to the user's results**, and **never on top of the circles (the logo)**:
+  - a row of 4 emojis sits in the empty band **under** the circles: the **top profession's emoji** first (e.g. 📱 UX Designer, 🤖 ML Engineer,
+    🧠 Clinical Psychologist, 🚑 Paramedic, 🐠 Marine Biologist — a keyword map covers all 160 careers; anything new falls back to its
+    domain icon), then the **top domains' icons** (🔬 🎨 💼 🩺 🤝 ⚖️ 🏗️ 🌿);
+  - enforced in code, not just by layout: the circles' painted area (glow included) is read from the image as a mask, and an emoji is only
+    drawn where its whole box plus a margin is clear of it — if there is no clear spot, no emoji is drawn. Applies to the fallback circles too;
+  - each passion and each career in the lists has its own emoji (in the text area); titles get 💖 / 🎯; the last slide's row is 👀 🤔 💭 👇.
+- **Caption and title are written from the results** (still editable before posting), EN/FR/ES, e.g.
+  `📱 My top career match: UX Designer! · 💖 What I love: 🎨 Creative Arts & Design · 🔬 Science & Technology … · Which careers would fit YOU? 👇 #ikigai #careertest #wikigai #creative #tech`
+  (2 domain hashtags added from the results). Title: `📱 My ikigai: UX Designer`.
+- Still **no logo, no "Wikigai" wordmark, no URL** on the images (TikTok rule).
+  ⚠️ If TikTok's reviewers read the four circles as the Wikigai logo, they may flag it as branding — answer: it is the generic ikigai diagram
+  (four overlapping circles), with no name or link. If they insist, swap the image file; nothing else changes.
 
-### 1. New public pages (EN / FR / ES, indexable, in the sitemap)
-| URL | What |
-|---|---|
-| `/privacy` (`/fr/privacy`, `/es/privacy`) | Full GDPR privacy policy written from what the code actually does: data table (what · why · legal basis · retention), cookies (one strictly-necessary cookie), AI (only profession/skills/age band/country/language are sent — never name, email, birthday), WikiVids/YouTube, providers, transfers, **social media + Postiz section for Meta/TikTok reviewers**, rights, deletion, minors, security |
-| `/terms` (+ fr, es) | Terms of use: guidance not advice, AI content, fair use, IP, donations, beta features, liability (consumer-safe), Spanish law |
-| `/delete-my-data` (+ fr, es) | **Public data deletion** — works signed out and without a password: email → 6-digit code → tick "I understand" → everything deleted → receipt email. This is the "User data deletion" URL for Meta and TikTok |
+## 2. Sign-in apps: ready for Google, Facebook and Instagram (hidden)
+One account, many ways in. TikTok works exactly as in v20261112b; Google, Facebook and Instagram are built in but **hidden** until switched on.
+- **Backend, one generic flow** (`backend/src/routes/oauth.js` + one small file per app in `backend/src/lib/oauth/`):
+  `GET /api/oauth/:app/start?intent=login|link|delete|share` → app consent → `GET /auth/:app/callback`, `POST /api/oauth/:app/disconnect`.
+  The v20261112b URLs keep working (`/api/tiktok/start`, `/auth/tiktok/callback`). Results come back as `?auth=<code>&via=<app>`;
+  sign-in ends at `/auth/done` (session in the #fragment, as before).
+- **Where the buttons show** (only the apps switched on): `/login` and `/signup` (onboarding) — "Continue with TikTok / Google /
+  Facebook / Instagram" in each app's official colours; **Account › Sign-in methods** — Email + one row per app (Connect / Disconnect),
+  also for an app that was switched off later so people can still disconnect it.
+- **Rules (all apps)**: an app account belongs to one Wikigai account. An app that gives a **verified email** (Google; Facebook) fills the
+  account's email at sign-up, so no "add your email" card. If that email **already has an account**, nothing is merged silently: the person is
+  told to sign in with the email and connect the app from Account (`?auth=email_exists`). Instagram (business/creator accounts only) gives
+  no email, like TikTok. Disconnecting is allowed while another way in remains (email or another app). App-only accounts delete with
+  "Confirm with <app>". Merge of an app-only account into the signed-in one now moves its other app links too.
+- **Schema** (`016_oauth_providers.sql`, idempotent): `user_identities.provider` allows `tiktok, google, facebook, instagram`;
+  `tiktok_oauth_states` → generic **`oauth_states`** (+ `provider` column). `015_tiktok.sql` no longer creates the old table.
+- **Add another app later**: one file in `lib/oauth/`, its id in the 016 CHECK, its icon in `assets/oauth.js`. Nothing else.
 
-Aliases (301, same language): `/privacy-policy`, `/terms-of-service`, `/terms-of-use`, `/tos`, `/data-deletion`, `/delete-data`,
-`/delete-account`, `/user-data-deletion`, `/privacidad`, `/condiciones`, `/borrar-mis-datos`, `/confidentialite`, `/cgu`,
-`/supprimer-mes-donnees`… (`/fr/data-deletion` → `/fr/delete-my-data`).
-
-Legal texts live in `backend/src/seo/legal/<lang>/{privacy,terms}.html` (server-rendered into the page in the visitor's language).
-Page chrome, form texts and footer are in the `legal` block of `locales/<lang>/ui.js` (added by `tools/i18n/add-legal-texts.py`).
-
-### 2. Every user can delete — and download — their data
-- **New API** `POST /api/privacy/delete/start {email}` → always `{ok:true}` (no account enumeration), max one code per address per minute;
-  `POST /api/privacy/delete/confirm {email, pin}` → deletes the account and everything linked, emails a receipt, clears the session cookie.
-  Rate-limited like sign-in. Migration `014_privacy_delete.sql` adds the `delete` PIN purpose.
-- **One deletion routine** `backend/src/lib/accountData.js › deleteAccount()` used by both the Account page (password) and the public page
-  (email code). It now explicitly deletes `user_results` (by id **and** legacy email hash), `learning_plans`, `learning_research`,
-  `favorite_videos`, `plan_ai_log`, `video_search_log`, `auth_pins`, `users` in one transaction and logs row counts only (no id, no email).
-- **Download my data** (GDPR access/portability): Account › "Download my data" → `GET /api/user/export` → `wikigai-my-data-YYYY-MM-DD.json`
-  (profile with decrypted email/phone, survey results, plans, research, saved videos; never the password hash).
-- Account page: "Forgot your password? Delete with an email code instead" link + Privacy/Terms links.
-- Emails (EN/FR/ES): "Your Wikigai data deletion code" and "Your Wikigai account and data were deleted".
-
-### 3. Site-wide legal footer + consent line
-- Footer on **every** page (Privacy · Terms · Delete my data · Support · © Wikigai by Digitradin), language-aware links,
-  injected by `assets/app.js` (self-contained CSS; opt out with `<body data-no-footer>`).
-- Sign-up: "By creating an account you accept the Terms of Use and the Privacy Policy" (linked) under the button.
-
-### 4. Phone layout fixes found during review (matter for social traffic, which is ~all mobile)
-- **Home page** was 541 px wide on a 390 px phone (inline style kept the 4 pillars in 4 columns) → now 1 column on phones,
-  2 on tablets; nav buttons no longer overflow by 2 px in French.
-- **Account page** was 489 px wide on phones (long country names in the selects) → fits 390 px.
-
-### 5. Estonian company + leaner privacy policy (added 2026-11-12, on Tomas's request)
-- **Controller and service provider = Digitradin OÜ (Estonia)**, shown as "being registered in Estonia" until the registry code and
-  address exist. Set on the server (no code change; pages update on restart), see `deploy/.env.production.example`:
-  `LEGAL_ENTITY_NAME` (default `Digitradin OÜ`), `LEGAL_REG_CODE`, `LEGAL_ADDRESS`, `LEGAL_EMAIL` (default `admin@digitradin.cloud`).
-  When code + address are set, the wording switches automatically to "registered in the Estonian Business Register under registry code …".
-- Estonian best practice applied (EN/FR/ES): GDPR + Estonian Personal Data Protection Act; lead authority **Andmekaitse Inspektsioon**
-  (Tatari 39, 10134 Tallinn, aki.ee) plus the user's local authority; breach notice to AKI within 72 h; Estonian digital-consent age
-  **13** added to the age list; Terms under **Estonian law**, **Harju County Court**, consumers keep their home-country rights,
-  **Consumer Disputes Committee (TTJA)** for consumers in Estonia, ECC-Net for other EU consumers; liability wording per Law of
-  Obligations Act § 106; **service-provider block** (name, registry code, address, email) required by the Information Society Services Act.
-- **Leaner privacy policy (harder to copy):** chapter 2 now lists data *categories*, purposes, legal bases and retention only (what
-  GDPR Art. 13 requires) — no analytics method, no exact AI inputs, no model/provider names, no internal tool names (Postiz),
-  no security stack. Providers are listed by category ("current list on request"). Chapter 2 went from ~400 to ~200 words.
-- Scripts kept for traceability: `tools/i18n/legal-estonia.py`, `tools/i18n/legal-privacy-lean.py` (both idempotent).
-- Re-tested: i18n check 0 errors, smoke 23/23, all 9 legal URLs 200, no `{{placeholder}}` left in any language, both identity modes
-  (being registered / registered) render correctly, phone width 390 px.
+## 3. Privacy policy follows the switches (EN/FR/ES)
+`backend/src/seo/legal/<lang>/privacy.html` now has conditional blocks, resolved from the server settings:
+- apps that are off are **never named**; "We do not offer sign-in with Facebook or Instagram" stays while both are off;
+- when Google/Facebook/Instagram is on: a data-table row, a "Signing in with Google and Facebook" paragraph (identifier, name, picture,
+  verified email only; no silent merge; token used once then revoked), a Facebook/Instagram line in "our social media", and the
+  deletion step "Signed up with … → Confirm with …". Delete-my-data page text is now app-neutral.
+- Scripts: `tools/i18n/legal-signin-apps.py`, `tools/i18n/add-oauth-texts.py` (new `oauth.*` texts, 39 keys × 3; TikTok-only sign-in texts
+  removed from `tiktok.*`; 3 caption keys added).
 
 ## Files
-New: `backend/src/lib/accountData.js`, `backend/src/routes/privacy.js`, `backend/src/seo/legal/{en,fr,es}/{privacy,terms}.html`,
-`deploy/migrations/014_privacy_delete.sql`, `frontend/public/{privacy,terms,delete-my-data}.html`, `frontend/public/assets/legal.css`,
-`tools/i18n/add-legal-texts.py`.
-Changed: `backend/src/index.js` (route + rate limit), `backend/src/seo/index.js` (3 pages, aliases, legal fragments, dictionary merge),
-`backend/src/routes/user.js` (shared deletion + export), `backend/src/routes/auth.js` (exports PIN helpers, `delete` email kind),
-`backend/src/i18n/locales/{en,fr,es}.json` (4 email texts), `frontend/public/assets/i18n/locales/{en,fr,es}/ui.js` (`legal` block, 61 keys),
-`frontend/public/assets/app.js` (footer), `frontend/public/account.html`, `frontend/public/signup.html`, `frontend/public/index.html`,
-`frontend/public/assets/learning.css`.
+New: `backend/src/lib/oauth/{index,common,tiktok,google,facebook,instagram}.js`, `backend/src/routes/oauth.js`,
+`deploy/migrations/016_oauth_providers.sql`, `frontend/public/assets/oauth.js` (replaces `assets/tiktok.js`),
+`frontend/public/auth-done.html` (replaces `auth-tiktok.html`), `frontend/public/assets/brand/ikigai-circles.jpg`,
+`backend/scripts/oauth_standin.mjs` + `oauth_smoke.mjs` (replace the `tiktok_*` ones).
+Changed: `index.js`, `routes/tiktok.js` (sharing only), `routes/user.js` (profile `methods.providers`), `lib/accountData.js`,
+`lib/retention.js`, `seo/index.js`, privacy ×3, `015_tiktok.sql`, `tiktok-share.js/.css`, `support.js`, login/signup/account/share pages, ui.js ×3.
 
-## Tests run (local, real Postgres + Chromium)
-- `node tools/i18n/check.js` → 0 errors, 0 warnings (61 new keys × 3 languages, 4 new email keys).
-- `backend/scripts/smoke.mjs` → **23/23 pass** (sign-up, verify, login, results, forgot/reset unchanged).
-- Routes: `/privacy`, `/terms`, `/delete-my-data` × EN/FR/ES = 200; aliases 301 to the right language; `/privacy.html` → `/privacy`;
-  sitemap 21 URLs (9 new) with hreflang; `<html lang>`, title, canonical and hreflang per language.
-- Public deletion API: bad email → 400; unknown email → ok (no enumeration); real email → code (in the requested language);
-  second request within 60 s → no new code; wrong code → `PIN_MISMATCH`; right code → 200, session cookie cleared, **all rows gone**
-  (users, results incl. a legacy email-hash row, plans, saved videos, pins), receipt email in the account language; reused code → `PIN_NO_PIN`.
-- Account page: wrong password → `DELETE_BAD_PASSWORD`; correct → all rows gone. Export: JSON with account + 1 result + 1 plan + 1 video,
-  `Content-Disposition: attachment`, `Cache-Control: private, no-store`; without a session → 401.
-- Browser (Chromium): privacy desktop EN, privacy phone FR (data table turns into cards), terms phone ES, delete page full flow in FR
-  (button stays disabled until 6 digits + checkbox), Account page download (file `wikigai-my-data-….json` received), sign-up consent line,
-  footer on home/login/sign-up/survey/account. No page errors, no horizontal scroll on 390 px phones.
-- SEO audit: new pages pass; 3 new meta descriptions shortened to ≤ 160 chars. (Pre-existing: FR home, FR sign-up, FR/ES support
-  descriptions are 164–184 chars — harmless, can be trimmed later.)
+## Settings (server `.env.production`, per stack — see `deploy/.env.production.example`)
+TikTok: unchanged (see `RELEASE_v20261112b.md`). New, all optional and **off by default**:
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (default `PUBLIC_URL/auth/google/callback`), `GOOGLE_LOGIN`
+- `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, `FACEBOOK_REDIRECT_URI` (default `PUBLIC_URL/auth/facebook/callback`), `FACEBOOK_GRAPH_VERSION` (v21.0), `FACEBOOK_LOGIN`
+- `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_REDIRECT_URI` (default `PUBLIC_URL/auth/instagram/callback`), `INSTAGRAM_LOGIN`
+Use a **separate Meta app** for user sign-in (not the Postiz publishing app). Not added to `deploy.sh` SYNC_KEYS (prod stays off).
 
-## Deploy (CTO)
-1. Preprod: deploy this folder (`Deploy Wikigai.command`) → check https://wikigai.digitradin.cloud/privacy, `/terms`, `/delete-my-data`,
-   and a real deletion with a throw-away account (the code email must arrive — SMTP must be set on preprod, else codes go to the outbox).
-2. Prod: same, then confirm `https://wikigai.com/privacy`, `/terms`, `/delete-my-data` return 200 **without redirects** (Meta and TikTok
-   reviewers fetch them) and `https://wikigai.com/sitemap.xml` lists them.
-3. Migration `014` runs automatically at start-up (idempotent).
-   Optional now, required once the OÜ is registered: add `LEGAL_REG_CODE` and `LEGAL_ADDRESS` (and `LEGAL_ENTITY_NAME` if the final
-   company name differs) to the server `.env.production` and restart.
-4. Tell the CMO: "legal URLs live" → Phase 7 can start.
+## Tests run (local, real Postgres 16 + Chromium)
+- `backend/scripts/oauth_smoke.mjs` with TikTok + Google + Facebook on → **70/70 pass**: all 48 TikTok cases of v20261112b on the new
+  routes (+ old `/api/tiktok/start` still works); config lists only the apps on (Instagram hidden); Google: new user gets the verified email
+  and no card, same account on 2nd login, existing email → `email_exists` and no account created, unverified email not used, email user
+  connects Google → Google opens it, cancel; TikTok-only account adds Facebook → both sign in to it, TikTok disconnect allowed, last
+  app without email refused, second Facebook refused, Facebook user with email, delete by "Confirm with Facebook"; Instagram off →
+  refused; unknown app → `BAD_PROVIDER`; share intent TikTok-only; privacy page names "Google and Facebook" only.
+- Same script with **no app switched on** (`HIDDEN=1`, = production today) → **8/8**: config empty, every app's start refused, privacy
+  EN/FR/ES mention no Google/Facebook sign-in and keep "we do not offer sign-in with Facebook or Instagram", no template tags left.
+- Browser: no buttons / no Sign-in methods card when everything is off; with apps on, login + signup show the 3 buttons, Spanish
+  `email_exists` message, Account rows Email / TikTok / Google / Facebook (app icon when the avatar can't load), no horizontal scroll on
+  iPhone 13; share screen EN + FR: 4 slides with the new art, emojis and generated caption; no page errors.
+- `node tools/i18n/check.js` → 0 errors.
 
-Rollback: deploy `v20261111` (no data change needed; the extra PIN purpose is harmless).
+How to run: `node backend/scripts/oauth_standin.mjs 9911`, backend with the env at the top of that file (+ `EXPOSE_PINS=true
+AUTH_RATE_MAX=1000 API_RATE_MAX=2000`), then `BASE_URL=http://localhost:8080 TT=http://localhost:9911 node backend/scripts/oauth_smoke.mjs`.
 
-## Legal note
-Texts are written from the actual code and data flows, but they are not legal advice. Before scaling paid campaigns, have them reviewed
-once by an Estonian lawyer — especially: the company name once registered (and whether "being registered" wording is acceptable until then),
-the minimum-age rule for minors, the data processing agreements with each provider, and — if management stays in Spain — where the
-company's "main establishment" for GDPR purposes really is (it decides which authority leads).
+## Local test (double-click "Test Wikigai Locally.command")
+TikTok buttons now show locally too: the script starts a **pretend TikTok** (`backend/scripts/oauth_standin.mjs`, port 9911) and switches
+`TIKTOK_LOGIN` / `TIKTOK_SHARE` on for the local run only, so "Continue with TikTok" (sign-up / sign-in) and "Share to TikTok" can be clicked
+without TikTok keys (it signs you in as a test TikTok user). Hide them with `WK_LOCAL_TIKTOK=false` in `tools/local/local.env`.
+Server stacks are unaffected: preprod / wikigai.com show the button only after the TikTok keys + `TIKTOK_LOGIN=true` are set there.
+
+## Deploy (CTO) — same plan as v20261112b
+1. **Preprod** with the TikTok **sandbox** keys + `TIKTOK_LOGIN=true`, `TIKTOK_SHARE=true` (redirect `https://wikigai.digitradin.cloud/auth/tiktok/callback`).
+   Leave Google/Facebook/Instagram unset. Check `[migrate] applied 016_oauth_providers.sql` in the logs (and no `[migrate] FAILED`).
+2. **Production** with every app off — safe; brings the migration fixes and legal texts.
+3. Later, per app: create the app (Google Cloud OAuth client / Meta app for login), redirect `https://wikigai.com/auth/<app>/callback`,
+   set keys + `<APP>_LOGIN=true` on preprod first, then prod. The button, Account row and privacy text appear on their own.
+
+Rollback: `v20261112b` (or `v20261112`). `oauth_states` and the widened CHECK are harmless to older versions except v20261112b's
+TikTok sign-in, which expects `tiktok_oauth_states` — if rolling back to v20261112b with TikTok on, run
+`ALTER TABLE oauth_states RENAME TO tiktok_oauth_states;` first.

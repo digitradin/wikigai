@@ -21,6 +21,8 @@ const learnRoutes = require('./routes/learn');
 const videoRoutes = require('./routes/videos');
 const planRoutes = require('./routes/plans');
 const privacyRoutes = require('./routes/privacy'); // v20261111b: public data deletion (/delete-my-data)
+const tiktokRoutes = require('./routes/tiktok');   // v20261112b: Share to TikTok
+const oauthRoutes = require('./routes/oauth');     // v20261112c: sign in with apps (TikTok; Google/Facebook/Instagram hidden)
 const analytics = require('./analytics/collect');
 const seo = require('./seo');
 const { guardMemberPages } = require('./lib/pageGuard');
@@ -91,20 +93,22 @@ app.use(cors({
 app.options('*', cors());
 
 // ── Body parsing ──────────────────────────────────────────────────
+app.use('/api/tiktok/media', express.json({ limit: '12mb' })); // v20261112b: 2–4 carousel JPEGs (checked in routes/tiktok.js)
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(requestLogger);
 
 // ── Rate limiting ─────────────────────────────────────────────────
-const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false });
+const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: parseInt(process.env.API_RATE_MAX || '60', 10), standardHeaders: true, legacyHeaders: false }); // API_RATE_MAX: tests only
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 40, standardHeaders: true, legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, max: parseInt(process.env.AUTH_RATE_MAX || '40', 10), standardHeaders: true, legacyHeaders: false, // AUTH_RATE_MAX: tests only
   message: { error: 'Too many attempts. Please wait and try again.' },
 });
 app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/user/delete-account', authLimiter); // password check: same brute-force limit as sign-in
 app.use('/api/privacy/', authLimiter);              // v20261111b: emailed deletion codes — same limit as sign-in
+app.use(['/api/tiktok/start', '/api/oauth/:provider/start', '/auth/:provider/callback'], authLimiter); // sign in with apps — same limit as sign-in
 app.use('/api/admin/', authLimiter);               // statistics token: same brute-force limit
 
 // ── Members-only pages: visitors without a session are sent to /login (before any static file) ──
@@ -141,6 +145,8 @@ app.get('/api/config', (req, res) => {
       paywall: false,
     },
     shareUrl: process.env.PUBLIC_URL || 'https://wikigai.com',
+    tiktok: require('./lib/tiktok').flags(), // v20261112b: { login, share } — off until TIKTOK_LOGIN / TIKTOK_SHARE = true
+    auth: { providers: require('./lib/oauth').publicList() }, // v20261112c: sign-in apps switched on for this stack (none by default)
     data: { version: '2B-0.1', refreshCadenceMonths: 6 },
   });
 });
@@ -148,6 +154,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/captcha', captchaRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/privacy', privacyRoutes);
+// v20261112b: TikTok sign-in / linking / sharing
+app.use('/api/tiktok', tiktokRoutes);
+app.use('/api/oauth', oauthRoutes);                       // v20261112c
+app.get('/auth/:provider/callback', oauthRoutes.callback); // /auth/tiktok/callback (registered at TikTok), /auth/google/callback…
+app.get('/tt-media/:token/:n.jpg', tiktokRoutes.media);
 app.use('/api/survey', surveyRoutes);
 app.use('/api/results', resultsRoutes);
 // first-party, cookieless analytics
@@ -167,7 +178,7 @@ app.use('/api/plans', planRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login, /privacy, /terms, /delete-my-data and their /fr/ /es/ versions) are rendered by seo.mount
-const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/account': 'account.html', '/learning': 'learning.html', '/favorites': 'learning.html', '/dashboard': 'dashboard/index.html' };
+const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/account': 'account.html', '/learning': 'learning.html', '/favorites': 'learning.html', '/dashboard': 'dashboard/index.html', '/share/tiktok': 'share-tiktok.html', '/auth/done': 'auth-done.html', '/auth/tiktok/done': 'auth-done.html' };
 const sendPrivate = (file) => (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderPrivate(file));
 for (const [route, file] of Object.entries(privatePages)) app.get(route, sendPrivate(file));
 app.get('/dashboard/*', sendPrivate('dashboard/index.html'));

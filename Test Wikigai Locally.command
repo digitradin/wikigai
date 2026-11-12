@@ -81,12 +81,26 @@ export PUBLIC_DIR="$ROOT/frontend/public" MIGRATIONS_DIR="$ROOT/deploy/migration
 export OUTBOX_DIR="$LOCAL/.data/outbox"
 mkdir -p "$OUTBOX_DIR"
 
-cleanup() { echo; echo "▶ Stopping local Wikigai…"; kill "$APP_PID" "$DB_PID" 2>/dev/null; wait 2>/dev/null; echo "Stopped."; }
+# v20261112c — "Continue with TikTok" / "Share to TikTok" work locally with a PRETEND TikTok (backend/scripts/oauth_standin.mjs),
+# so the buttons show and can be clicked without TikTok keys. Hide them: WK_LOCAL_TIKTOK=false in tools/local/local.env.
+TT_PORT="${WK_TT_PORT:-9911}"; TT_PID=
+if [ "${WK_LOCAL_TIKTOK:-true}" = "true" ]; then
+  export TIKTOK_CLIENT_KEY=local-test TIKTOK_CLIENT_SECRET=local-test TIKTOK_LOGIN=true TIKTOK_SHARE=true
+  export TIKTOK_AUTH_URL="http://localhost:$TT_PORT/v2/auth/authorize/" TIKTOK_API_BASE="http://localhost:$TT_PORT"
+  export TIKTOK_REDIRECT_URI="http://localhost:$PORT/auth/tiktok/callback" TIKTOK_MEDIA_BASE_URL="http://localhost:$PORT"
+fi
+
+cleanup() { echo; echo "▶ Stopping local Wikigai…"; kill "$APP_PID" "$DB_PID" $TT_PID 2>/dev/null; wait 2>/dev/null; echo "Stopped."; }
 trap cleanup EXIT INT TERM HUP
 
 echo "▶ Starting local database…"
 node "$LOCAL/db.mjs" "$DB_PORT" & DB_PID=$!
 for i in $(seq 1 60); do nc -z 127.0.0.1 "$DB_PORT" 2>/dev/null && break; sleep 0.5; done
+
+if [ "${WK_LOCAL_TIKTOK:-true}" = "true" ]; then
+  if lsof -iTCP:"$TT_PORT" -sTCP:LISTEN >/dev/null 2>&1; then echo "• Pretend TikTok already running on port $TT_PORT — reusing it."
+  else echo "▶ Starting pretend TikTok (local test only)…"; node "$ROOT/backend/scripts/oauth_standin.mjs" "$TT_PORT" >/dev/null 2>&1 & TT_PID=$!; fi
+fi
 
 echo "▶ Starting Wikigai…"
 node "$ROOT/backend/src/index.js" & APP_PID=$!
@@ -101,6 +115,9 @@ if curl -s -o /dev/null "http://localhost:$PORT/health"; then
    • Owner statistics (not part of the site): http://localhost:$PORT/__stats
      — paste the STATS_API_TOKEN from tools/local/local.env
    • Your local data stays in tools/local/.data (delete that folder to reset).
+   • "Continue with TikTok" (sign-up / sign-in) and "Share to TikTok" use a PRETEND TikTok here:
+     no TikTok account needed, it signs you in as a test TikTok user. The real TikTok button appears on
+     preprod / wikigai.com only once the CTO adds the TikTok keys there.
    • French / Spanish: http://localhost:$PORT/fr/  ·  http://localhost:$PORT/es/
    • AI plans (My learning › Plans): add your router token and/or any free AI keys
      (GROQ_API_KEY, GEMINI_API_KEY, …) to tools/local/local.env and restart this window.

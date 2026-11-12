@@ -18,7 +18,7 @@
     <li><a href="#videos">Videos (WikiVids)</a></li>
     <li><a href="#providers">Service providers</a></li>
     <li><a href="#transfers">International transfers</a></li>
-    <li><a href="#social">Social media and our publishing tool</a></li>
+    <li><a href="#social">8. Social media, TikTok sign-in and sharing</a></li>
     <li><a href="#rights">Your rights</a></li>
     <li><a href="#delete">How to delete your data</a></li>
     <li><a href="#children">Children and students</a></li>
@@ -38,6 +38,8 @@
     <tr><td data-th="Data"><strong>Account</strong> — email, name, password (never stored in readable form), language</td><td data-th="Why">Create and secure your account and send you service emails (codes, confirmations)</td><td data-th="Legal basis">Contract — Art. 6(1)(b)</td><td data-th="Kept">Until you delete your account</td></tr>
     <tr><td data-th="Data"><strong>Optional profile</strong> — birthday, phone, countries you choose</td><td data-th="Why">Personalise your results and plans</td><td data-th="Legal basis">Contract — only if you add them</td><td data-th="Kept">Until you clear them or delete your account</td></tr>
     <tr><td data-th="Data"><strong>Your answers and results</strong></td><td data-th="Why">Provide your Wikigai and keep your progress</td><td data-th="Legal basis">Contract</td><td data-th="Kept">Until you delete your account</td></tr>
+    <tr><td data-th="Data"><strong>TikTok sign-in and sharing</strong> — only if you use them: your TikTok account identifier, display name and profile picture; a temporary access token; the images you choose to post</td><td data-th="Why">Sign you in with TikTok, show which account you post to, and publish what you choose when you press Post</td><td data-th="Legal basis">Contract — at your request</td><td data-th="Kept">Sign-in link: until you disconnect TikTok or delete your account. Access token and images: 24 hours at most</td></tr>
+    <!--if:google,facebook,instagram--><tr><td data-th="Data"><strong>Sign-in with {{signin_apps}}</strong> — only if you use it: your account identifier, name and profile picture at that app and, when the app provides it, your verified email address</td><td data-th="Why">Create your account or sign you in, and show which app is connected</td><td data-th="Legal basis">Contract — at your request</td><td data-th="Kept">Until you disconnect the app or delete your account</td></tr><!--/if-->
     <tr><td data-th="Data"><strong>What you create or save</strong> — plans, favourites, saved videos</td><td data-th="Why">Keep them available to you</td><td data-th="Legal basis">Contract</td><td data-th="Kept">Until you remove them or delete your account; items you never save are removed automatically after a short period</td></tr>
     <tr><td data-th="Data"><strong>Security and service data</strong> — sign-in codes, abuse-prevention and technical records</td><td data-th="Why">Keep the service secure, reliable and fair</td><td data-th="Legal basis">Legitimate interest</td><td data-th="Kept">Short periods, at most 30 days</td></tr>
     <tr><td data-th="Data"><strong>Anonymous usage statistics</strong> — no cookies, not linked to your account, cannot identify you</td><td data-th="Why">Understand what helps people and improve Wikigai</td><td data-th="Legal basis">Legitimate interest</td><td data-th="Kept">Up to 13 months</td></tr>
@@ -64,15 +66,20 @@
 <p>We may disclose data if the law requires it or to protect the safety of users. The current list of providers is available on request.</p>
 <h2 id="transfers">7. International transfers</h2>
 <p>Our database is hosted in the European Union. Some providers above may process data outside the European Economic Area (for example in the United States). In that case we rely on an adequacy decision (such as the EU–US Data Privacy Framework) or on the European Commission’s Standard Contractual Clauses.</p>
-<h2 id="social">8. Social media and our publishing tool</h2>
-<p>Wikigai publishes content on its own social media accounts, including Instagram <strong>@wikigai_com</strong> and TikTok <strong>@wikigai.com</strong> (and future French and Spanish accounts). We schedule these posts with a publishing tool that runs on our own server and connects through the platforms’ official APIs (Meta’s Instagram API and TikTok’s Login Kit and Content Posting API).</p>
+<h2 id="social">8. Social media, TikTok sign-in and sharing</h2>
+<h3>Signing in with TikTok</h3>
+<p>You can create a Wikigai account or sign in with <strong>“Continue with TikTok”</strong>, and connect or disconnect TikTok in Account › Sign-in methods. TikTok then gives us your <strong>TikTok account identifier, display name and profile picture</strong> — nothing else (no email, contacts, videos or messages). We use them only to sign you in to the same Wikigai account and to show which TikTok account is connected. The access token TikTok gives us at sign-in is revoked straight away. If you signed up with TikTok, we ask you once — you can skip it — to add your email, so you can recover your account.</p>
+<!--if:google,facebook,instagram--><h3>Signing in with {{signin_apps}}</h3>
+<p>You can also create a Wikigai account or sign in with <strong>{{signin_apps}}</strong>, and connect or disconnect them in Account › Sign-in methods. The app gives us your <strong>account identifier, name and profile picture</strong> and, when it provides it, your <strong>verified email address</strong> — nothing else (no contacts, friends, posts, photos or messages). We use them only to sign you in to the same Wikigai account. If a Wikigai account already uses that email, we never join the two by ourselves: you sign in with your email and connect the app from your account. The access token the app gives us is used once to read these details and then revoked or discarded. What the app does with your data is governed by its own privacy policy.</p><!--/if-->
+<h3>Sharing to TikTok</h3>
+<p>If you choose <strong>“Share to TikTok”</strong>, TikTok asks you to authorise Wikigai to post on your behalf. On the post screen you see the account you are posting to, preview the images and choose the caption, who can view the post and the other settings. <strong>Nothing is sent to TikTok until you press Post.</strong> The images are created from your results, stored on our server only so TikTok can fetch them, and deleted within 24 hours. The access token is stored encrypted and deleted within 24 hours; we never keep a long-term token. We do not read your videos, followers or messages. You can disconnect TikTok at any time in Account › Sign-in methods or in the TikTok app (Settings and privacy › Security › Manage app permissions). What TikTok does with your data is governed by <a href="https://www.tiktok.com/legal/privacy-policy" rel="noopener" target="_blank">TikTok’s Privacy Policy</a>.</p>
+<h3>Our own social media accounts</h3>
 <ul>
-  <li>The tool only connects <strong>Wikigai’s own brand accounts</strong>. It stores the access tokens and basic profile information of those accounts (account id, name, avatar) and the posts we prepare. It is not offered to the public and does not collect data about our followers.</li>
-  <li>Wikigai does <strong>not</strong> offer sign-in with Facebook, Instagram or TikTok, and does not import any data from those platforms into your Wikigai account.</li>
+  <li>Wikigai publishes on its own accounts, including Instagram <strong>@wikigai_com</strong> and TikTok <strong>@wikigai.com</strong>, with a publishing tool that runs on our own server and connects only Wikigai’s brand accounts through the platforms’ official APIs. It does not collect data about our followers.</li>
   <li>When you follow, like or comment on our accounts, the platform’s own privacy policy applies. We see only what the platform shows publicly (such as your username and comments) and use it only to reply and moderate.</li>
   <li>Links in our posts carry a campaign tag (UTM) so our anonymous statistics can tell which post brought a visit — this never identifies you.</li>
+  <!--ifnot:facebook,instagram--><li>We do not offer sign-in with Facebook or Instagram and import no data from them.</li><!--/ifnot--><!--if:facebook,instagram--><li>When you sign in with Facebook or Instagram, we receive only the details listed above; we do not read your friends, followers, posts or messages and we never post for you.</li><!--/if-->
 </ul>
-
 <h2 id="rights">9. Your rights</h2>
 <p>Under the GDPR you can ask to <strong>access</strong>, <strong>correct</strong>, <strong>delete</strong>, <strong>restrict</strong> or <strong>receive a portable copy</strong> of your data, and <strong>object</strong> to processing based on legitimate interest. Most of this you can do yourself:</p>
 <ul>
@@ -86,9 +93,11 @@
 <ol class="lg-steps">
   <li><strong>Signed in:</strong> Account › “Delete my account”, confirm with your email and password.</li>
   <li><strong>Forgot your password, or prefer not to sign in:</strong> go to <a href="/delete-my-data">wikigai.com/delete-my-data</a>, enter your email, and confirm with the 6-digit code we send you.</li>
+  <li><strong>Signed up with TikTok and never added an email:</strong> sign in with TikTok, then Account › “Delete my account” › “Confirm with TikTok”.</li>
+  <!--if:google,facebook,instagram--><li><strong>Signed up with {{signin_apps}} and never added an email:</strong> sign in with the same app, then Account › “Delete my account” › “Confirm with …”.</li><!--/if-->
   <li><strong>By email:</strong> write from your account’s address to <a href="mailto:{{email}}?subject=Delete%20my%20Wikigai%20data">{{email}}</a> with the subject “Delete my Wikigai data”. We act within one month and confirm by email.</li>
 </ol>
-<p>Deletion is <strong>immediate and permanent</strong> for your account, profile, answers, results, plans, research, saved videos and pending codes. Encrypted backups roll over automatically and no longer contain your data after 30 days at most. Anonymous statistics are not linked to you and therefore stay. Comments you posted on our social media accounts belong to that platform — delete them there, or ask us and we will remove them from our pages.</p>
+<p>Deletion is <strong>immediate and permanent</strong> for your account, profile, answers, results, plans, research, saved videos, pending codes, your sign-in app links (such as TikTok), access token and images. Encrypted backups roll over automatically and no longer contain your data after 30 days at most. Anonymous statistics are not linked to you and therefore stay. Comments you posted on our social media accounts belong to that platform — delete them there, or ask us and we will remove them from our pages.</p>
 
 <h2 id="children">11. Children and students</h2>
 <p>Wikigai is designed for students and adults. If you are under the age at which you can consent to online services in your country (13 in Estonia, 14 in Spain, 15 in France, 16 in many other EU countries, 13 in the UK), please use Wikigai only with the permission and involvement of a parent or guardian, who may contact us at any time to access or delete your data. Your birthday is optional and is used only to adapt the tone of study plans. If we learn that a child’s data was collected without the required permission, we delete it.</p>

@@ -9,7 +9,7 @@ const { verifySessionToken, DEFAULT_TTL_MS } = require('./session');
 
 const COOKIE = 'wk_session';
 // /dashboard, /dashboard/…, /ikigai, /ikigai/…, /learning…, /account and their raw .html files
-const MEMBER_PAGE = /^\/(dashboard|ikigai|learning|favorites|account)(\/.*|\.html)?$/; // v20261101c: + /favorites
+const MEMBER_PAGE = /^\/(dashboard|ikigai|learning|favorites|account|share)(\/.*|\.html)?$/; // v20261112b: + /share/tiktok // v20261101c: + /favorites
 
 function readCookie(req, name) {
   const raw = req.headers.cookie || '';

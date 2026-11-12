@@ -77,18 +77,33 @@ function legalVars(lang) {
     + `<li><strong>${la}:</strong> ${LEGAL.address ? v.address : pa}</li><li><strong>${le}:</strong> <a href="mailto:${v.email}">${v.email}</a></li></ul>`;
   return { entity_line: line, provider, email: v.email };
 }
+/* v20261112c: sign-in apps that are switched off are never named in the policy.
+   <!--if:a,b-->…<!--/if--> kept when one of a,b is on · <!--ifnot:a,b-->…<!--/ifnot--> kept when none is on ·
+   {{signin_apps}} = the apps on, other than TikTok (it has its own paragraphs), e.g. "Google and Facebook". */
+function signinBlocks(html, lang) {
+  let on = [], label = {};
+  try { const o = require('../lib/oauth'); on = o.enabledIds(); Object.keys(o.PROVIDERS).forEach((id) => { label[id] = o.PROVIDERS[id].label; }); } catch { /* none */ }
+  const any = (list) => list.split(',').some((id) => on.includes(id.trim()));
+  const others = on.filter((id) => id !== 'tiktok').map((id) => label[id] || id);
+  let names = others.join(', ');
+  try { names = new Intl.ListFormat(lang, { style: 'long', type: 'conjunction' }).format(others); } catch { /* old runtime */ }
+  return html
+    .replace(/<!--if:([\w,]+)-->([\s\S]*?)<!--\/if-->/g, (m, list, body) => (any(list) ? body : ''))
+    .replace(/<!--ifnot:([\w,]+)-->([\s\S]*?)<!--\/ifnot-->/g, (m, list, body) => (any(list) ? '' : body))
+    .replace(/\{\{signin_apps\}\}/g, names);
+}
 function legalHtml(doc, lang) {
   const k = lang + '/' + doc;
   if (!legalCache[k] || process.env.NODE_ENV !== 'production') {
     const f = path.join(LEGAL_DIR, lang, doc + '.html');
     const raw = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : fs.readFileSync(path.join(LEGAL_DIR, 'en', doc + '.html'), 'utf8');
     const vars = legalVars(LEGAL_TXT[lang] ? lang : 'en');
-    legalCache[k] = raw.replace(/\{\{(\w+)\}\}/g, (m, key) => (vars[key] != null ? vars[key] : m));
+    legalCache[k] = signinBlocks(raw, lang).replace(/\{\{(\w+)\}\}/g, (m, key) => (vars[key] != null ? vars[key] : m));
   }
   return legalCache[k];
 }
 /* never indexed */
-const PRIVATE_PREFIXES = ['/survey', '/dashboard', '/ikigai', '/learning', '/account', '/verify', '/forgot', '/reset', '/widget'];
+const PRIVATE_PREFIXES = ['/survey', '/dashboard', '/ikigai', '/learning', '/account', '/verify', '/forgot', '/reset', '/widget', '/share', '/auth', '/tt-media'];
 
 let PUBLIC_DIR = null;
 let LOCALES = ['en'];

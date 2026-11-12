@@ -141,6 +141,8 @@
     }
   });
 
+  // v20261112b: back from "Confirm with TikTok" (Account page) — the account is already deleted
+  if (new URLSearchParams(location.search).get('deleted') === '1') { show(3); try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ } }
   WK.i18n.ready.then(() => {
     const u = me();
     if (u && u.email && !$('dlEmail').value) $('dlEmail').value = u.email; // signed in: pre-fill, still needs the emailed code

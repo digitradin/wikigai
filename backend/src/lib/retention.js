@@ -19,6 +19,10 @@ async function purgeLearning() {
     ['video search cache', `DELETE FROM video_search_cache WHERE created_at < NOW() - make_interval(hours => $1)`, [videoHours]],
     ['plan AI log', `DELETE FROM plan_ai_log WHERE created_at < NOW() - INTERVAL '7 days'`, []],
     ['video search log', `DELETE FROM video_search_log WHERE created_at < NOW() - INTERVAL '7 days'`, []],
+    // v20261112b — TikTok: carousel images and posting tokens live 24 h at most, OAuth states 10 min
+    ['tiktok images', `DELETE FROM tiktok_media WHERE created_at < NOW() - INTERVAL '24 hours'`, []],
+    ['tiktok tokens', `DELETE FROM tiktok_tokens WHERE expires_at < NOW() OR created_at < NOW() - INTERVAL '24 hours'`, []],
+    ['oauth states', `DELETE FROM oauth_states WHERE created_at < NOW() - INTERVAL '10 minutes'`, []],
   ];
   const out = {};
   for (const [name, sql, params] of jobs) {
@@ -32,7 +36,7 @@ async function purgeLearning() {
 
 function startLearningRetention() {
   setTimeout(purgeLearning, 90 * 1000).unref();
-  setInterval(purgeLearning, 24 * 3600 * 1000).unref();
+  setInterval(purgeLearning, 3600 * 1000).unref(); // v20261112b: hourly (24 h TikTok limits)
 }
 
 module.exports = { purgeLearning, startLearningRetention };
