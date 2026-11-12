@@ -530,7 +530,7 @@ function pinEmailHtml(pin, name, kind = 'verify', lang = 'en') {
     <p style="color:#94a3b8;margin:0 0 24px;font-size:13px">${escapeHtml(t('tagline'))}</p>
     <div style="background:#1e293b;border-radius:16px;padding:28px;color:#e2e8f0">
       <p style="margin:0 0 8px">${escapeHtml(t('hi', { name }))}</p>
-      <p style="margin:0 0 20px;color:#cbd5e1;font-size:14px">${escapeHtml(t(kind === 'reset' ? 'bodyReset' : kind === 'change' ? 'bodyEmailChange' : 'bodyVerify'))}</p>
+      <p style="margin:0 0 20px;color:#cbd5e1;font-size:14px">${escapeHtml(t(kind === 'reset' ? 'bodyReset' : kind === 'change' ? 'bodyEmailChange' : kind === 'delete' ? 'bodyDelete' : 'bodyVerify'))}</p>
       <div style="font-size:34px;letter-spacing:8px;font-weight:700;color:#fff;background:#0f172a;border-radius:12px;padding:18px;text-align:center">${pin}</div>
       <p style="margin:20px 0 0;color:#64748b;font-size:12px">${escapeHtml(t('ignore'))}</p>
     </div>
@@ -613,3 +613,5 @@ function noticeEmailHtml(name, body, lang = 'en') {
 
 module.exports = router;
 module.exports.requireUser = requireUser;
+// v20261111b: shared with routes/privacy.js (public data deletion by emailed code)
+Object.assign(module.exports, { issuePin, verifyPin, pinError, pinEmailHtml, noticeEmailHtml, normalizeEmail, EMAIL_RE, userLang });

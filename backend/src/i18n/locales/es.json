@@ -11,6 +11,10 @@
     "subjectEmailChange": "Confirma tu nuevo correo de Wikigai",
     "bodyEmailChange": "Usa este código para confirmar esta dirección como tu nuevo correo de Wikigai. Caduca en 10 minutos.",
     "subjectEmailChanged": "Se ha cambiado el correo de tu cuenta Wikigai",
-    "bodyEmailChanged": "El correo de tu cuenta Wikigai se ha cambiado a {email}. Tus resultados y elementos guardados se conservan. Si no has sido tú, responde a este correo o restablece tu contraseña de inmediato."
+    "bodyEmailChanged": "El correo de tu cuenta Wikigai se ha cambiado a {email}. Tus resultados y elementos guardados se conservan. Si no has sido tú, responde a este correo o restablece tu contraseña de inmediato.",
+    "subjectDelete": "Tu código para borrar tus datos de Wikigai",
+    "bodyDelete": "Se ha pedido borrar definitivamente la cuenta de Wikigai vinculada a este correo, con todos sus datos. Si has sido tú, introduce este código en la página de borrado. Caduca en 10 minutos.",
+    "subjectDeleted": "Tu cuenta y tus datos de Wikigai se han borrado",
+    "bodyDeleted": "Como pediste, tu cuenta de Wikigai y todos sus datos (perfil, respuestas, resultados, planes y vídeos guardados) se han borrado definitivamente. Las copias de seguridad cifradas se renuevan automáticamente y dejan de contenerlos en un máximo de 30 días. Vuelve cuando quieras."
   }
 }

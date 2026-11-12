@@ -355,3 +355,7 @@ a.pl-saved-open{text-decoration:none}
 .pl-keep{display:block;margin-top:6px;color:var(--t3);font-size:.78rem}
 .pl-errcard strong{display:block;font-size:1rem;margin-bottom:4px}
 .pl-errcard .cta-row{margin-top:12px}
+
+/* v20261111b: long country names in the Account selects no longer widen the page on phones (was 489px on a 390px screen) */
+.ac-select{max-width:100%;min-width:0;text-overflow:ellipsis}
+.ac-row>div,.ac-grid>*{min-width:0}

@@ -11,6 +11,10 @@
     "subjectEmailChange": "Confirmez votre nouvelle adresse Wikigai",
     "bodyEmailChange": "Utilisez ce code pour confirmer cette adresse comme nouvel e-mail Wikigai. Il expire dans 10 minutes.",
     "subjectEmailChanged": "L’e-mail de votre compte Wikigai a été modifié",
-    "bodyEmailChanged": "L’e-mail de votre compte Wikigai a été remplacé par {email}. Vos résultats et éléments enregistrés sont conservés. Si ce n’est pas vous, répondez à cet e-mail ou réinitialisez votre mot de passe immédiatement."
+    "bodyEmailChanged": "L’e-mail de votre compte Wikigai a été remplacé par {email}. Vos résultats et éléments enregistrés sont conservés. Si ce n’est pas vous, répondez à cet e-mail ou réinitialisez votre mot de passe immédiatement.",
+    "subjectDelete": "Votre code de suppression des données Wikigai",
+    "bodyDelete": "Une demande de suppression définitive du compte Wikigai lié à cet e-mail, avec toutes ses données, a été faite. Si c’est vous, saisissez ce code sur la page de suppression. Il expire dans 10 minutes.",
+    "subjectDeleted": "Votre compte et vos données Wikigai ont été supprimés",
+    "bodyDeleted": "Comme vous l’avez demandé, votre compte Wikigai et toutes ses données (profil, réponses, résultats, plans et vidéos enregistrées) ont été définitivement supprimés. Les sauvegardes chiffrées sont renouvelées automatiquement et ne les contiennent plus au bout de 30 jours maximum. Vous êtes le bienvenu à tout moment."
   }
 }

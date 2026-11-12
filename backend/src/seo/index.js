@@ -23,7 +23,70 @@ const PAGES = {
   '/signup': { file: 'signup.html', title: 'meta.signup', desc: 'meta.signupDesc', priority: '0.8', changefreq: 'monthly' },
   '/support': { file: 'support.html', title: 'meta.support', desc: 'meta.supportDesc', priority: '0.6', changefreq: 'monthly' },
   '/login': { file: 'login.html', title: 'meta.login', desc: 'meta.loginDesc', priority: '0.3', changefreq: 'yearly' },
+  // v20261111b: legal pages + public data deletion (also the URLs given to Meta / TikTok developer apps)
+  '/privacy': { file: 'privacy.html', title: 'legal.metaPrivacy', desc: 'legal.metaPrivacyDesc', priority: '0.3', changefreq: 'yearly', legal: 'privacy' },
+  '/terms': { file: 'terms.html', title: 'legal.metaTerms', desc: 'legal.metaTermsDesc', priority: '0.3', changefreq: 'yearly', legal: 'terms' },
+  '/delete-my-data': { file: 'delete-my-data.html', title: 'legal.metaDelete', desc: 'legal.metaDeleteDesc', priority: '0.2', changefreq: 'yearly' },
 };
+/* common addresses people (and platform reviewers) try → the real page, same language */
+const ALIASES = {
+  '/privacy-policy': '/privacy', '/privacidad': '/privacy', '/confidentialite': '/privacy', '/politique-de-confidentialite': '/privacy', '/politica-de-privacidad': '/privacy',
+  '/terms-of-service': '/terms', '/terms-of-use': '/terms', '/tos': '/terms', '/conditions': '/terms', '/condiciones': '/terms', '/cgu': '/terms',
+  '/delete-data': '/delete-my-data', '/data-deletion': '/delete-my-data', '/delete-account': '/delete-my-data', '/user-data-deletion': '/delete-my-data',
+  '/supprimer-mes-donnees': '/delete-my-data', '/borrar-mis-datos': '/delete-my-data',
+};
+/* legal texts: one HTML fragment per language in seo/legal/<lang>/<doc>.html, written into data-legal="<doc>" */
+const LEGAL_DIR = path.join(__dirname, 'legal');
+const legalCache = {};
+/* Who runs Wikigai (data controller + service provider). Estonian company — set on the server once registered:
+     LEGAL_ENTITY_NAME   default "Digitradin OÜ"
+     LEGAL_REG_CODE      Estonian Business Register code (8 digits). Empty = "in registration" wording
+     LEGAL_ADDRESS       registered address in Estonia, e.g. "Sepapaja tn 6, 15551 Tallinn, Estonia"
+     LEGAL_EMAIL         privacy + legal contact, default admin@digitradin.cloud
+   Changing them updates /privacy and /terms in every language on the next start — no code change. */
+const LEGAL = {
+  name: (process.env.LEGAL_ENTITY_NAME || 'Digitradin OÜ').trim(),
+  code: (process.env.LEGAL_REG_CODE || '').trim(),
+  address: (process.env.LEGAL_ADDRESS || '').trim(),
+  email: (process.env.LEGAL_EMAIL || 'admin@digitradin.cloud').trim(),
+};
+const LEGAL_TXT = {
+  en: {
+    registered: '<strong>{name}</strong>, a private limited company registered in the Estonian Business Register under registry code {code}, registered address {address}',
+    pending: '<strong>{name}</strong>, a private limited company (osaühing) being registered in Estonia. Its registry code and registered address will be published here as soon as the registration is complete; until then, the service is run by the founder on the company’s behalf',
+    labels: ['Service provider', 'Registry code', 'Registered address', 'Email', 'being registered in the Estonian Business Register', 'Estonia — published on registration'],
+  },
+  fr: {
+    registered: '<strong>{name}</strong>, société à responsabilité limitée immatriculée au registre du commerce estonien sous le numéro {code}, dont le siège est {address}',
+    pending: '<strong>{name}</strong>, société à responsabilité limitée (osaühing) en cours d’immatriculation en Estonie. Son numéro d’immatriculation et son siège seront publiés ici dès la fin de l’immatriculation ; d’ici là, le service est exploité par son fondateur pour le compte de la société',
+    labels: ['Prestataire', 'Numéro d’immatriculation', 'Siège social', 'E-mail', 'en cours d’immatriculation au registre du commerce estonien', 'Estonie — publié à l’immatriculation'],
+  },
+  es: {
+    registered: '<strong>{name}</strong>, sociedad de responsabilidad limitada inscrita en el Registro Mercantil de Estonia con el código {code} y domicilio social en {address}',
+    pending: '<strong>{name}</strong>, sociedad de responsabilidad limitada (osaühing) en proceso de inscripción en Estonia. Su código de registro y domicilio social se publicarán aquí en cuanto termine la inscripción; mientras tanto, el servicio lo gestiona su fundador en nombre de la sociedad',
+    labels: ['Prestador del servicio', 'Código de registro', 'Domicilio social', 'Correo', 'en proceso de inscripción en el Registro Mercantil de Estonia', 'Estonia — se publicará al inscribirse'],
+  },
+};
+function legalVars(lang) {
+  const L = LEGAL_TXT[lang] || LEGAL_TXT.en;
+  const v = { name: esc(LEGAL.name), code: esc(LEGAL.code), address: esc(LEGAL.address), email: esc(LEGAL.email) };
+  const registered = !!(LEGAL.code && LEGAL.address);
+  const line = (registered ? L.registered : L.pending).replace(/\{(\w+)\}/g, (m, k) => v[k] ?? m);
+  const [lp, lc, la, le, pc, pa] = L.labels;
+  const provider = `<ul class="lg-provider"><li><strong>${lp}:</strong> ${v.name}</li><li><strong>${lc}:</strong> ${LEGAL.code ? v.code : pc}</li>`
+    + `<li><strong>${la}:</strong> ${LEGAL.address ? v.address : pa}</li><li><strong>${le}:</strong> <a href="mailto:${v.email}">${v.email}</a></li></ul>`;
+  return { entity_line: line, provider, email: v.email };
+}
+function legalHtml(doc, lang) {
+  const k = lang + '/' + doc;
+  if (!legalCache[k] || process.env.NODE_ENV !== 'production') {
+    const f = path.join(LEGAL_DIR, lang, doc + '.html');
+    const raw = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : fs.readFileSync(path.join(LEGAL_DIR, 'en', doc + '.html'), 'utf8');
+    const vars = legalVars(LEGAL_TXT[lang] ? lang : 'en');
+    legalCache[k] = raw.replace(/\{\{(\w+)\}\}/g, (m, key) => (vars[key] != null ? vars[key] : m));
+  }
+  return legalCache[k];
+}
 /* never indexed */
 const PRIVATE_PREFIXES = ['/survey', '/dashboard', '/ikigai', '/learning', '/account', '/verify', '/forgot', '/reset', '/widget'];
 
@@ -38,7 +101,7 @@ function init(publicDir) {
   LOCALES = [...runtime.matchAll(/\{\s*code:\s*'([a-z]{2})'/g)].map((m) => m[1]);
   LOCALES.forEach((code) => {
     const file = path.join(publicDir, `assets/i18n/locales/${code}/ui.js`);
-    const ctx = { WK: { i18n: { register: (c, ns, data) => { if (ns === 'ui') DICTS[c] = data; } } } };
+    const ctx = { WK: { i18n: { register: (c, ns, data) => { if (ns === 'ui') DICTS[c] = Object.assign(DICTS[c] || {}, data); } } } };
     vm.createContext(ctx);
     vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   });
@@ -104,7 +167,7 @@ function translateHtml(html, lang) {
 /* point internal links of public pages at the same-language version */
 function localizeLinks(html, lang) {
   if (lang === 'en') return html;
-  return html.replace(/href="(\/(?:signup|support|login)?)"/g, (m, href) => `href="${localPath(href === '' ? '/' : href, lang)}"`);
+  return html.replace(/href="(\/(?:signup|support|login|privacy|terms|delete-my-data)?)"/g, (m, href) => `href="${localPath(href === '' ? '/' : href, lang)}"`);
 }
 
 function jsonLd(lang) {
@@ -160,6 +223,7 @@ function renderPublic(route, lang) {
   const page = PAGES[route];
   let html = readFile(page.file);
   html = translateHtml(html, lang);
+  if (page.legal) html = html.replace(/(<([a-z]+)\b[^>]*\bdata-legal="([a-z-]+)"[^>]*>)[\s\S]*?(<\/\2>)/i, (all, open, tag, doc, close) => open + legalHtml(doc, lang) + close);
   html = localizeLinks(html, lang);
   const { tags, title, desc } = headTags(route, lang, page);
   html = html.replace(/<html lang="[^"]*"/i, `<html lang="${lang}"`);
@@ -204,11 +268,17 @@ function mount(app, publicDir) {
     next();
   });
   // one URL per page: send old .html addresses to the clean ones
-  ['index', 'signup', 'support', 'login'].forEach((f) => app.get(`/${f}.html`, (req, res) => res.redirect(301, f === 'index' ? '/' : `/${f}`)));
+  ['index', 'signup', 'support', 'login', 'privacy', 'terms', 'delete-my-data'].forEach((f) => app.get(`/${f}.html`, (req, res) => res.redirect(301, f === 'index' ? '/' : `/${f}`)));
   app.get('/sitemap.xml', (req, res) => res.type('application/xml').set('Cache-Control', 'public, max-age=3600').send(sitemap()));
   app.get('/robots.txt', (req, res) => res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(robots()));
+  // aliases (/privacy-policy, /fr/data-deletion…) → canonical page in the same language
+  app.get(/^(?:\/([a-z]{2}))?(\/[a-z-]+)\/?$/, (req, res, next) => {
+    const lang = req.params[0], target = ALIASES[req.params[1]];
+    if (!target || (lang && !LOCALES.includes(lang))) return next();
+    return res.redirect(301, lang && lang !== 'en' ? `/${lang}${target}` : target);
+  });
   // public pages in every language — before static so "/" is rendered too
-  app.get(/^\/(?:[a-z]{2}(?:\/.*)?|signup|support|login)?\/?$/, (req, res, next) => {
+  app.get(/^\/(?:[a-z]{2}(?:\/.*)?|signup|support|login|privacy|terms|delete-my-data)?\/?$/, (req, res, next) => {
     const m = matchPublic(req.path);
     if (!m) return next();
     if (m.lang !== 'en' && req.path === `/${m.lang}`) return res.redirect(301, `/${m.lang}/` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''));
@@ -216,4 +286,4 @@ function mount(app, publicDir) {
   });
 }
 
-module.exports = { mount, init, renderPublic, renderPrivate, sitemap, robots, matchPublic, isPrivate, localPath, PAGES, PRIVATE_PREFIXES, PUBLIC_URL, CANONICAL_HOST, locales };
+module.exports = { mount, init, renderPublic, legalHtml, legalVars, LEGAL, ALIASES, renderPrivate, sitemap, robots, matchPublic, isPrivate, localPath, PAGES, PRIVATE_PREFIXES, PUBLIC_URL, CANONICAL_HOST, locales };

@@ -9,6 +9,7 @@ const i18n = require('../i18n');
 
 const { isCountry } = require('../lib/countries'); // Account page countries (v20261028b)
 const { findResultsRow } = require('../lib/results'); // results belong to users.id (v20261028b)
+const { deleteAccount, exportAccount } = require('../lib/accountData'); // v20261111b: privacy (delete + download my data)
 const MAX_TARGET_COUNTRIES = 10;
 
 /**
@@ -142,7 +143,7 @@ router.put('/profile', async (req, res, next) => {
 /**
  * POST /api/user/delete-account — permanently delete the signed-in account (Account page).
  * Body: { email: string (must be retyped exactly), password: string (current password) }
- * Deletes the user, their saved results, AI research and pending codes. Anonymous
+ * Deletes the user, their results, plans, research, saved videos and pending codes. Anonymous
  * analytics rows contain no personal data and are not linked to the account.
  */
 router.post('/delete-account', async (req, res, next) => {
@@ -158,15 +159,26 @@ router.post('/delete-account', async (req, res, next) => {
     if (!row || !row.password_hash || !password || !verifyPassword(password, row.password_hash)) {
       return res.status(401).json({ error: 'Incorrect password.', code: 'DELETE_BAD_PASSWORD' });
     }
-    const emailHash = hashEmail(user.email);
-    await db.transaction(async (c) => {
-      await c.query('DELETE FROM user_results WHERE user_id = $1 OR user_email = $2', [user.id, emailHash]);
-      await c.query('DELETE FROM auth_pins WHERE email_hash = $1', [emailHash]);
-      await c.query('DELETE FROM users WHERE id = $1', [user.id]); // cascades to learning_research
-    });
-    console.log('[user] account deleted');
+    await deleteAccount(user.id, user.email); // v20261111b: shared with the public /delete-my-data page
     clearSessionCookie(req, res);
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/user/export — "Download my data" (Account page, v20261111b). GDPR access + portability:
+ * every piece of personal data linked to the signed-in account, as one JSON file.
+ */
+router.get('/export', async (req, res, next) => {
+  try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const data = await exportAccount(user);
+    res.set('Cache-Control', 'private, no-store');
+    res.set('Content-Disposition', `attachment; filename="wikigai-my-data-${new Date().toISOString().slice(0, 10)}.json"`);
+    res.type('application/json').send(JSON.stringify(data, null, 2));
   } catch (err) {
     next(err);
   }

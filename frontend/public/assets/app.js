@@ -239,3 +239,41 @@
 
   window.CPS = { confirm: confirmBox, confirmRetake, API_BASE, api, Store, Captcha, setupPinRow, showAlert, hideAlert, requireAuthOrRedirect, logout };
 })();
+
+/* ── v20261111b: legal footer on every page — Privacy · Terms · Delete my data · Support ──
+   Self-contained (own CSS) because not every page loads wk.css. Links follow the page language
+   (/fr/privacy…). A page can opt out with <body data-no-footer>. */
+(function () {
+  'use strict';
+  const I = () => window.WK && window.WK.i18n;
+  const T = (k, v) => (I() ? I().t(k, v) : k);
+  const CSS = `.wk-legal-foot{position:relative;z-index:1;margin:48px auto 0;padding:22px 16px 72px;max-width:1100px;text-align:center;font:500 12.5px/1.6 Inter,system-ui,sans-serif;color:rgba(238,242,249,.55)}
+  .wk-legal-foot nav{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;margin-bottom:6px}
+  .wk-legal-foot a{color:rgba(238,242,249,.72);text-decoration:none;padding:6px 2px}
+  .wk-legal-foot a:hover,.wk-legal-foot a:focus-visible{color:#fff;text-decoration:underline;text-underline-offset:3px}
+  .wk-legal-foot .wk-lf-copy{opacity:.8}
+  .wk-legal-foot::before{content:"";display:block;height:1px;max-width:520px;margin:0 auto 18px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}`;
+  function prefix() {
+    const m = location.pathname.match(/^\/(fr|es)(\/|$)/);
+    const lang = m ? m[1] : (I() && I().lang) || 'en';
+    return lang === 'en' ? '' : '/' + lang;
+  }
+  function render() {
+    if (!document.body || document.body.hasAttribute('data-no-footer')) return;
+    if (!document.getElementById('wk-legal-foot-css')) {
+      const st = document.createElement('style'); st.id = 'wk-legal-foot-css'; st.textContent = CSS; document.head.appendChild(st);
+    }
+    let f = document.querySelector('.wk-legal-foot');
+    if (!f) { f = document.createElement('footer'); f.className = 'wk-legal-foot'; document.body.appendChild(f); }
+    const p = prefix();
+    f.setAttribute('aria-label', T('legal.footLabel'));
+    f.innerHTML = `<nav><a href="${p}/privacy">${T('legal.footPrivacy')}</a><a href="${p}/terms">${T('legal.footTerms')}</a><a href="${p}/delete-my-data">${T('legal.footDelete')}</a><a href="${p}/support">${T('legal.footSupport')}</a></nav>`
+      + `<div class="wk-lf-copy">${T('legal.footCopy', { year: String(new Date().getFullYear()) })}</div>`;
+  }
+  function start() {
+    // wk:langchange (not onChange): registering a listener would stop pages that rely on a reload after a language switch from reloading
+    document.addEventListener('wk:langchange', render);
+    if (I() && I().ready) I().ready.then(render); else render();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();

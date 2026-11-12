@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="legal.metaDelete">Delete my data — Wikigai</title>
+<meta name="description" data-i18n-attr="content:legal.metaDeleteDesc" content="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/survey.css">
+<link rel="stylesheet" href="/assets/ikigai.css">
+<link rel="stylesheet" href="/assets/wk.css">
+<link rel="stylesheet" href="/assets/legal.css">
+<script src="/assets/i18n/i18n.js"></script>
+<script src="/assets/track.js" defer></script>
+</head>
+<body class="survey-body ik-body">
+<div id="wkNav"></div>
+<!-- v20261111b: public data deletion — works signed out and without a password (6-digit code by email).
+     This is the "User data deletion" URL given to Meta and TikTok. API: POST /api/privacy/delete/start|confirm -->
+<main class="ik-main" style="padding-top:90px">
+  <div class="results-wrap lg-wrap">
+    <header class="ik-head">
+      <div class="ik-kicker" data-i18n="legal.delKicker">🗑️ Your data, your choice</div>
+      <h1 data-i18n-html="legal.delTitle">Delete my <span class="grad">data</span></h1>
+      <p data-i18n="legal.delLead">Permanently delete your Wikigai account and everything linked to it.</p>
+    </header>
+
+    <div class="dl-grid">
+      <section class="ik-card dl-card" aria-live="polite">
+        <!-- step 1: email -->
+        <form class="dl-step dl-form on" id="dlStep1" novalidate>
+          <h2 data-i18n="legal.delStep1">1. Your email</h2>
+          <p class="dl-help" data-i18n="legal.delStep1Help">Enter the email address of your Wikigai account.</p>
+          <label for="dlEmail" data-i18n="legal.delEmail">Email address</label>
+          <input class="dl-input" id="dlEmail" type="email" inputmode="email" autocomplete="email" spellcheck="false" required placeholder="you@example.com">
+          <div class="dl-msg" id="dlMsg1" role="alert"></div>
+          <div class="dl-actions"><button class="dl-btn primary" type="submit" id="dlSend" data-i18n="legal.delSend">Send me a code</button></div>
+        </form>
+
+        <!-- step 2: code + explicit confirmation -->
+        <form class="dl-step dl-form" id="dlStep2" novalidate>
+          <h2 data-i18n="legal.delStep2">2. Confirm</h2>
+          <div class="dl-sent" id="dlSent"></div>
+          <label for="dlPin" data-i18n="legal.delCode">6-digit code</label>
+          <input class="dl-input dl-pin" id="dlPin" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="••••••">
+          <label class="dl-ack"><input type="checkbox" id="dlAck"> <span data-i18n="legal.delAck">I understand that my account and all its data will be permanently deleted.</span></label>
+          <div class="dl-msg" id="dlMsg2" role="alert"></div>
+          <div class="dl-actions">
+            <button class="dl-btn danger" type="submit" id="dlGo" disabled data-i18n="legal.delGo">Delete everything permanently</button>
+            <button class="dl-link" type="button" id="dlResend" data-i18n="legal.delResend">Send a new code</button>
+            <button class="dl-link" type="button" id="dlBack" data-i18n="legal.delChange">Use another email</button>
+          </div>
+        </form>
+
+        <!-- step 3: done -->
+        <div class="dl-step dl-done" id="dlStep3" tabindex="-1">
+          <div class="ico" aria-hidden="true">✅</div>
+          <h2 data-i18n="legal.delDoneTitle">Your data has been deleted</h2>
+          <p class="dl-help" data-i18n="legal.delDone">Your Wikigai account and all its data have been permanently deleted.</p>
+          <a class="dl-btn primary" href="/" style="display:inline-block;text-decoration:none" data-i18n="legal.delHome">Back to the home page</a>
+        </div>
+      </section>
+
+      <aside class="dl-side">
+        <section class="ik-card">
+          <h3 data-i18n="legal.delWhatTitle">What will be deleted</h3>
+          <ul class="dl-list" data-i18n-html="legal.delWhatList"></ul>
+          <p class="dl-note" data-i18n="legal.delWhatNote"></p>
+        </section>
+        <section class="ik-card">
+          <h3 data-i18n="legal.delOtherTitle">Other ways</h3>
+          <ul data-i18n-html="legal.delOther"></ul>
+        </section>
+        <section class="ik-card">
+          <h3 data-i18n="legal.delSocialTitle">Came from Instagram, Facebook or TikTok?</h3>
+          <p data-i18n="legal.delSocial"></p>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+<script src="/assets/app.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const T = (k, v) => WK.i18n.t(k, v);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  let email = '';
+  const show = (n) => ['dlStep1', 'dlStep2', 'dlStep3'].forEach((id, i) => $(id).classList.toggle('on', i === n - 1));
+  const msg = (id, text, kind) => { const el = $(id); el.textContent = text || ''; el.className = 'dl-msg' + (kind ? ' ' + kind : ''); };
+  const ERR = { BAD_EMAIL: 'legal.delErrEmail', BAD_PIN: 'legal.delErrCode', PIN_MISMATCH: 'legal.delErrMismatch', PIN_EXPIRED: 'legal.delErrExpired', PIN_NO_PIN: 'legal.delErrExpired', PIN_LOCKED: 'legal.delErrLocked' };
+  const errText = (e) => {
+    if (e && ERR[e.code]) return T(ERR[e.code]);
+    if (e && e.status === 429) return T('legal.delErrRate');
+    return T('legal.delErrGeneric');
+  };
+  const me = () => { try { return JSON.parse(localStorage.getItem('cps_user') || 'null'); } catch { return null; } };
+  const lang = () => (location.pathname.match(/^\/(fr|es)(\/|$)/) || [])[1] || WK.i18n.lang || 'en';
+
+  async function sendCode(btn) {
+    const v = $('dlEmail').value.trim().toLowerCase();
+    if (!EMAIL_RE.test(v)) { msg('dlMsg1', T('legal.delErrEmail'), 'err'); $('dlEmail').focus(); return; }
+    email = v;
+    const label = btn.textContent; btn.disabled = true; btn.textContent = T('legal.delSending'); msg('dlMsg1', ''); msg('dlMsg2', '');
+    try {
+      const r = await CPS.api('/api/privacy/delete/start', { method: 'POST', auth: false, body: { email, locale: lang() } });
+      $('dlSent').innerHTML = T('legal.delSent', { email: esc(email) });
+      if (r && r.dev_pin) $('dlPin').value = r.dev_pin; // preprod / local tests only (EXPOSE_PINS)
+      show(2); $('dlPin').focus();
+      window.WK?.track?.('privacy_delete_code');
+    } catch (e) {
+      msg($('dlStep2').classList.contains('on') ? 'dlMsg2' : 'dlMsg1', errText(e), 'err');
+    } finally { btn.disabled = false; btn.textContent = label; }
+  }
+
+  const ready = () => { $('dlGo').disabled = !($('dlAck').checked && /^\d{6}$/.test($('dlPin').value)); };
+  $('dlPin').addEventListener('input', () => { $('dlPin').value = $('dlPin').value.replace(/\D/g, '').slice(0, 6); ready(); });
+  $('dlAck').addEventListener('change', ready);
+  $('dlStep1').addEventListener('submit', (e) => { e.preventDefault(); sendCode($('dlSend')); });
+  $('dlResend').addEventListener('click', () => sendCode($('dlResend')));
+  $('dlBack').addEventListener('click', () => { $('dlPin').value = ''; $('dlAck').checked = false; ready(); msg('dlMsg2', ''); show(1); $('dlEmail').focus(); });
+  $('dlStep2').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test($('dlPin').value)) return msg('dlMsg2', T('legal.delErrCode'), 'err');
+    if (!$('dlAck').checked) return msg('dlMsg2', T('legal.delErrAck'), 'err');
+    const btn = $('dlGo'), label = btn.textContent; btn.disabled = true; btn.textContent = T('legal.delDeleting'); msg('dlMsg2', '');
+    try {
+      await CPS.api('/api/privacy/delete/confirm', { method: 'POST', auth: false, body: { email, pin: $('dlPin').value } });
+      window.WK?.track?.('privacy_delete_done');
+      const u = me();
+      if (u && String(u.email || '').toLowerCase() === email) { try { CPS.Store.clear(); } catch { /* ignore */ } } // signed in as the deleted account → sign out here
+      show(3); $('dlStep3').focus();
+      if (window.WikiNav) window.WikiNav.render();
+    } catch (err) {
+      msg('dlMsg2', errText(err), 'err'); btn.textContent = label; ready();
+    }
+  });
+
+  WK.i18n.ready.then(() => {
+    const u = me();
+    if (u && u.email && !$('dlEmail').value) $('dlEmail').value = u.email; // signed in: pre-fill, still needs the emailed code
+  });
+  WK.i18n.onChange(() => {});
+})();
+</script>
+</body>
+</html>

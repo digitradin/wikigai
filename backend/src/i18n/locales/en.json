@@ -11,6 +11,10 @@
     "subjectEmailChange": "Confirm your new Wikigai email",
     "bodyEmailChange": "Use this code to confirm this address as your new Wikigai email. It expires in 10 minutes.",
     "subjectEmailChanged": "Your Wikigai email was changed",
-    "bodyEmailChanged": "The email of your Wikigai account was changed to {email}. Your results and saved items are kept. If you didn't do this, reply to this email or reset your password straight away."
+    "bodyEmailChanged": "The email of your Wikigai account was changed to {email}. Your results and saved items are kept. If you didn't do this, reply to this email or reset your password straight away.",
+    "subjectDelete": "Your Wikigai data deletion code",
+    "bodyDelete": "Someone asked to permanently delete the Wikigai account linked to this email, with all its data. If it was you, enter this code on the deletion page. It expires in 10 minutes.",
+    "subjectDeleted": "Your Wikigai account and data were deleted",
+    "bodyDeleted": "As you asked, your Wikigai account and all its data (profile, answers, results, plans and saved videos) have been permanently deleted. Encrypted backups roll over automatically and no longer contain it after 30 days at most. You are welcome back any time."
   }
 }

@@ -20,6 +20,7 @@ const adminRoutes = require('./routes/admin');
 const learnRoutes = require('./routes/learn');
 const videoRoutes = require('./routes/videos');
 const planRoutes = require('./routes/plans');
+const privacyRoutes = require('./routes/privacy'); // v20261111b: public data deletion (/delete-my-data)
 const analytics = require('./analytics/collect');
 const seo = require('./seo');
 const { guardMemberPages } = require('./lib/pageGuard');
@@ -103,6 +104,7 @@ const authLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/user/delete-account', authLimiter); // password check: same brute-force limit as sign-in
+app.use('/api/privacy/', authLimiter);              // v20261111b: emailed deletion codes — same limit as sign-in
 app.use('/api/admin/', authLimiter);               // statistics token: same brute-force limit
 
 // ── Members-only pages: visitors without a session are sent to /login (before any static file) ──
@@ -145,6 +147,7 @@ app.get('/api/config', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/captcha', captchaRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/privacy', privacyRoutes);
 app.use('/api/survey', surveyRoutes);
 app.use('/api/results', resultsRoutes);
 // first-party, cookieless analytics
@@ -163,7 +166,7 @@ app.use('/api/videos', videoRoutes);
 app.use('/api/plans', planRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
-// public pages (/, /signup, /support, /login and their /fr/ /es/ versions) are rendered by seo.mount
+// public pages (/, /signup, /support, /login, /privacy, /terms, /delete-my-data and their /fr/ /es/ versions) are rendered by seo.mount
 const privatePages = { '/verify': 'verify.html', '/forgot': 'forgot.html', '/reset': 'reset.html', '/survey': 'survey.html', '/ikigai': 'ikigai.html', '/account': 'account.html', '/learning': 'learning.html', '/favorites': 'learning.html', '/dashboard': 'dashboard/index.html' };
 const sendPrivate = (file) => (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderPrivate(file));
 for (const [route, file] of Object.entries(privatePages)) app.get(route, sendPrivate(file));

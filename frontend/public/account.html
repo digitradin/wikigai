@@ -106,12 +106,22 @@
           <button class="ac-btn danger" type="button" id="acSignOut" data-i18n="account.signOut">Sign out</button>
         </div>
       </section>
+      <!-- v20261111b: GDPR access + portability -->
+      <section class="ik-card">
+        <h2 data-i18n="legal.exportTitle">Download my data</h2>
+        <div class="ac-row">
+          <div><small data-i18n="legal.exportHelp">Get a copy of everything Wikigai holds about your account as a JSON file.</small><div class="ac-msg" id="acExpMsg" role="status"></div></div>
+          <button class="ac-btn" type="button" id="acExport" data-i18n="legal.exportBtn">Download my data</button>
+        </div>
+        <p style="font-size:.8rem;color:var(--t2);margin:6px 0 0" data-i18n-html="legal.accountPrivacy"></p>
+      </section>
       <section class="ik-card ac-danger">
         <h2 data-i18n="account.deleteTitle">Delete my account</h2>
         <div class="ac-row">
           <div><small data-i18n="account.deleteHelp">Permanently deletes your account, your answers, results and saved research. This cannot be undone.</small></div>
           <button class="ac-btn danger" type="button" id="acDeleteOpen" data-i18n="account.deleteBtn">Delete my account…</button>
         </div>
+        <p style="font-size:.8rem;color:var(--t2);margin:2px 0 0" data-i18n-html="legal.deleteNoPassword"></p>
         <form id="acDeleteForm" class="ac-delform" hidden autocomplete="off">
           <p class="ac-warn" data-i18n="account.deleteWarn">⚠️ This is permanent. To confirm, retype your email and enter your password.</p>
           <label for="acDelEmail" data-i18n="account.deleteEmail">Retype your email</label>
@@ -206,6 +216,23 @@
       delMsg.className = 'ac-msg err'; delMsg.textContent = err.message;
       $('acDelPass').value = ''; delReady();
     }
+  });
+  // ── download my data (v20261111b): GET /api/user/export → JSON file ──
+  $('acExport').addEventListener('click', async () => {
+    const b = $('acExport'), m = $('acExpMsg'), label = b.textContent;
+    b.disabled = true; b.textContent = T('legal.exportBusy'); m.className = 'ac-msg'; m.textContent = '';
+    try {
+      const r = await fetch((window.CPS.API_BASE || '') + '/api/user/export', { headers: { Authorization: 'Bearer ' + Store.token } });
+      if (!r.ok) throw new Error(String(r.status));
+      const blob = await r.blob();
+      const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || 'wikigai-my-data.json';
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      m.className = 'ac-msg ok'; m.textContent = T('legal.exportOk');
+      window.WK?.track?.('data_export');
+    } catch (err) {
+      m.className = 'ac-msg err'; m.textContent = T('legal.exportFail');
+    } finally { b.disabled = false; b.textContent = label; }
   });
   // ── change email (v20261028b): code to the NEW address, then confirm; same account id ──
   const em = { step: 1, email: '' };
