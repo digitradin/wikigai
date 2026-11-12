@@ -8,7 +8,9 @@
    API: /api/plans (server: routes/plans.js + lib/llm.js — free AI providers, rotated with fail-over).
    Videos = "WikiVids": filtered YouTube search (filters hidden, server side: /api/videos/search),
    play in a privacy-enhanced player, save favourites ("My WikiVids").
-   Tools / Schools are "coming soon". Plans (AI) is live again in v20261029 (AI_SOON = false;
+   Schools (v20261112d) = the full schools directory (assets/schools.js, shared with the public /schools page):
+   1st area + 1st profession of My path preselected, other options unselected, extras folded under "+ N more".
+   Tools is "coming soon". Plans (AI) is live again in v20261029 (AI_SOON = false;
    set it to true — and the sidebar badge in site.js — to show "coming soon" again).
    WikiVids (v20261028b): after a search, all option rows fold to max 2 rows + "More options". Text: learn.* (i18n). */
 (function () {
@@ -693,7 +695,7 @@ ${overview}
   /* ── overview + coming-soon sections ── */
   function sectionCards(except) {
     return `<div class="lr-grid">${SECTIONS.filter((s) => s.id !== except).map((s) => `<a class="ik-card lr-card" href="/learning/${s.id}">
-      <span class="lr-ico">${s.icon}</span><strong>${T('side.' + s.id)}</strong><small>${T('learn.' + (s.id === 'plans' ? 'plansAi' : s.id === 'videos' ? 'vCard' : s.id) + 'Lead')}</small>${s.id === 'plans' ? (AI_SOON ? `<span class="lr-soon">✨ ${T('learn.aiBadge')} · ${T('learn.soon')}</span>` : `<span class="lr-new">✨ ${T('learn.aiBadge')}</span>`) : s.id === 'videos' ? `<span class="lr-new">▶ WikiVids</span>` : `<span class="lr-soon">${T('learn.soon')}</span>`}</a>`).join('')}</div>`;
+      <span class="lr-ico">${s.icon}</span><strong>${T('side.' + s.id)}</strong><small>${T('learn.' + (s.id === 'plans' ? 'plansAi' : s.id === 'videos' ? 'vCard' : s.id === 'schools' ? 'schoolsCard' : s.id) + 'Lead')}</small>${s.id === 'plans' ? (AI_SOON ? `<span class="lr-soon">✨ ${T('learn.aiBadge')} · ${T('learn.soon')}</span>` : `<span class="lr-new">✨ ${T('learn.aiBadge')}</span>`) : s.id === 'videos' ? `<span class="lr-new">▶ WikiVids</span>` : s.id === 'schools' ? `<span class="lr-new">🎓 ${T('side.new')}</span>` : `<span class="lr-soon">${T('learn.soon')}</span>`}</a>`).join('')}</div>`;
   }
   function pageSoon(s) {
     return `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')} · ${T('side.' + s.id)}</div>
@@ -707,6 +709,17 @@ ${overview}
           <div class="cta-row" style="margin-top:14px">${AI_SOON ? `<a class="btn-primary" href="/learning/videos">▶ ${T('learn.vidsBtn')} →</a>` : `<a class="btn-primary" href="/learning/plans">✨ ${T('learn.askBtn')} →</a>`}</div>
         </section>
         ${sectionCards(s.id)}`;
+  }
+
+  /* ── Schools (v20261112d): full directory from assets/schools.js (window.WKSchools), member mode ── */
+  function pageSchools() {
+    const noPath = path && !path.s1;
+    return `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')} · ${T('side.schools')}</div>
+        <h1>${T('learn.schoolsTitle')} <span class="lr-badge lr-badge-new">🎓 ${T('side.new')}</span></h1>
+        <p>${T('sch.memberLead')}</p></header>
+      ${pathBox()}
+      ${noPath ? `<p class="lr-warn">${T('sch.noPath')}</p>` : ''}
+      <div id="schApp" class="sc-wrap">${path === null ? `<div class="lr-loading"><div class="lr-spinner" aria-hidden="true"></div><div><strong>${T('common.loading')}</strong></div></div>` : ''}</div>`;
   }
 
   /* ── My favourites (v20261101c): saved plans (premium), saved WikiVids (thumbnails), courses & more (soon) ── */
@@ -740,7 +753,7 @@ ${overview}
       plans: () => favSection('plans', '🗺️', premium, favPlans(sub ? 0 : 4)),
       videos: () => favSection('videos', '🎬', '', favVideos(sub ? 0 : 6)),
       courses: () => favSection('courses', '🎓', '', `<div class="fv-soon-grid">${favSoon('courses', '🎓')}</div>`),
-      more: () => favSection('more', '➕', '', `<div class="fv-soon-grid">${favSoon('schools', '🏛️')}${favSoon('tools', '🔧')}${favSoon('jobs', '💼')}</div>`),
+      more: () => favSection('more', '➕', '', `<div class="fv-soon-grid"><a class="fv-soon fv-link" href="/learning/schools"><span class="fv-soon-ico">🏛️</span><div><strong>${T('fav.schoolsTitle')} <span class="lr-new">${T('side.new')}</span></strong><small>${T('sch.favLead')}</small></div></a>${favSoon('tools', '🔧')}${favSoon('jobs', '💼')}</div>`),
     };
     const body = sub ? secs[sub]() : secs.plans() + secs.videos() + secs.courses() + secs.more();
     return `<header class="ik-head"><div class="ik-kicker">⭐ ${T('side.favorites')}${sub ? ' · ' + T('fav.' + sub) : ''}</div>
@@ -780,6 +793,10 @@ ${overview}
       if (vFocused && $('wvQ')) { const i = $('wvQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
       if (path && wv.saved === null) { wv.saved = undefined; wvLoadSaved().then(() => render()); }
       if (path && wv.auto && !wv.busy) { wv.auto = false; wvSearch(); }
+    } else if (s.id === 'schools') {
+      document.title = `${T('side.schools')} — ${T('side.myLearning')} — Wikigai`;
+      view.innerHTML = pageSchools();
+      if (path !== null && window.WKSchools) window.WKSchools.mount($('schApp'), { mode: 'member', path });
     } else {
       document.title = `${T('side.' + s.id)} — ${T('side.myLearning')} — Wikigai`;
       view.innerHTML = pageSoon(s);

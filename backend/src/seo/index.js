@@ -27,6 +27,9 @@ const PAGES = {
   '/privacy': { file: 'privacy.html', title: 'legal.metaPrivacy', desc: 'legal.metaPrivacyDesc', priority: '0.3', changefreq: 'yearly', legal: 'privacy' },
   '/terms': { file: 'terms.html', title: 'legal.metaTerms', desc: 'legal.metaTermsDesc', priority: '0.3', changefreq: 'yearly', legal: 'terms' },
   '/delete-my-data': { file: 'delete-my-data.html', title: 'legal.metaDelete', desc: 'legal.metaDeleteDesc', priority: '0.2', changefreq: 'yearly' },
+  // v20261112d: public schools directory. While it runs on DEMO data it is noindex and left out of the sitemap;
+  // set SCHOOLS_INDEX=true on a stack once real data is loaded (strategy §7.4 quality gate).
+  '/schools': { file: 'schools.html', title: 'sch.metaTitle', desc: 'sch.metaDesc', priority: '0.9', changefreq: 'weekly', jsonld: false, indexable: () => process.env.SCHOOLS_INDEX === 'true' },
 };
 /* common addresses people (and platform reviewers) try → the real page, same language */
 const ALIASES = {
@@ -182,7 +185,7 @@ function translateHtml(html, lang) {
 /* point internal links of public pages at the same-language version */
 function localizeLinks(html, lang) {
   if (lang === 'en') return html;
-  return html.replace(/href="(\/(?:signup|support|login|privacy|terms|delete-my-data)?)"/g, (m, href) => `href="${localPath(href === '' ? '/' : href, lang)}"`);
+  return html.replace(/href="(\/(?:signup|support|login|privacy|terms|delete-my-data|schools)?)"/g, (m, href) => `href="${localPath(href === '' ? '/' : href, lang)}"`);
 }
 
 function jsonLd(lang) {
@@ -207,8 +210,9 @@ function headTags(route, lang, page) {
   const alts = LOCALES.map((l) => `<link rel="alternate" hreflang="${l}" href="${PUBLIC_URL + localPath(route, l)}">`).join('\n')
     + `\n<link rel="alternate" hreflang="x-default" href="${PUBLIC_URL + localPath(route, 'en')}">`;
   const img = `${PUBLIC_URL}/assets/brand/og-${LOCALES.includes(lang) ? lang : 'en'}.png`;
+  const indexable = typeof page.indexable === 'function' ? page.indexable() : true;
   const tags = [
-    `<meta name="robots" content="index, follow, max-image-preview:large">`,
+    indexable ? `<meta name="robots" content="index, follow, max-image-preview:large">` : `<meta name="robots" content="noindex, follow">`,
     `<link rel="canonical" href="${self}">`,
     alts,
     `<meta property="og:type" content="website">`,
@@ -261,6 +265,7 @@ function renderPrivate(file) {
 function sitemap() {
   const urls = [];
   Object.entries(PAGES).forEach(([route, page]) => {
+    if (typeof page.indexable === 'function' && !page.indexable()) return; // v20261112d: demo pages stay out of the sitemap
     LOCALES.forEach((lang) => {
       const alts = LOCALES.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${PUBLIC_URL + localPath(route, l)}"/>`).join('\n');
       urls.push(`  <url>\n    <loc>${PUBLIC_URL + localPath(route, lang)}</loc>\n    <lastmod>${BUILD_DATE}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n${alts}\n    <xhtml:link rel="alternate" hreflang="x-default" href="${PUBLIC_URL + localPath(route, 'en')}"/>\n  </url>`);
@@ -283,7 +288,7 @@ function mount(app, publicDir) {
     next();
   });
   // one URL per page: send old .html addresses to the clean ones
-  ['index', 'signup', 'support', 'login', 'privacy', 'terms', 'delete-my-data'].forEach((f) => app.get(`/${f}.html`, (req, res) => res.redirect(301, f === 'index' ? '/' : `/${f}`)));
+  ['index', 'signup', 'support', 'login', 'privacy', 'terms', 'delete-my-data', 'schools'].forEach((f) => app.get(`/${f}.html`, (req, res) => res.redirect(301, f === 'index' ? '/' : `/${f}`)));
   app.get('/sitemap.xml', (req, res) => res.type('application/xml').set('Cache-Control', 'public, max-age=3600').send(sitemap()));
   app.get('/robots.txt', (req, res) => res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(robots()));
   // aliases (/privacy-policy, /fr/data-deletion…) → canonical page in the same language
@@ -293,7 +298,7 @@ function mount(app, publicDir) {
     return res.redirect(301, lang && lang !== 'en' ? `/${lang}${target}` : target);
   });
   // public pages in every language — before static so "/" is rendered too
-  app.get(/^\/(?:[a-z]{2}(?:\/.*)?|signup|support|login|privacy|terms|delete-my-data)?\/?$/, (req, res, next) => {
+  app.get(/^\/(?:[a-z]{2}(?:\/.*)?|signup|support|login|privacy|terms|delete-my-data|schools)?\/?$/, (req, res, next) => {
     const m = matchPublic(req.path);
     if (!m) return next();
     if (m.lang !== 'en' && req.path === `/${m.lang}`) return res.redirect(301, `/${m.lang}/` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''));

@@ -203,6 +203,7 @@ a.wk-side-head:hover{background:var(--bg-glass)}
 .wk-badge{font:700 .56rem var(--font);letter-spacing:.3px;padding:2px 6px;border-radius:8px;flex:none}
 .wk-badge.soon{background:rgba(255,140,66,.14);color:#ffb36b}
 .wk-badge.ai{background:var(--g1);color:#fff}
+.wk-badge.new{background:rgba(34,197,94,.16);color:#86efac} /* v20261112d */
 
 /* v20261101c: Premium badge (My favourites › My plans) */
 .wk-badge.premium{background:linear-gradient(135deg,#f5c542,#ff8c42);color:#2a1500}

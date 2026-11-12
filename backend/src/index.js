@@ -20,6 +20,7 @@ const adminRoutes = require('./routes/admin');
 const learnRoutes = require('./routes/learn');
 const videoRoutes = require('./routes/videos');
 const planRoutes = require('./routes/plans');
+const schoolRoutes = require('./routes/schools'); // v20261112d: schools directory (public + My learning › Schools)
 const privacyRoutes = require('./routes/privacy'); // v20261111b: public data deletion (/delete-my-data)
 const tiktokRoutes = require('./routes/tiktok');   // v20261112b: Share to TikTok
 const oauthRoutes = require('./routes/oauth');     // v20261112c: sign in with apps (TikTok; Google/Facebook/Instagram hidden)
@@ -175,6 +176,8 @@ app.use('/api/learn', learnRoutes);
 app.use('/api/videos', videoRoutes);
 // My learning › Plans v2: profession → outlook + 10 skills → 30d / 3m / 1y plan (free LLM providers, lib/llm.js)
 app.use('/api/plans', planRoutes);
+// v20261112d: schools directory — public (insights removed server-side) + members (full data, match, shortlist)
+app.use('/api/schools', schoolRoutes);
 
 // ── Pretty page routes ────────────────────────────────────────────
 // public pages (/, /signup, /support, /login, /privacy, /terms, /delete-my-data and their /fr/ /es/ versions) are rendered by seo.mount

@@ -5,6 +5,7 @@
      users (email + phone encrypted, name, birthday, countries, language)
      user_results (survey answers + results; older rows keyed by the email hash)
      learning_research, learning_plans, favorite_videos, plan_ai_log, video_search_log  (ON DELETE CASCADE)
+     favorite_schools (My learning › Schools shortlist, ON DELETE CASCADE)                            — v20261112d
      auth_pins (one-time codes, keyed by the email hash)
      user_identities (TikTok sign-in), tiktok_tokens (24 h posting token), tiktok_media (24 h carousel images),
      oauth_states (10 min)                                                                          — v20261112b
@@ -44,6 +45,7 @@ async function deleteAccount(userId, email) {
     await run('learning_plans', 'DELETE FROM learning_plans WHERE user_id = $1', [userId]);
     await run('learning_research', 'DELETE FROM learning_research WHERE user_id = $1', [userId]);
     await run('favorite_videos', 'DELETE FROM favorite_videos WHERE user_id = $1', [userId]);
+    await run('favorite_schools', 'DELETE FROM favorite_schools WHERE user_id = $1', [userId]); // v20261112d
     await run('plan_ai_log', 'DELETE FROM plan_ai_log WHERE user_id = $1', [userId]);
     await run('video_search_log', 'DELETE FROM video_search_log WHERE user_id = $1', [userId]);
     if (emailHash) await run('auth_pins', 'DELETE FROM auth_pins WHERE email_hash = $1', [emailHash]);
@@ -84,6 +86,7 @@ async function exportAccount(user) {
     learningPlans: await rows('SELECT * FROM learning_plans WHERE user_id = $1 ORDER BY created_at', [user.id]),
     learningResearch: await rows('SELECT * FROM learning_research WHERE user_id = $1 ORDER BY created_at', [user.id]),
     savedVideos: await rows('SELECT * FROM favorite_videos WHERE user_id = $1 ORDER BY created_at', [user.id]),
+    savedSchools: await rows('SELECT program_id, created_at FROM favorite_schools WHERE user_id = $1 ORDER BY created_at', [user.id]), // v20261112d
     signInMethods: [
       ...(user.email ? [{ method: 'email', email: user.email, password: !!meta.has_password }] : []),
       ...(await rows('SELECT provider AS method, display_name, linked_at, last_login_at FROM user_identities WHERE user_id = $1', [user.id])),
@@ -120,6 +123,9 @@ async function mergeAccounts(fromId, intoId, intoUser) {
     out.videos = (await c.query(`INSERT INTO favorite_videos (user_id, video_id, title, channel, thumb, duration_s, views, domain, query, created_at)
       SELECT $1, video_id, title, channel, thumb, duration_s, views, domain, query, created_at FROM favorite_videos WHERE user_id = $2
       ON CONFLICT (user_id, video_id) DO NOTHING`, [intoId, fromId])).rowCount || 0;
+    out.schools = (await c.query(`INSERT INTO favorite_schools (user_id, program_id, created_at)
+      SELECT $1, program_id, created_at FROM favorite_schools WHERE user_id = $2
+      ON CONFLICT (user_id, program_id) DO NOTHING`, [intoId, fromId])).rowCount || 0; // v20261112d
     // v20261112c: sign-in methods move too (any provider the target doesn't already have); the rest go with the source
     out.identities = (await c.query(`UPDATE user_identities SET user_id = $1 WHERE user_id = $2
       AND provider NOT IN (SELECT provider FROM user_identities WHERE user_id = $1)`, [intoId, fromId])).rowCount || 0;

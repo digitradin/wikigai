@@ -25,7 +25,7 @@
       { href: '/learning/plans', icon: '🗺️', label: 'side.plans', badge: 'ai', beta: true }, // v20261101b: Plans in beta; AI plans live again (v20261029); 'soon' hides them
       { href: '/learning/videos', icon: '🎬', label: 'side.videos' },
       { href: '/learning/tools', icon: '🔧', label: 'side.tools', badge: 'soon' },
-      { href: '/learning/schools', icon: '🎓', label: 'side.schools', badge: 'soon' },
+      { href: '/learning/schools', icon: '🎓', label: 'side.schools', badge: 'new' }, // v20261112d: schools directory live (demo data)
     ] },
     { id: 'fav', icon: '⭐', label: 'side.favorites', href: '/favorites', items: [ // v20261101c: My favourites
       { href: '/favorites/plans', icon: '🗺️', label: 'side.favPlans', badge: 'premium' },
@@ -76,7 +76,7 @@
         : `<span class="wk-side-head"><span class="ico">${g.icon}</span><span class="lbl">${T(g.label)}</span></span>`;
       return `<div class="wk-side-group${open ? ' open' : ''}${here ? ' here' : ''}" data-group="${g.id}">
         <div class="wk-side-row">${head}<button type="button" class="wk-side-tog" data-tog="${g.id}" aria-expanded="${open}" aria-controls="wkSide-${g.id}" aria-label="${esc(T('side.toggle', { name: T(g.label) }))}"><span aria-hidden="true">${open ? '−' : '+'}</span></button></div>
-        <ul class="wk-side-list" id="wkSide-${g.id}">${items.map((i) => `<li><a href="${i.href}" class="${isActive(i.href) ? 'active' : ''}"${isActive(i.href) ? ' aria-current="page"' : ''}><span class="ico">${i.icon}</span><span class="lbl">${T(i.label)}</span>${i.badge ? `<span class="wk-badge ${i.badge}">${T(i.badge === 'ai' ? 'learn.aiBadge' : i.badge === 'premium' ? 'side.premium' : 'side.soon')}${i.beta ? ' · ' + T('plan.beta') : ''}</span>` : ''}</a></li>`).join('')}</ul>
+        <ul class="wk-side-list" id="wkSide-${g.id}">${items.map((i) => `<li><a href="${i.href}" class="${isActive(i.href) ? 'active' : ''}"${isActive(i.href) ? ' aria-current="page"' : ''}><span class="ico">${i.icon}</span><span class="lbl">${T(i.label)}</span>${i.badge ? `<span class="wk-badge ${i.badge}">${T(i.badge === 'ai' ? 'learn.aiBadge' : i.badge === 'premium' ? 'side.premium' : i.badge === 'new' ? 'side.new' : 'side.soon')}${i.beta ? ' · ' + T('plan.beta') : ''}</span>` : ''}</a></li>`).join('')}</ul>
       </div>`;
     }).join('')}</nav>`;
   }
