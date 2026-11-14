@@ -30,6 +30,9 @@ const PAGES = {
   // v20261112d: public schools directory. While it runs on DEMO data it is noindex and left out of the sitemap;
   // set SCHOOLS_INDEX=true on a stack once real data is loaded (strategy §7.4 quality gate).
   '/schools': { file: 'schools.html', title: 'sch.metaTitle', desc: 'sch.metaDesc', priority: '0.9', changefreq: 'weekly', jsonld: false, indexable: () => process.env.SCHOOLS_INDEX === 'true' },
+  // v20261113: top menu pages — Wikigai (mission, ikigai logic, history, credits) and My path for visitors (simple explanation)
+  '/about': { file: 'about.html', title: 'about.metaTitle', desc: 'about.metaDesc', priority: '0.7', changefreq: 'monthly' },
+  '/how-it-works': { file: 'how-it-works.html', title: 'how.metaTitle', desc: 'how.metaDesc', priority: '0.8', changefreq: 'monthly' },
 };
 /* common addresses people (and platform reviewers) try → the real page, same language */
 const ALIASES = {
@@ -37,6 +40,8 @@ const ALIASES = {
   '/terms-of-service': '/terms', '/terms-of-use': '/terms', '/tos': '/terms', '/conditions': '/terms', '/condiciones': '/terms', '/cgu': '/terms',
   '/delete-data': '/delete-my-data', '/data-deletion': '/delete-my-data', '/delete-account': '/delete-my-data', '/user-data-deletion': '/delete-my-data',
   '/supprimer-mes-donnees': '/delete-my-data', '/borrar-mis-datos': '/delete-my-data',
+  '/about-us': '/about', '/a-propos': '/about', '/acerca-de': '/about', '/sobre-nosotros': '/about', '/mission': '/about', '/what-is-ikigai': '/about',
+  '/how': '/how-it-works', '/comment-ca-marche': '/how-it-works', '/como-funciona': '/how-it-works',
 };
 /* legal texts: one HTML fragment per language in seo/legal/<lang>/<doc>.html, written into data-legal="<doc>" */
 const LEGAL_DIR = path.join(__dirname, 'legal');
@@ -80,12 +85,13 @@ function legalVars(lang) {
     + `<li><strong>${la}:</strong> ${LEGAL.address ? v.address : pa}</li><li><strong>${le}:</strong> <a href="mailto:${v.email}">${v.email}</a></li></ul>`;
   return { entity_line: line, provider, email: v.email };
 }
-/* v20261112c: sign-in apps that are switched off are never named in the policy.
+/* v20261112c: sign-in apps that are switched off are never named in the policy (v20261114b: "off" = no keys; keys set with
+   <P>_LOGIN=false already shows the app's paragraphs, needed for Google brand verification).
    <!--if:a,b-->…<!--/if--> kept when one of a,b is on · <!--ifnot:a,b-->…<!--/ifnot--> kept when none is on ·
    {{signin_apps}} = the apps on, other than TikTok (it has its own paragraphs), e.g. "Google and Facebook". */
 function signinBlocks(html, lang) {
   let on = [], label = {};
-  try { const o = require('../lib/oauth'); on = o.enabledIds(); Object.keys(o.PROVIDERS).forEach((id) => { label[id] = o.PROVIDERS[id].label; }); } catch { /* none */ }
+  try { const o = require('../lib/oauth'); on = o.legalIds ? o.legalIds() : o.enabledIds(); Object.keys(o.PROVIDERS).forEach((id) => { label[id] = o.PROVIDERS[id].label; }); } catch { /* none */ }
   const any = (list) => list.split(',').some((id) => on.includes(id.trim()));
   const others = on.filter((id) => id !== 'tiktok').map((id) => label[id] || id);
   let names = others.join(', ');
@@ -185,7 +191,7 @@ function translateHtml(html, lang) {
 /* point internal links of public pages at the same-language version */
 function localizeLinks(html, lang) {
   if (lang === 'en') return html;
-  return html.replace(/href="(\/(?:signup|support|login|privacy|terms|delete-my-data|schools)?)"/g, (m, href) => `href="${localPath(href === '' ? '/' : href, lang)}"`);
+  return html.replace(/href="(\/(?:signup|support|login|privacy|terms|delete-my-data|schools|about|how-it-works)?)"/g, (m, href) => `href="${localPath(href === '' ? '/' : href, lang)}"`);
 }
 
 function jsonLd(lang) {
@@ -237,12 +243,24 @@ function headTags(route, lang, page) {
   return { tags: tags.join('\n'), title, desc };
 }
 
+/* v20261114b: legal footer written into the HTML itself (app.js re-renders the same <footer> after load), so crawlers that do
+   not run JavaScript — e.g. Google's OAuth brand verification checking "privacy policy linked on the home page" — see the links. */
+function staticFooter(html, lang) {
+  if (/class="wk-legal-foot"/.test(html) || /<body[^>]*\bdata-no-footer\b/i.test(html)) return html;
+  const L = (k, v) => esc(t(lang, 'legal.' + k, v) || '');
+  const foot = `<footer class="wk-legal-foot" aria-label="${L('footLabel')}"><nav><a href="/privacy">${L('footPrivacy')}</a><a href="/terms">${L('footTerms')}</a>`
+    + `<a href="/delete-my-data">${L('footDelete')}</a><a href="/support">${L('footSupport')}</a></nav>`
+    + `<div class="wk-lf-copy">${L('footCopy', { year: String(new Date().getFullYear()) })}</div></footer>`;
+  return html.replace(/(<script\b[^>]*src="\/assets\/app\.js")/i, `${foot}\n$1`).replace(/^(?![\s\S]*wk-legal-foot)([\s\S]*)<\/body>/i, `$1${foot}\n</body>`);
+}
+
 /* full HTML of a public page in a language */
 function renderPublic(route, lang) {
   const page = PAGES[route];
   let html = readFile(page.file);
   html = translateHtml(html, lang);
   if (page.legal) html = html.replace(/(<([a-z]+)\b[^>]*\bdata-legal="([a-z-]+)"[^>]*>)[\s\S]*?(<\/\2>)/i, (all, open, tag, doc, close) => open + legalHtml(doc, lang) + close);
+  html = staticFooter(html, lang);
   html = localizeLinks(html, lang);
   const { tags, title, desc } = headTags(route, lang, page);
   html = html.replace(/<html lang="[^"]*"/i, `<html lang="${lang}"`);
@@ -288,7 +306,7 @@ function mount(app, publicDir) {
     next();
   });
   // one URL per page: send old .html addresses to the clean ones
-  ['index', 'signup', 'support', 'login', 'privacy', 'terms', 'delete-my-data', 'schools'].forEach((f) => app.get(`/${f}.html`, (req, res) => res.redirect(301, f === 'index' ? '/' : `/${f}`)));
+  ['index', 'signup', 'support', 'login', 'privacy', 'terms', 'delete-my-data', 'schools', 'about', 'how-it-works'].forEach((f) => app.get(`/${f}.html`, (req, res) => res.redirect(301, f === 'index' ? '/' : `/${f}`)));
   app.get('/sitemap.xml', (req, res) => res.type('application/xml').set('Cache-Control', 'public, max-age=3600').send(sitemap()));
   app.get('/robots.txt', (req, res) => res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(robots()));
   // aliases (/privacy-policy, /fr/data-deletion…) → canonical page in the same language
@@ -298,7 +316,7 @@ function mount(app, publicDir) {
     return res.redirect(301, lang && lang !== 'en' ? `/${lang}${target}` : target);
   });
   // public pages in every language — before static so "/" is rendered too
-  app.get(/^\/(?:[a-z]{2}(?:\/.*)?|signup|support|login|privacy|terms|delete-my-data|schools)?\/?$/, (req, res, next) => {
+  app.get(/^\/(?:[a-z]{2}(?:\/.*)?|signup|support|login|privacy|terms|delete-my-data|schools|about|how-it-works)?\/?$/, (req, res, next) => {
     const m = matchPublic(req.path);
     if (!m) return next();
     if (m.lang !== 'en' && req.path === `/${m.lang}`) return res.redirect(301, `/${m.lang}/` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''));

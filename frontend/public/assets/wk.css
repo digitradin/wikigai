@@ -207,3 +207,22 @@ a.wk-side-head:hover{background:var(--bg-glass)}
 
 /* v20261101c: Premium badge (My favourites › My plans) */
 .wk-badge.premium{background:linear-gradient(135deg,#f5c542,#ff8c42);color:#2a1500}
+
+/* ── v20261113: top menu "Wikigai · My path · Schools" (assets/topmenu.js) ──
+   Desktop/tablet: centred in the bar. Phones (≤600px): a second row of the bar (bar 64px → 104px; pages shift by 40px). */
+.wk-top{flex:1;justify-content:center;gap:6px}
+.wk-top a{padding:8px 14px;border-radius:20px;font-weight:600;white-space:nowrap;color:var(--t2)}
+.wk-top a:hover{color:var(--text);background:var(--bg-glass);text-decoration:none}
+.wk-top a.active{color:#fff;background:rgba(196,77,255,.16);box-shadow:inset 0 0 0 1px rgba(196,77,255,.45)}
+.wk-top a.active::after{display:none}
+@media (max-width:760px){.wk-top{gap:2px}.wk-top a{padding:7px 10px;font-size:.84rem}}
+@media (max-width:600px){
+  .wk-nav{flex-wrap:wrap;height:auto;min-height:104px;row-gap:0;align-content:flex-start;padding:0 10px}
+  .wk-nav>.wk-left,.wk-nav>.wk-right{height:64px}
+  .wk-nav>.wk-top{order:3;flex:0 0 calc(100% + 20px);display:flex;height:40px;align-items:center;justify-content:space-around;gap:0;border-top:1px solid var(--border-glass);margin:0 -10px;padding:0 6px}
+  .wk-nav>.wk-top a{flex:1;text-align:center;padding:6px 4px;font-size:.84rem;border-radius:14px}
+  body.wk-has-top{padding-top:40px}
+  .wk-side{top:104px}
+  .wk-side-backdrop{inset:104px 0 0 0!important}
+  .ik-menu{top:104px}
+}

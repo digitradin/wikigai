@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="how.metaTitle">How Wikigai works — find careers you could love</title>
+<meta name="description" data-i18n-attr="content:how.metaDesc" content="Wikigai in four simple steps: explore the worlds of work, pick the jobs you love, show what you are good at and get your path.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/brand/favicon.png">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/survey.css">
+<link rel="stylesheet" href="/assets/ikigai.css">
+<link rel="stylesheet" href="/assets/wk.css">
+<link rel="stylesheet" href="/assets/about.css">
+<script>/* v20261113: signed-in people see their own path instead (top menu › My path) */
+try { if (localStorage.getItem('cps_token')) location.replace('/ikigai'); } catch (e) {}</script>
+<script src="/assets/i18n/i18n.js"></script>
+<script src="/assets/track.js" defer></script>
+</head>
+<!-- v20261113: top menu › My path for visitors. Simple words, no formulas. Public, server-rendered in EN/FR/ES. -->
+<body class="survey-body ik-body" data-no-side>
+<div id="wkNav"></div>
+<main class="ik-main ab-main">
+  <div class="results-wrap ab-wrap">
+    <section class="ab-hero">
+      <div class="ik-kicker" data-i18n="how.kicker">My path</div>
+      <h1 data-i18n-html="how.h1">How Wikigai finds <span class="grad">your path</span></h1>
+      <p data-i18n="how.lead">It is like a game of “this or that”.</p>
+      <div class="ab-acts">
+        <a class="btn-primary" href="/signup" data-i18n="how.ctaBtn">Start the free test</a>
+      </div>
+    </section>
+
+    <section class="ab-sec">
+      <h2 class="ab-h2" data-i18n="how.stepsT">Four easy steps</h2>
+      <div class="ab-grid four">
+        <div class="ab-tile"><span class="ab-ico">🌍</span><strong><span class="ab-num">1</span><span data-i18n="how.s1t">Explore the worlds of work</span></strong><small data-i18n="how.s1d"></small></div>
+        <div class="ab-tile"><span class="ab-ico">❤️</span><strong><span class="ab-num">2</span><span data-i18n="how.s2t">Pick the jobs you love</span></strong><small data-i18n="how.s2d"></small></div>
+        <div class="ab-tile"><span class="ab-ico">💪</span><strong><span class="ab-num">3</span><span data-i18n="how.s3t">Show what you are good at</span></strong><small data-i18n="how.s3d"></small></div>
+        <div class="ab-tile"><span class="ab-ico">🧭</span><strong><span class="ab-num">4</span><span data-i18n="how.s4t">Get your path</span></strong><small data-i18n="how.s4d"></small></div>
+      </div>
+    </section>
+
+    <section class="ik-card ab-sec">
+      <h2 data-i18n="how.getT">What you get</h2>
+      <div class="hw-get">
+        <span data-i18n="how.get1">❤️ Your favourite worlds and jobs</span>
+        <span data-i18n="how.get2">💪 Your strengths</span>
+        <span data-i18n="how.get3">🌍 Which jobs the world needs</span>
+        <span data-i18n="how.get4">💰 What they pay where you live</span>
+      </div>
+      <h2 style="margin-top:22px" data-i18n="how.nextT">And then?</h2>
+      <p data-i18n="how.nextD"></p>
+    </section>
+
+    <section class="ab-cta">
+      <p data-i18n="how.note">Free to start. Your answers stay private and you can delete them at any time.</p>
+      <div class="ab-acts">
+        <a class="btn-primary" href="/signup" data-i18n="how.ctaBtn">Start the free test</a>
+        <a class="btn-ghost" href="/schools" data-i18n="how.ctaBtn2">See schools</a>
+      </div>
+      <a class="ab-more" href="/about" data-i18n="how.aboutLink">Curious about the ikigai idea? Read where it comes from →</a>
+    </section>
+  </div>
+</main>
+<script src="/assets/app.js"></script>
+<script src="/assets/topmenu.js"></script>
+<script src="/assets/site.js"></script>
+<script>WK.i18n.onChange(() => {}); /* public page: a language switch goes to /fr/… or /es/… */</script>
+</body>
+</html>

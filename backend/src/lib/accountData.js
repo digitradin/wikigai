@@ -100,7 +100,9 @@ async function exportAccount(user) {
 
 /* v20261112b/c — move everything of a sign-in-app-only account (no email, no password) into the account that just proved it owns
    the same TikTok / Google / Facebook / Instagram account. The target account wins on conflicts. Then the empty source account is deleted. Returns a summary. */
-async function mergeAccounts(fromId, intoId, intoUser) {
+/* v20261114: opts.preferSource — the source holds the NEWEST results (a TikTok-only account claiming an existing email account):
+   its stages replace the same stages of the target (a partial stage never replaces a finished one); other target stages stay. */
+async function mergeAccounts(fromId, intoId, intoUser, opts = {}) {
   if (fromId === intoId) return { merged: false };
   const out = { stagesAdded: [], plans: 0, videos: 0, research: 0, identities: 0 };
   await db.transaction(async (c) => {
@@ -113,7 +115,11 @@ async function mergeAccounts(fromId, intoId, intoUser) {
         out.stagesAdded = Object.keys(sr);
       } else {
         const dr = (dst.results && typeof dst.results === 'object') ? dst.results : {};
-        Object.keys(sr).forEach((k) => { if (!(k in dr)) { dr[k] = sr[k]; out.stagesAdded.push(k); } });
+        Object.keys(sr).forEach((k) => {
+          const srcDone = !(sr[k] && sr[k].partial === true), dstDone = (k in dr) && !(dr[k] && dr[k].partial === true);
+          if (!(k in dr)) { dr[k] = sr[k]; out.stagesAdded.push(k); }
+          else if (opts.preferSource && (srcDone || !dstDone)) { dr[k] = sr[k]; (out.stagesReplaced = out.stagesReplaced || []).push(k); }
+        });
         const stage = Math.max(1, ...Object.keys(dr).map((k) => Math.min(3, (parseInt(k.split('_')[1], 10) || 0) + 1)));
         await c.query('UPDATE user_results SET results = $1::jsonb, stage = GREATEST(stage, $2), updated_at = NOW() WHERE id = $3', [JSON.stringify(dr), stage, dst.id]);
       }

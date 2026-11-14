@@ -274,3 +274,13 @@ details.ik-edit[open]>summary::after{transform:rotate(180deg)}
 .ik-ccard,.ik-ccard:hover,.ik-ccard:focus,.ik-ccard:active,.ik-ccard *{text-decoration:none!important}
 .ik-ccard:hover{border-color:rgba(196,77,255,.7)}
 .ik-ccard:focus-visible{outline:2px solid rgba(196,77,255,.8);outline-offset:2px}
+
+/* v20261112d: Share to TikTok per profession (Passions) */
+.ik-lovecell{display:inline-flex;align-items:center;gap:8px}
+.ik-tt{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#000;color:#fff;border:1px solid rgba(255,255,255,.25);text-decoration:none;flex:none;transition:transform .15s}
+.ik-tt svg{filter:drop-shadow(-1px -.7px 0 #25f4ee) drop-shadow(1px .7px 0 #fe2c55)}
+.ik-tt:hover{transform:scale(1.12)}
+.ik-ttnote{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--t2);margin:-4px 0 10px}
+.ik-ttnote svg{opacity:.8}
+.ik-table.lovetab.tg .ik-tr{grid-template-columns:36px 1.2fr 1.6fr 92px 128px}
+@media (max-width:640px){.ik-table.lovetab.tg .ik-tr{grid-template-columns:24px 1fr 72px auto}}

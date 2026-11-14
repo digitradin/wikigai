@@ -237,7 +237,41 @@
     if (await confirmRetake(el.dataset.stage || '')) window.location.href = el.getAttribute('href');
   }, true);
 
-  window.CPS = { confirm: confirmBox, confirmRetake, API_BASE, api, Store, Captcha, setupPinRow, showAlert, hideAlert, requireAuthOrRedirect, logout };
+  /* v20261114b — survey results of visitors who are not signed in stay on this device (7 days) until they sign in, whatever the
+     way (Google, TikTok…, email + code, password); then they go to the account once and are removed from the device.
+     Same rule as the server: a partial save never replaces a finished stage. */
+  const GUEST_KEY = 'wk_guest_results', GUEST_MS = 7 * 864e5;
+  const guest = {
+    get() {
+      try { const g = JSON.parse(localStorage.getItem(GUEST_KEY) || 'null'); return g && g.stages && Date.now() - (g.at || 0) < GUEST_MS ? g : null; } catch { return null; }
+    },
+    put(stage, results) {
+      try {
+        const g = guest.get() || { stages: {} }, k = 'stage_' + stage, prev = g.stages[k] || {};
+        if (results && results.partial === true && prev.partial === false) return;
+        g.stages[k] = { ...prev, ...results }; g.at = Date.now();
+        localStorage.setItem(GUEST_KEY, JSON.stringify(g));
+      } catch { /* private mode / storage full: nothing kept */ }
+    },
+    clear() { try { localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ } },
+  };
+  let flushP = null;
+  function flushGuest() {
+    if (!Store.token || !guest.get()) return Promise.resolve(false);
+    if (!flushP) {
+      flushP = (async () => {
+        const g = guest.get(); const keys = Object.keys(g.stages).sort();
+        for (const k of keys) await api('/api/user/results', { method: 'POST', body: { stage: Number(k.slice(6)), results: g.stages[k] } });
+        guest.clear();
+        try { window.WK && WK.track && WK.track('guest_results_saved', { stages: keys.length }); } catch { /* ignore */ }
+        return true;
+      })().catch(() => { flushP = null; return false; });
+    }
+    return flushP;
+  }
+
+  window.CPS = { confirm: confirmBox, confirmRetake, API_BASE, api, Store, Captcha, setupPinRow, showAlert, hideAlert, requireAuthOrRedirect, logout, guest, flushGuest };
+  if (Store.token) flushGuest(); // signed in on any page with results waiting on this device
 })();
 
 /* ── v20261111b: legal footer on every page — Privacy · Terms · Delete my data · Support ──

@@ -224,7 +224,8 @@ WK.i18n.register('en', 'ui', {
   /* ── My favourites (v20261101c) ── */
   fav: {
     title: "My <span class=\"grad\">favourites</span>",
-    lead: "Everything you saved, in one place: your study plans, your WikiVids and — soon — your courses and more.",
+    lead: "Everything you saved, in one place: your study plans, your WikiVids and your schools & courses.", // v20261114
+    findSchools: "Find schools", // v20261114
     all: "All",
     plans: "My plans",
     videos: "My WikiVids",
@@ -262,7 +263,10 @@ WK.i18n.register('en', 'ui', {
     backOverview: "Back to the overview",
     skillsOf: "Select skills:",
     beta: "Beta",
-    paidSoon: "Saving as HTML and printing / PDF will be paid extras ({price}) — coming soon. Your plan stays saved in your account.",
+    paidSoon: "Saving as HTML and printing / PDF will be extras — coming soon. Your plan stays saved in your account.", // v20261114: no price
+    uniNote: "Plans are just to learn more about an activity. The ideal education path for some professions still requires a university degree.", // v20261114
+    uniSave: "Save your plan and search schools", // v20261114
+    uniGo: "Search schools for this profession", // v20261114
     stepsAria: "Plan steps",
     step1: "Select a profession",
     step2: "Profession overview",
@@ -401,6 +405,8 @@ WK.i18n.register('en', 'ui', {
 
   /* ── My account (account.html) ── */
   account: {
+    edit: "Edit", // v20261114
+    verifyNow: "Verify email", // v20261114
     kicker: "👤 My profile",
     title: "My <span class=\"grad\">account</span>",
     lead: "Your details, language and sign-in settings.",
@@ -664,6 +670,13 @@ WK.i18n.register('en', 'ui', {
     shareSub: 'Every friend, classmate or colleague who maps their Wikigai helps us improve it for the next person.',
     start: "Start my Wikigai — the basics are free",
     goHub: 'Go to My Wikigai',
+    postTikTok: "Post to TikTok",
+    postInstagram: "Post to Instagram",
+    shareFacebook: "Share on Facebook",
+    igPreparing: "Preparing your slides…",
+    igNoResults: "Finish the survey first",
+    igDone: "✓ Caption copied — paste it in Instagram",
+    igError: "Couldn’t open sharing — try again",
   },
 
   /* ── survey (survey.html + survey.js) ── */
@@ -725,6 +738,12 @@ WK.i18n.register('en', 'ui', {
     goDashboard: 'Go to my dashboard',
     retake: '↺ Retake',
     retakeStage: '↺ Retake Stage {n}',
+    guestTitle: "Save your results — it’s free",
+    guestText: "One tap and your answers are kept in your own account, ready for the next stage.",
+    guestEmail: "Sign up with email",
+    guestHave: "Already have an account?",
+    guestSignin: "Sign in",
+    ctaTextGuest: "Your results are on this device for now — save them below to keep them and see your full map.",
     filterNotice: '🔎 Focused on your {count} domains: <strong>{names}</strong>. Part A has {pairs} quick pairs; Part B duels follow for the subfields you keep. <a href="/dashboard" style="color:inherit">Change domains</a>',
     filterNotice1: '🔎 Focused on your domain: <strong>{names}</strong>. Part A has {pairs} quick pairs; Part B duels follow for the subfields you keep. <a href="/dashboard" style="color:inherit">Change domains</a>',
     partADone: 'Part A Complete',
@@ -833,6 +852,8 @@ WK.i18n.register('en', 'ui', {
 
   /* ── Wikigai hub (ikigai.html + ikigai.js) ── */
   hub: {
+    ttShare: "Share “{career}” to TikTok", // v20261112d
+    ttShareNote: "Share any profession with a passion score of {min} or more to TikTok.", // v20261112d
     loading: 'Loading your Wikigai…',
     tabOverview: 'My Wikigai',
     tabLove: 'What I love',
@@ -1143,7 +1164,7 @@ WK.i18n.register('en', 'ui', {
     footTerms: "Terms",
     footDelete: "Delete my data",
     footSupport: "Support Wikigai",
-    footCopy: "© {year} Wikigai · Digitradin OÜ (Estonia)",
+    footCopy: "© {year} Wikigai · Digitradin",
     footLabel: "Legal and privacy",
     signupAgree: "By creating an account you accept the <a href=\"/terms\" target=\"_blank\">Terms of Use</a> and the <a href=\"/privacy\" target=\"_blank\">Privacy Policy</a>.",
     exportTitle: "Download my data",
@@ -1157,6 +1178,10 @@ WK.i18n.register('en', 'ui', {
   },
   // v20261112b: Continue with TikTok, sign-in methods, add-your-email card, Share to TikTok
   tiktok: {
+    s3TitleOne: "A career I love", // v20261112d
+    captionOne: "{emoji} A career I love: {career} ({score}/100 passion score)!\n💖 What I love: {loves}\n🌀 I mapped what I love, what I’m good at, what the world needs and what pays. Which careers would fit YOU? 👇\n#ikigai #careertest #wikigai {tags}", // v20261112d
+    captionTitleOne: "{emoji} A career I love: {career}", // v20261112d
+    careerTooLow: "Only professions with a passion score of {min} or more can be shared on their own — here is your full result instead.", // v20261112d
     errGeneric: "TikTok could not be reached. Please try again.",
     metaShare: "Share to TikTok — Wikigai",
     shareKicker: "📲 Share",
@@ -1266,9 +1291,45 @@ WK.i18n.register('en', 'ui', {
     cardSkip: "Not now",
     cardDone: "Saved — {email} is now on your account. You can also set a password in Account › Change password.",
     cardTaken: "This email already has a Wikigai account. Sign in to it, then go to Account › Sign-in methods › Connect {provider} — your results come with you.",
+    cardTakenT: "Great news, this email is already registered.", // v20261114
+    cardTakenAsk: "Please confirm to save these results to your email ({email}).", // v20261114
+    cardPassPh: "Password of this account", // v20261114
+    cardSave: "Save", // v20261114
+    cardForgot: "Forgot password?", // v20261114
+    cardOther: "Use another email", // v20261114
+    cardBadPass: "Incorrect password. Please try again.", // v20261114
+    cardClaimed: "Saved — these results are now in your account {email}. Next time, sign in with your email or TikTok.", // v20261114
+    cardDummy: "Test server — no email is sent. Your 6-digit code:", // v20261114
+    cardAlready: "We already sent a code to {email}. Check your inbox (and spam); it is valid for 10 minutes after it was sent.", // v20261114
   },
   // v20261112d: schools directory (public /schools + My learning › Schools)
   sch: {
+    fWhere: "Where?", // v20261113
+    whereFromTarget: "From your study settings", // v20261113
+    whereFromRes: "From your country of residence", // v20261113
+    whereEdit: "Change in Account", // v20261113
+    whereAskT: "Where would you like to study?", // v20261113
+    whereAsk: "We are showing {countries} for now, based on your language. Pick one or more countries above.", // v20261114
+    whereUnsupported: "We don’t list schools in {country} yet, so we are showing {countries}, based on your language. Pick one or more countries above.", // v20261114
+    whereSave: "Save as my study countries", // v20261113
+    whereSaved: "Saved to your study settings", // v20261113
+    whereAll: "No country chosen: showing every country.", // v20261113
+    whereFromLang: "Based on the site language", // v20261114
+    whereAskRes: "We are showing your country of residence. Pick where you would like to study and save it.", // v20261114
+    restTitle: "Schools that might help in similar areas", // v20261114
+    fArea: "Area", // v20261114
+    fProsPublic: "Professions", // v20261114
+    prosLocked: "Filter by profession with your free Wikigai account.", // v20261114
+    prosPickArea: "Pick an area above to see its professions.", // v20261114
+    prosTap: "Tap one or more professions to see only their programmes.", // v20261114
+    prosOn: "Showing programmes for {n} chosen profession(s). Tap again to remove.", // v20261114
+    nonePros: "No programme leads to these professions in the chosen countries yet. See the similar ones below, or pick other countries.", // v20261114
+    pickArea: "Choose an area", // v20261113
+    areaPros: "Your professions in this area", // v20261113
+    areaProsNone: "No profession from your path in this area yet: showing every programme in it.", // v20261113
+    leadSimple: "Programmes in your top areas. Pick one area: the programmes that lead to your professions come first.", // v20261113
+    fastSignup: "Sign up in one tap:", // v20261112d
+    takeTest: "Take the free Wikigai test", // v20261112d
     metaTitle: "Schools, universities & programmes — Wikigai",
     metaDesc: "Compare universities and programmes in Spain, France, the UK, Ireland, the US and Mexico — and find the ones that lead to the career that fits you.",
     kicker: "Wikigai · Schools directory",
@@ -1412,7 +1473,39 @@ WK.i18n.register('en', 'ui', {
     loadErr: "The directory could not load. Please try again.",
     demoTag: "DEMO",
     demoTip: "Demo data: fictional institution, illustrative figures",
-    demoNote: "Preview with demo data: the institutions are fictional and the figures are illustrative. Real data is loaded before launch.",
+    demoNote: "Some results are still demo data (fictional institutions, illustrative figures) for countries whose official data is not loaded yet. Programmes from official open data have no DEMO tag.",
+    c_DE: "Germany",
+    publicDir: "public directory",
+    trustTip_unverified: "From one public course directory only, not confirmed elsewhere yet. Check with the institution.",
+    trustTip_public: "From a public course directory and confirmed by at least one other independent source.",
+    trustTip_official: "From official government open data.",
+    trust_unverified: "Unverified",
+    trust_public: "Public listing",
+    trust_official: "Official data",
+    lowData: "Limited data",
+    lowDataTip: "Few official figures are available for this programme, so it is listed after the better-documented ones.",
+    noDataYet: "No programmes in {countries} yet",
+    noDataYetTip: "No official or public listing loaded for it yet. Available now: {countries}. More countries are coming.",
+    notListed: "No longer listed",
+    notListedTip: "This programme is not offered in the latest official data (or was a demo record). It stays in your shortlist.",
+    workStudy: "work-study",
+    d_places: "Places",
+    applicantsN: "{n} applicants",
+    rangeTip: "Range across the years / sources we have",
+    scopeInst: "whole institution",
+    grantHolders: "share of students with a need-based grant",
+    source: "Source",
+    officialData: "official open data",
+    insAccept: "Acceptance",
+    insAcceptSub: "median offer rate",
+    level_short: "Short-cycle (2 yrs)",
+    level_prep: "Preparatory class",
+    level_integrated: "Integrated master (5 yrs)",
+    level_doctorate: "Doctorate",
+    level_certificate: "Certificate",
+    level_other: "Other",
+    kind_institute: "Institute / school",
+    kind_lycee: "Lycée (post-bac classes)",
     modalTitle: "Unlock every insight — free",
     modalB1: "Your match with each programme, from your Wikigai results",
     modalB2: "Real yearly cost, salaries and employment rates",
@@ -1420,5 +1513,97 @@ WK.i18n.register('en', 'ui', {
     modalB4: "Your admission chance and a shortlist you can keep",
     modalNote: "Free. No card needed. Sign up with email or TikTok.",
     close: "Close",
+  },
+  about: {
+    // v20261113
+    metaTitle: "About Wikigai — our mission and the ikigai idea",
+    metaDesc: "Why Wikigai exists, what it does, how the four circles of ikigai work, where the idea comes from and who to credit for it.",
+    kicker: "About Wikigai",
+    h1: "Find where what you love meets <span class=\"grad\">what the world needs</span>",
+    lead: "Wikigai helps young people and career changers turn the idea of ikigai into real choices: careers that fit them, what to learn next and the schools that lead there.",
+    missionT: "Our mission",
+    missionD: "Choosing a path is one of the biggest decisions in life, and most people make it with little help. Our mission is to give everyone, wherever they live, a clear and honest map of the careers that fit them, free to start, in their own language, with no ranking that money can buy.",
+    doesT: "What Wikigai does",
+    does1t: "A free three-stage test",
+    does1d: "Quick, instinctive questions find the big areas of work you are drawn to, then the real professions you love inside them, then what you are good at and where you live.",
+    does2t: "Your path",
+    does2d: "Your top areas, the professions that fit you best, your strengths, how much each career is needed and what it pays in your country.",
+    does3t: "What to do next",
+    does3d: "Study plans, learning videos and a schools directory that shows the programmes leading to the careers on your path.",
+    logicT: "The ikigai logic: four circles",
+    logicLead: "The famous ikigai diagram asks four questions. Where two circles meet, you find something good. Where all four meet, you find your ikigai: a reason to get up in the morning.",
+    cLove: "What you love",
+    cGood: "What you are good at",
+    cNeeds: "What the world needs",
+    cPaid: "What you can be paid for",
+    oPassion: "Passion",
+    oMission: "Mission",
+    oProfession: "Profession",
+    oVocation: "Vocation",
+    oCenter: "Ikigai",
+    pairsT: "Where two circles meet",
+    pPassion: "<b>Passion</b> = what you love + what you are good at",
+    pMission: "<b>Mission</b> = what you love + what the world needs",
+    pVocation: "<b>Vocation</b> = what the world needs + what you can be paid for",
+    pProfession: "<b>Profession</b> = what you are good at + what you can be paid for",
+    missT: "When one circle is missing",
+    miss1: "No pay: delight and fullness, but no money to live on.",
+    miss2: "Not needed: satisfaction, but a feeling of being useless.",
+    miss3: "Not loved: comfortable, but a feeling of emptiness.",
+    miss4: "Not good at it yet: excitement, but a lot of uncertainty.",
+    useT: "How Wikigai uses it",
+    useD: "Your answers fill the four circles: what you love (your areas and professions), what you are good at (your strengths), what the world needs (how much each career is in demand) and what it pays (pay ranges in your country). The careers where they overlap best come first. It is a guide to explore, not a verdict.",
+    histT: "A short history of ikigai",
+    hist1y: "The word",
+    hist1d: "生きがい (ikigai) is Japanese: <i>iki</i> means “life” and <i>gai</i> (from <i>kai</i>) means “worth” or “value”. Together: what makes life worth living. In Japan it is often about everyday things, like family, a hobby or a role in the community, not only work or money.",
+    hist2y: "1966",
+    hist2d: "Psychiatrist <b>Mieko Kamiya</b> publishes <i>Ikigai ni tsuite</i> (“On the meaning of life”), a classic Japanese book on ikigai.",
+    hist3y: "2009",
+    hist3d: "<b>Dan Buettner</b>’s TED talk on the “Blue Zones”, places where people live longest, presents ikigai in Okinawa as a reason to get up in the morning.",
+    hist4y: "2012",
+    hist4d: "Spanish astrologer <b>Andrés Zuzunaga</b>’s four-circle diagram of “purpose” (<i>propósito</i>) is published, first in Borja Vilaseca’s book <i>Qué harías si no tuvieras miedo</i>.",
+    hist5y: "2014",
+    hist5d: "Blogger <b>Marc Winn</b> writes “What’s your ikigai?” and puts the word ikigai at the centre of Zuzunaga’s diagram. This is the version that went around the world.",
+    hist6y: "2016–2017",
+    hist6d: "Books by <b>Héctor García and Francesc Miralles</b> (<i>Ikigai</i>, 2016) and <b>Ken Mogi</b> (<i>The Little Book of Ikigai</i>, 2017) bring ikigai to millions of readers.",
+    credT: "Credits",
+    credLead: "The ideas behind Wikigai belong to many people. We thank:",
+    cred1: "<b>The Japanese tradition of ikigai</b> and <b>Mieko Kamiya</b>, who studied it",
+    cred2: "<b>Andrés Zuzunaga</b>, author of the four-circle diagram of purpose",
+    cred3: "<b>Marc Winn</b>, who joined the diagram and the word ikigai",
+    cred4: "<b>Dan Buettner</b>, <b>Héctor García</b>, <b>Francesc Miralles</b> and <b>Ken Mogi</b>, who made ikigai known worldwide",
+    credNote: "Wikigai is independent and not affiliated with any of the people above.",
+    ctaT: "Ready to find your path?",
+    ctaD: "Take the free test and get your personal map.",
+    ctaBtn: "Start your Wikigai",
+    ctaBtn2: "How it works",
+  },
+  how: {
+    // v20261113
+    metaTitle: "How Wikigai works — find careers you could love",
+    metaDesc: "Wikigai in four simple steps: explore the worlds of work, pick the jobs you love, show what you are good at and get your path.",
+    kicker: "My path",
+    h1: "How Wikigai finds <span class=\"grad\">your path</span>",
+    lead: "It is like a game of “this or that”. You answer quick questions, and Wikigai shows you jobs that could make you happy. There are no right or wrong answers.",
+    stepsT: "Four easy steps",
+    s1t: "Explore the worlds of work",
+    s1d: "Science, art, business, helping people… You choose between two options again and again. Go with your gut!",
+    s2t: "Pick the jobs you love",
+    s2d: "Inside the worlds you like, you meet real jobs and say which ones you prefer.",
+    s3t: "Show what you are good at",
+    s3d: "Tell us your school subjects and where you live.",
+    s4t: "Get your path",
+    s4d: "Wikigai shows the jobs that fit you best, if people need them and how much they pay.",
+    getT: "What you get",
+    get1: "❤️ Your favourite worlds and jobs",
+    get2: "💪 Your strengths",
+    get3: "🌍 Which jobs the world needs",
+    get4: "💰 What they pay where you live",
+    nextT: "And then?",
+    nextD: "You can learn more about each job, make a study plan and find schools that lead there.",
+    note: "Free to start. Your answers stay private and you can delete them at any time.",
+    ctaBtn: "Start the free test",
+    ctaBtn2: "See schools",
+    aboutLink: "Curious about the ikigai idea? Read where it comes from →",
   },
 });

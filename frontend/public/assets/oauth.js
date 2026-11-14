@@ -2,7 +2,7 @@
    /share/tiktok. Providers come from /api/config → auth.providers (only the ones switched on for this stack — none by default):
    TikTok today; Google, Facebook, Instagram ready but hidden.
    - "Continue with <app>" buttons on the sign-in and sign-up (onboarding) cards
-   - Account › Sign-in methods: Email ✓ / Add email · one row per app: Connect / Disconnect (rows also shown for apps
+   - Account › Sign-in methods (first card of the page, v20261112d): Email ✓ / Add email · one row per app: Connect / Disconnect (rows also shown for apps
      already connected, even if the app was switched off later, so people can still disconnect)
    - accounts without email: "Add email" wording; accounts with neither email nor password: Delete → "Confirm with <app>"
    - messages after the round trip (?auth=cancel|linked|merged|taken|email_exists|…&via=<app>)
@@ -114,8 +114,10 @@
     const m = prof.methods || {};
     const linked = m.providers || (m.tiktok ? [{ id: 'tiktok', ...m.tiktok }] : []);
     const rows = ORDER.filter((id) => ids.includes(id) || linked.some((l) => l.id === id));
-    // 1) Sign-in methods card (before the delete card) — only when an app is on, or one is already connected
-    if (rows.length) {
+    // 1) Sign-in methods card — v20261112d: the FIRST card of the Account page (was just before the delete card);
+    //    v20261114: ALWAYS shown — the Email row (address + Verified / Not verified + Verify) moved here from "Your details";
+    //    app rows only when an app is on, or one is already connected
+    {
       const sec = document.createElement('section');
       sec.className = 'ik-card'; sec.id = 'oaMethods';
       const appRow = (id) => {
@@ -128,12 +130,25 @@
       };
       sec.innerHTML = `<h2>${esc(T('oauth.methodsTitle'))}</h2><p class="ik-sub" style="margin-bottom:6px">${esc(T('oauth.methodsHelp'))}</p>
         <div class="ac-row"><div class="oa-method"><span class="oa-ico oa-mail">✉️</span><div><strong>${esc(T('oauth.methodEmail'))}</strong><small>${esc(m.email ? (prof.user.email || '') : T('oauth.noEmailYet'))}</small></div></div>
-          ${m.email ? '<span class="ac-badge">✓</span>' : `<button class="ac-btn" type="button" id="oaAddEmail">${esc(T('oauth.addEmail'))}</button>`}</div>
+          ${!m.email ? `<button class="ac-btn" type="button" id="oaAddEmail">${esc(T('oauth.addEmail'))}</button>`
+            : prof.user.verified ? `<span class="ac-badge">${esc(T('account.verified'))}</span>`
+            : `<span class="oa-verify"><span class="ac-badge no">${esc(T('account.notVerified'))}</span><button class="ac-btn primary" type="button" id="oaVerify">${esc(T('account.verifyNow'))}</button></span>`}</div>
         ${rows.map(appRow).join('')}<div class="ac-msg" id="oaMethodsMsg" role="status"></div>`;
-      const del = document.querySelector('.ac-danger');
-      del.parentNode.insertBefore(sec, del);
+      const first = document.querySelector('main section.ik-card') || document.querySelector('.ac-danger');
+      first.parentNode.insertBefore(sec, first);
       sec.querySelectorAll('[data-oa-on]').forEach((b) => b.addEventListener('click', (e) => start(b.dataset.oaOn, 'link', '/account', e.currentTarget)));
       $('oaAddEmail')?.addEventListener('click', () => { $('acEmOpen')?.click(); $('acEmNew')?.scrollIntoView({ block: 'center' }); });
+      // v20261114: verify the email from here — a new code is sent, then the usual /verify page
+      $('oaVerify')?.addEventListener('click', async (e) => {
+        const b = e.currentTarget, msg = $('oaMethodsMsg'), email = prof.user.email || '';
+        b.disabled = true; msg.className = 'ac-msg'; msg.textContent = '';
+        try {
+          const r = await CPS().api('/api/auth/resend', { method: 'POST', auth: false, body: { email } });
+          sessionStorage.setItem('cps_pending_email', email);
+          if (r && r.dev_pin) sessionStorage.setItem('cps_dev_pin', r.dev_pin);
+          location.href = '/verify';
+        } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; b.disabled = false; }
+      });
       sec.querySelectorAll('[data-oa-off]').forEach((b) => b.addEventListener('click', async () => {
         const id = b.dataset.oaOff, label = appOf(id).label, msg = $('oaMethodsMsg');
         msg.className = 'ac-msg'; msg.textContent = '';

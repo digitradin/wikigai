@@ -11,5 +11,8 @@ const PROVIDERS = {
 };
 const get = (id) => (Object.prototype.hasOwnProperty.call(PROVIDERS, id) ? PROVIDERS[id] : null);
 const enabledIds = () => Object.keys(PROVIDERS).filter((id) => PROVIDERS[id].loginEnabled());
+/* v20261114b: legal texts name an app as soon as its keys are on the server, even while <P>_LOGIN is false — Google's brand
+   verification reads the privacy policy BEFORE the button can be switched on in production. */
+const legalIds = () => Object.keys(PROVIDERS).filter((id) => PROVIDERS[id].loginEnabled() || PROVIDERS[id].configured());
 const publicList = () => enabledIds().map((id) => ({ id, label: PROVIDERS[id].label }));
-module.exports = { PROVIDERS, get, enabledIds, publicList };
+module.exports = { PROVIDERS, get, enabledIds, legalIds, publicList };

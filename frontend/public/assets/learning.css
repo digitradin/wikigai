@@ -364,3 +364,19 @@ a.pl-saved-open{text-decoration:none}
 .lr-badge.lr-badge-new{background:rgba(34,197,94,.16);color:#86efac;-webkit-text-fill-color:#86efac}
 a.fv-link{text-decoration:none;color:inherit}
 a.fv-link:hover{border-color:rgba(196,77,255,.45)}
+/* v20261114: Account › one Save button for "Your details" (pink = unsaved changes) + frozen fields with Edit */
+.ac-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ac-head h2{margin:0}
+.ac-savebox{display:flex;align-items:center;gap:10px}
+.ac-savebox .ac-msg{margin:0}
+#acSave:disabled{opacity:.5}
+#acSave.primary{box-shadow:0 0 0 3px rgba(236,72,153,.25)}
+.ac-name input:disabled{opacity:.75;cursor:not-allowed;background:rgba(255,255,255,.03)}
+.oa-verify{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* v20261114: Plans step 4 — "plans are to learn; some professions need a degree" + save & search schools */
+.pl-uni{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 0 4px;padding:14px 16px;border-radius:14px;border:1px solid rgba(77,201,246,.35);background:linear-gradient(135deg,rgba(77,201,246,.08),rgba(196,77,255,.06))}
+.pl-uni-ico{font-size:1.4rem}
+.pl-uni p{flex:1 1 320px;margin:0;font-size:.9rem;line-height:1.5}
+.pl-uni .btn-primary{white-space:nowrap}
+.fv-schools{margin-top:4px}

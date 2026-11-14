@@ -17,6 +17,7 @@ const i18n = require('../i18n');
 const { parseBirthDate, toIso } = require('../lib/birthdate');
 const { isCountry } = require('../lib/countries');
 const { countryFromRequest } = require('../lib/geo');
+const { mergeAccounts } = require('../lib/accountData');
 
 /* language for emails: the account's saved locale, else the request's */
 function userLang(user, req) { return i18n.normalize(user && user.locale) || i18n.fromRequest(req); }
@@ -27,6 +28,22 @@ const MAX_PW_FAILS = 8;
 const LOCK_MS = 15 * 60 * 1000; // 15 minutes
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/* v20261114 — "dummy" email codes for the email-change / add-email flow on servers that cannot send mail (preprod):
+   no email is sent and the 6-digit code is returned to the page, which shows it. Never on production (wikigai.com).
+   EMAIL_CODES=dummy | send overrides the automatic choice (automatic = dummy when there is no SMTP_HOST). */
+function isProductionSite() {
+  const u = process.env.PUBLIC_URL;
+  if (!u) return process.env.NODE_ENV === 'production';
+  try { return /(^|\.)wikigai\.com$/i.test(new URL(u).hostname); } catch { return true; }
+}
+function dummyEmailCodes() {
+  if (isProductionSite()) return false;
+  const v = String(process.env.EMAIL_CODES || '').toLowerCase();
+  if (v === 'send') return false;
+  if (v === 'dummy') return true;
+  return !process.env.SMTP_HOST;
+}
 
 function normalizeEmail(email) {
   return typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -454,6 +471,54 @@ function pinError(res, check) {
   return res.status(status).json({ error: msgs[check.reason] || 'Invalid code.', code: 'PIN_' + check.reason.toUpperCase() });
 }
 
+/* ─────────────────────────────────────────────────────────────
+ * v20261114 — POST /api/auth/claim-email  { email, password }   (signed in)
+ * A sign-in-app-only account (TikTok…, no email, no password) types an email that already has a Wikigai account
+ * ("Keep your results safe" card). The person proves they own it with that account's password; then everything of the
+ * app-only account (results, plans, videos, schools, the TikTok sign-in) moves INTO the email account, its newest
+ * results replacing the same stages there, and the app-only account is deleted. Returns a session for the email account.
+ * Brute force: /api/auth/ rate limit + the same per-account lock as sign-in (8 wrong passwords → 15 min).
+ * ───────────────────────────────────────────────────────────── */
+router.post('/claim-email', async (req, res, next) => {
+  try {
+    const me = await requireUser(req, res);
+    if (!me) return;
+    const mine = await db.getOne('SELECT email_hash, password_hash FROM users WHERE id = $1', [me.id]);
+    if (!mine || mine.email_hash || mine.password_hash) {
+      return res.status(400).json({ error: 'This account already has its own email or password.', code: 'NOT_APP_ONLY' });
+    }
+    const email = normalizeEmail(req.body && req.body.email);
+    const password = String((req.body && req.body.password) || '');
+    if (!EMAIL_RE.test(email) || !password) return res.status(400).json({ error: 'Enter your password.', code: 'BAD_INPUT' });
+    const emailHash = hashEmail(email);
+    const target = await db.getOne(
+      `SELECT id, name, locale, status, password_hash, failed_logins, locked_until FROM users WHERE email_hash = $1 AND email_verified = true`, [emailHash]);
+    if (!target) return res.status(404).json({ error: 'No Wikigai account uses this email.', code: 'NO_USER' });
+    if (target.id === me.id) return res.status(400).json({ error: 'This is already your email.', code: 'SAME_EMAIL' });
+    if (target.status !== 'active') return res.status(403).json({ error: 'This account is disabled.', code: 'DISABLED' });
+    if (!target.password_hash) return res.status(409).json({ error: 'This account has no password.', code: 'NO_PASSWORD' });
+    if (target.locked_until && new Date(target.locked_until).getTime() > Date.now()) {
+      return res.status(429).json({ error: 'Too many attempts. Please try again in a few minutes.', code: 'LOCKED' });
+    }
+    if (!verifyPassword(password, target.password_hash)) {
+      const fails = (target.failed_logins || 0) + 1, lock = fails >= MAX_PW_FAILS;
+      await db.query('UPDATE users SET failed_logins = $2, locked_until = $3 WHERE id = $1', [target.id, lock ? 0 : fails, lock ? new Date(Date.now() + LOCK_MS) : null]);
+      return res.status(401).json({ error: 'Incorrect password.', code: 'BAD_PASSWORD' });
+    }
+    await ensureResultsRow(target.id, emailHash, target.name); // links a legacy results row to the id before merging into it
+    const summary = await mergeAccounts(me.id, target.id, { id: target.id, email }, { preferSource: true });
+    await db.query('UPDATE users SET last_login_at = NOW(), failed_logins = 0, locked_until = NULL WHERE id = $1', [target.id]);
+    const token = createSessionToken(target.id);
+    setSessionCookie(req, res, token);
+    console.log('[auth] app-only account claimed an email account', JSON.stringify({ added: (summary.stagesAdded || []).length, replaced: (summary.stagesReplaced || []).length }));
+    res.json({
+      ok: true, token,
+      user: { id: target.id, email, name: target.name, locale: target.locale, verified: true },
+      stages: [...(summary.stagesAdded || []), ...(summary.stagesReplaced || [])],
+    });
+  } catch (err) { next(err); }
+});
+
 async function requireUser(req, res) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : req.query.token;
@@ -563,7 +628,14 @@ router.post('/email-change/start', async (req, res, next) => {
     const newHash = hashEmail(newEmail);
     const taken = await db.getOne('SELECT id FROM users WHERE email_hash = $1 AND email_verified = true AND id <> $2', [newHash, user.id]);
     if (taken) return res.status(409).json({ error: 'This email is already used by another Wikigai account.', code: 'EMAIL_TAKEN', linkHint: !user.email });
+    const dummy = dummyEmailCodes();
+    // v20261114: once=true ("Keep your results safe" card) — one email per address while its code is still valid
+    if (req.body && req.body.once === true && !dummy) {
+      const live = await db.getOne(`SELECT 1 AS x FROM auth_pins WHERE email_hash = $1 AND purpose = 'email_change' AND consumed = false AND expires_at > NOW() LIMIT 1`, [newHash]);
+      if (live) return res.json({ ok: true, email: newEmail, alreadySent: true });
+    }
     const pin = await issuePin(newHash, 'email_change');
+    if (dummy) return res.json({ ok: true, email: newEmail, dummy: true, dummy_pin: pin }); // preprod: no email, code shown on screen
     const lang = userLang(user, req);
     await sendMail({ to: newEmail, subject: i18n.t(lang, 'email.subjectEmailChange'), html: pinEmailHtml(pin, user.name || newEmail.split('@')[0], 'change', lang) });
     res.json({ ok: true, email: newEmail, ...(process.env.EXPOSE_PINS === 'true' ? { dev_pin: pin } : {}) });

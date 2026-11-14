@@ -25,26 +25,24 @@
     </header>
     <div class="ac-grid">
       <section class="ik-card">
-        <h2 data-i18n="account.details">Your details</h2>
+        <div class="ac-head"><h2 data-i18n="account.details">Your details</h2>
+          <div class="ac-savebox"><span class="ac-msg" id="acSaveMsg" role="status"></span><button class="ac-btn" type="button" id="acSave" disabled data-i18n="account.save">Save</button></div></div>
         <div class="ac-row">
           <div><label for="acName" data-i18n="account.name">Name</label></div>
           <div style="flex:1 1 260px;max-width:420px">
-            <form class="ac-name" id="acNameForm"><input id="acName" maxlength="80" autocomplete="name" data-i18n-attr="placeholder:account.namePh"><button class="ac-btn primary" type="submit" data-i18n="account.save">Save</button></form>
-            <div class="ac-msg" id="acNameMsg" role="status"></div>
+            <div class="ac-name"><input id="acName" maxlength="80" autocomplete="name" data-i18n-attr="placeholder:account.namePh"></div>
           </div>
         </div>
         <div class="ac-row">
           <div><label for="acBirth" data-i18n="account.birth">Birthday</label><small data-i18n="account.birthHelp">Optional — lets us adapt your learning plans to your age.</small></div>
           <div style="flex:1 1 260px;max-width:420px">
-            <form class="ac-name" id="acBirthForm"><input id="acBirth" type="date" autocomplete="bday" min="1926-01-01"><button class="ac-btn primary" type="submit" data-i18n="account.save">Save</button><button class="ac-btn" type="button" id="acBirthClear" data-i18n="account.clear">Clear</button></form>
-            <div class="ac-msg" id="acBirthMsg" role="status"></div>
+            <div class="ac-name"><input id="acBirth" type="date" autocomplete="bday" min="1926-01-01"><button class="ac-btn" type="button" id="acBirthEdit" hidden data-i18n="account.edit">Edit</button></div>
           </div>
         </div>
         <div class="ac-row">
           <div><label for="acRes" data-i18n="account.residence">Country of residence</label><small data-i18n="account.residenceHelp">Where you live now — helps us show pay, demand and studies that apply to you.</small></div>
           <div style="flex:1 1 260px;max-width:420px">
             <select id="acRes" class="ac-select"><option value="" data-i18n="account.chooseCountry">Choose a country…</option></select>
-            <div class="ac-msg" id="acResMsg" role="status"></div>
           </div>
         </div>
         <div class="ac-row">
@@ -52,18 +50,12 @@
           <div style="flex:1 1 260px;max-width:420px">
             <div class="ac-chips" id="acTgtChips"></div>
             <select id="acTgtAdd" class="ac-select"><option value="" data-i18n="account.addCountry">+ Add a country…</option></select>
-            <div class="ac-msg" id="acTgtMsg" role="status"></div>
           </div>
-        </div>
-        <div class="ac-row">
-          <div><span class="ac-k" data-i18n="account.email">Email</span></div>
-          <div class="ac-v"><span id="acEmail">—</span><span class="ac-badge" id="acVerified" hidden></span></div>
         </div>
         <div class="ac-row">
           <div><label for="acPhone" data-i18n="account.phone">Phone</label><small data-i18n="account.phoneHelp">Optional — international format, e.g. +34 600 000 000. Only you can see it.</small></div>
           <div style="flex:1 1 260px;max-width:420px">
-            <form class="ac-name" id="acPhoneForm"><input id="acPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+34 600 000 000"><button class="ac-btn primary" type="submit" data-i18n="account.save">Save</button><button class="ac-btn" type="button" id="acPhoneClear" data-i18n="account.clear">Clear</button></form>
-            <div class="ac-msg" id="acPhoneMsg" role="status"></div>
+            <div class="ac-name"><input id="acPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+34 600 000 000"><button class="ac-btn" type="button" id="acPhoneEdit" hidden data-i18n="account.edit">Edit</button></div>
           </div>
         </div>
         <div class="ac-row">
@@ -144,6 +136,7 @@
 </main>
 <script src="/assets/app.js"></script>
 <script src="/assets/oauth.js"></script>
+<script src="/assets/topmenu.js"></script>
 <script src="/assets/site.js"></script>
 <script src="/assets/countries.js"></script>
 <script>
@@ -152,48 +145,79 @@
   if (!Store.token) { location.href = '/login'; return; }
   const I = WK.i18n, T = (k, v) => I.t(k, v), $ = (id) => document.getElementById(id);
   let user = null;
-  function paint() {
-    if (!user) return;
-    $('acEmail').textContent = user.email || '—';
-    const v = $('acVerified'); v.hidden = false; v.className = 'ac-badge' + (user.verified ? '' : ' no');
-    v.textContent = T(user.verified ? 'account.verified' : 'account.notVerified');
-  }
+  /* v20261114: one Save button for "Your details" (pink when something changed); the email row moved to Sign-in methods */
+  const draft = { residence: '', targets: [] };
+  const unlocked = { birth: false, phone: false };
+  function paint() { /* v20261114: email + verified badge are shown in Sign-in methods, not here */ }
   async function load() {
     try { user = (await api('/api/user/profile')).user; }
     catch (err) { if (err.status === 401) { Store.clear(); location.href = '/login'; } return; }
     Store.user = user;
+    fillFromUser();
+  }
+  function fillFromUser() {
     $('acName').value = user.name || '';
     $('acBirth').value = user.birthDate || '';
     $('acPhone').value = user.phone || '';
-    paint(); paintCountries();
+    draft.residence = user.residenceCountry || '';
+    draft.targets = (user.targetCountries || []).slice();
+    unlocked.birth = false; unlocked.phone = false;
+    paintLocks(); paintCountries(); markDirty();
   }
-  $('acNameForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const msg = $('acNameMsg'), name = $('acName').value.trim();
-    msg.className = 'ac-msg'; msg.textContent = '';
-    try {
-      await api('/api/user/profile', { method: 'PUT', body: { name } });
-      user.name = name; Store.user = user;
-      msg.className = 'ac-msg ok'; msg.textContent = T('account.saved');
-      if (window.WikiNav) window.WikiNav.render();
-    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
+  /* birthday + phone: empty = editable; filled = frozen with an "Edit" button (click again = Cancel) */
+  function paintLocks() {
+    [['birth', 'acBirth', 'acBirthEdit', user && user.birthDate], ['phone', 'acPhone', 'acPhoneEdit', user && user.phone]].forEach(([k, inp, btn, saved]) => {
+      const lock = !!saved && !unlocked[k];
+      $(inp).disabled = lock;
+      $(btn).hidden = !saved;
+      $(btn).textContent = T(unlocked[k] ? 'account.deleteCancel' : 'account.edit');
+    });
+  }
+  function changes() {
+    if (!user) return {};
+    const c = {};
+    const name = $('acName').value.trim(); if (name !== (user.name || '')) c.name = name;
+    const birth = $('acBirth').value || ''; if (birth !== (user.birthDate || '')) c.birthDate = birth;
+    const phone = $('acPhone').value.trim(); if (phone !== (user.phone || '')) c.phone = phone;
+    if (draft.residence !== (user.residenceCountry || '')) c.residenceCountry = draft.residence;
+    if (draft.targets.join(',') !== (user.targetCountries || []).join(',')) c.targetCountries = draft.targets.slice();
+    return c;
+  }
+  function markDirty() {
+    const dirty = Object.keys(changes()).length > 0, b = $('acSave');
+    b.disabled = !dirty; b.classList.toggle('primary', dirty);
+    if (dirty) { const m = $('acSaveMsg'); if (m.classList.contains('ok')) { m.className = 'ac-msg'; m.textContent = ''; } }
+  }
+  ['acName', 'acBirth', 'acPhone'].forEach((id) => { $(id).addEventListener('input', markDirty); $(id).addEventListener('change', markDirty); });
+  [['birth', 'acBirth', 'acBirthEdit', 'birthDate'], ['phone', 'acPhone', 'acPhoneEdit', 'phone']].forEach(([k, inp, btn, field]) => {
+    $(btn).addEventListener('click', () => {
+      unlocked[k] = !unlocked[k];
+      if (!unlocked[k]) $(inp).value = user[field] || '';   // Cancel: back to the saved value
+      paintLocks(); markDirty();
+      if (unlocked[k]) $(inp).focus();
+    });
   });
+  async function saveAll() {
+    const body = changes(); if (!Object.keys(body).length) return;
+    const b = $('acSave'), m = $('acSaveMsg');
+    b.disabled = true; m.className = 'ac-msg'; m.textContent = '';
+    try {
+      const r = await api('/api/user/profile', { method: 'PUT', body });
+      ['name', 'birthDate', 'phone', 'residenceCountry', 'targetCountries'].forEach((k) => { if (k in r) user[k] = r[k]; });
+      Store.user = user;
+      fillFromUser();
+      m.className = 'ac-msg ok';
+      m.textContent = ('birthDate' in r && user.birthDate) ? T('account.birthSaved', { age: ageOf(user.birthDate) }) : T('account.saved');
+      if ('name' in r && window.WikiNav) window.WikiNav.render();
+    } catch (err) { m.className = 'ac-msg err'; m.textContent = err.message; markDirty(); }
+  }
+  $('acSave').addEventListener('click', saveAll);
+  ['acName', 'acBirth', 'acPhone'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); saveAll(); } }));
+  window.addEventListener('beforeunload', (e) => { if (Object.keys(changes()).length) { e.preventDefault(); e.returnValue = ''; } });
   $('acPassword').addEventListener('click', () => { try { sessionStorage.setItem('wk_forgot_email', user?.email || ''); } catch {} });
   // ── birthday (optional) ──
   (function () { const d = new Date(); d.setFullYear(d.getFullYear() - 8); $('acBirth').max = d.toISOString().slice(0, 10); })();
   const ageOf = (iso) => { const b = new Date(iso + 'T12:00:00Z'), n = new Date(); let a = n.getFullYear() - b.getUTCFullYear(); if (n.getMonth() < b.getUTCMonth() || (n.getMonth() === b.getUTCMonth() && n.getDate() < b.getUTCDate())) a -= 1; return a; };
-  async function saveBirth(value) {
-    const msg = $('acBirthMsg');
-    msg.className = 'ac-msg'; msg.textContent = '';
-    try {
-      const r = await api('/api/user/profile', { method: 'PUT', body: { birthDate: value } });
-      user.birthDate = r.birthDate || null; Store.user = user; $('acBirth').value = user.birthDate || '';
-      msg.className = 'ac-msg ok';
-      msg.textContent = user.birthDate ? T('account.birthSaved', { age: ageOf(user.birthDate) }) : T('account.birthCleared');
-    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
-  }
-  $('acBirthForm').addEventListener('submit', (e) => { e.preventDefault(); saveBirth($('acBirth').value || ''); });
-  $('acBirthClear').addEventListener('click', () => saveBirth(''));
   $('acSignOut').addEventListener('click', () => { if (window.CPS.logout) window.CPS.logout(); else { Store.clear(); location.href = '/login'; } });
   // ── delete account: retype email + password ──
   const delForm = $('acDeleteForm'), delGo = $('acDeleteGo'), delMsg = $('acDelMsg');
@@ -255,9 +279,9 @@
       const r = await api('/api/auth/email-change/start', { method: 'POST', body: { newEmail, password: $('acEmPass').value } });
       em.step = 2; em.email = r.email || newEmail;
       $('acEmStep1').hidden = true; $('acEmStep2').hidden = false; $('acEmResend').hidden = false;
-      $('acEmSent').textContent = T('account.emailCodeSent', { email: em.email });
+      $('acEmSent').textContent = r.dummy ? `${T('oauth.cardDummy')} ${r.dummy_pin}` : T('account.emailCodeSent', { email: em.email }); // v20261114: preprod shows the code
       $('acEmGo').textContent = T('account.confirmEmail');
-      if (r.dev_pin) $('acEmPin').value = r.dev_pin; // local tests only (codes shown on screen)
+      if (r.dummy_pin || r.dev_pin) $('acEmPin').value = r.dummy_pin || r.dev_pin; // preprod (dummy) + local tests
       $('acEmPin').focus();
     } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
   }
@@ -275,17 +299,6 @@
   $('acEmResend').addEventListener('click', () => { $('acEmStep1').hidden = false; $('acEmStep2').hidden = true; $('acEmResend').hidden = true; em.step = 1; $('acEmGo').textContent = T('account.sendCode'); $('acEmPass').focus(); });
   $('acEmForm').addEventListener('submit', (e) => { e.preventDefault(); if (em.step === 1) emSend(); else emConfirm(); });
 
-  // ── phone (v20261028b): optional, international format, stored encrypted ──
-  async function savePhone(value) {
-    const msg = $('acPhoneMsg'); msg.className = 'ac-msg'; msg.textContent = '';
-    try {
-      const r = await api('/api/user/profile', { method: 'PUT', body: { phone: value } });
-      user.phone = r.phone || null; Store.user = user; $('acPhone').value = user.phone || '';
-      msg.className = 'ac-msg ok'; msg.textContent = T(user.phone ? 'account.saved' : 'account.phoneCleared');
-    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
-  }
-  $('acPhoneForm').addEventListener('submit', (e) => { e.preventDefault(); savePhone($('acPhone').value.trim()); });
-  $('acPhoneClear').addEventListener('click', () => savePhone(''));
   // ── countries (v20261028b): residence + where to study / work (max 10), saved on change ──
   const MAX_TGT = 10;
   const flag = (c) => (c === 'XK' ? '🏳️' : String.fromCodePoint(...[...c].map((x) => 0x1f1a5 + x.charCodeAt(0))));
@@ -297,36 +310,27 @@
   }
   function paintCountries() {
     if (!user) return;
-    const tg = user.targetCountries || [];
+    const tg = draft.targets;   // v20261114: edits stay in the draft until Save
     $('acRes').innerHTML = `<option value="">${escH(T('account.chooseCountry'))}</option>` + countryOptions(new Set());
-    $('acRes').value = user.residenceCountry || '';
+    $('acRes').value = draft.residence;
     $('acTgtChips').innerHTML = tg.map((c) => `<span class="ac-chip">${flag(c)} ${escH(cName(c))}<button type="button" data-rmc="${c}" aria-label="${escH(T('account.removeCountry', { country: cName(c) }))}">×</button></span>`).join('');
     const add = $('acTgtAdd');
     add.innerHTML = `<option value="">${escH(T(tg.length >= MAX_TGT ? 'account.maxCountries' : 'account.addCountry', { n: MAX_TGT }))}</option>` + countryOptions(new Set(tg));
     add.disabled = tg.length >= MAX_TGT;
   }
-  async function saveCountries(body, msgId) {
-    const msg = $(msgId); msg.className = 'ac-msg'; msg.textContent = '';
-    try {
-      const r = await api('/api/user/profile', { method: 'PUT', body });
-      if ('residenceCountry' in r) user.residenceCountry = r.residenceCountry;
-      if ('targetCountries' in r) user.targetCountries = r.targetCountries;
-      Store.user = user; msg.className = 'ac-msg ok'; msg.textContent = T('account.saved');
-    } catch (err) { msg.className = 'ac-msg err'; msg.textContent = err.message; }
-    paintCountries();
-  }
-  $('acRes').addEventListener('change', (e) => saveCountries({ residenceCountry: e.target.value }, 'acResMsg'));
+  $('acRes').addEventListener('change', (e) => { draft.residence = e.target.value; markDirty(); });
   $('acTgtAdd').addEventListener('change', (e) => {
-    const c = e.target.value; if (!c) return;
-    saveCountries({ targetCountries: [...(user.targetCountries || []), c].slice(0, MAX_TGT) }, 'acTgtMsg');
+    const c = e.target.value; if (!c || draft.targets.includes(c)) return;
+    draft.targets = [...draft.targets, c].slice(0, MAX_TGT); paintCountries(); markDirty();
   });
   $('acTgtChips').addEventListener('click', (e) => {
     const b = e.target.closest('[data-rmc]'); if (!b) return;
-    saveCountries({ targetCountries: (user.targetCountries || []).filter((x) => x !== b.dataset.rmc) }, 'acTgtMsg');
+    draft.targets = draft.targets.filter((x) => x !== b.dataset.rmc); paintCountries(); markDirty();
   });
 
   I.ready.then(load);
-  I.onChange(() => { paint(); paintCountries(); });
+  // a language switch only re-labels the page: drafts, countries and the Save state are kept (v20261114)
+  I.onChange(() => { paint(); paintCountries(); paintLocks(); });
 })();
 </script>
 </body>

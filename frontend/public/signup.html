@@ -86,6 +86,8 @@
   WK.i18n.onChange(() => {}); // static text re-applies itself; keep typed input
 
   if (Store.token) window.location.href = '/dashboard';
+  // v20261114b: where to land after the email code (?next=/survey?stage=1&review=1&saved=1 from the survey results); site paths only
+  (() => { const n = new URLSearchParams(location.search).get('next') || ''; try { if (/^\/(?!\/)[\w\-/.?=&%]*$/.test(n) && !/^\/(login|signup)/.test(n)) sessionStorage.setItem('cps_next', n); else sessionStorage.removeItem('cps_next'); } catch (e) { /* ignore */ } })();
   WK.i18n.ready.then(() => Captcha.mount('captcha'));
   document.querySelectorAll('.pw-toggle').forEach(b => b.addEventListener('click', () => {
     const inp = document.getElementById(b.dataset.target);

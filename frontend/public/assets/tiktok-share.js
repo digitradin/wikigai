@@ -1,4 +1,5 @@
-/* Wikigai — "Share to TikTok" screen (/share/tiktok) — v20261112b; v20261112c: ikigai-circles art + emojis per domain / top profession.
+/* Wikigai — "Share to TikTok" screen (/share/tiktok) — v20261112b; v20261112c: ikigai-circles art + emojis per domain / top profession,
+   and window.WikiCarousel (same slides for Instagram etc.) when loaded on any other page.
    1. not connected → "Connect TikTok" (Login Kit, posting scopes asked only here)
    2. builds the result carousel in the browser (canvas, 1080×1920 JPEG, NO logo / brand name / URL on the images — TikTok rule),
       with emojis for the user's top domains and top profession, and a caption that uses the same emojis
@@ -6,6 +7,7 @@
       preview, editable title + caption, "Who can view" from privacy_level_options with NO default, comments + music unticked,
       commercial-content disclosure, Music Usage Confirmation (+ Branded Content Policy) right above Post,
       nothing sent to TikTok before the user presses Post
+   v20261112d: ?career=<name> (from Passions) shares ONE profession (passion score ≥ 50), otherwise the full result.
    4. Post (DIRECT_POST) or "Open in TikTok to add a sound" (MEDIA_UPLOAD → TikTok inbox) → status polling */
 (function () {
   'use strict';
@@ -19,7 +21,7 @@
   const BC_URL = 'https://www.tiktok.com/legal/page/global/bc-policy/en';
   let slides = [], creator = null;
 
-  if (!Store.token) { location.href = '/login?next=/share/tiktok'; return; }
+  if (app && !Store.token) { location.href = '/login?next=/share/tiktok'; return; }
 
   /* ── emojis: one per domain (STAGE_DATA icons) and one per profession (keyword map, falls back to its domain icon) ── */
   const JOB_EMOJI = [
@@ -47,7 +49,7 @@
     [/architect/i, '🏛️'], [/urban|planner|city/i, '🏙️'], [/surveyor/i, '📐'], [/electric/i, '⚡'], [/mechanic/i, '⚙️'],
     [/civil eng|structural|construction|site manager|builder/i, '🏗️'],
     [/solar|energy|renewable|wind/i, '☀️'], [/climate|sustainab|environment|ecolog|conservation/i, '🌱'], [/agricult|farm|forest|horticult/i, '🌾'],
-    [/invest|bank|trader|trading|wealth|fund/i, '📈'], [/financ|account|audit|tax/i, '💰'], [/founder|entrepreneur|startup/i, '🚀'],
+    [/invest|bank|trader|trading|wealth|fund|asset/i, '📈'], [/financ|account|audit|tax/i, '💰'], [/founder|entrepreneur|startup/i, '🚀'],
     [/market|brand|social media|advertis|pr /i, '📣'], [/sales|business develop/i, '🤝'], [/consult|strateg/i, '🧩'],
     [/\bhr\b|recruit|talent|people/i, '🧑‍💼'], [/manager|lead|chief|ceo|director|executive/i, '👔'], [/engineer/i, '🔧'],
   ];
@@ -61,8 +63,35 @@
     return areaOf(area).icon || '✨';
   }
 
+  /* ── v20261112d: one profession (?career=<English name>, from My path › Passions). Allowed only when the
+     profession is still on the shortlist with a passion score of CAREER_MIN or more; otherwise the full result is shared. ── */
+  const CAREER_MIN = 50;
+  const wantCareer = (new URLSearchParams(location.search).get('career') || '').slice(0, 120);
+  function oneCareer(r) {
+    if (!wantCareer) return null;
+    const s2 = r.stage_2 || {};
+    const dp = (r.stage_1 || {}).domainPrefs || {}, sp = s2.subPrefs || {}, pp = s2.proPrefs || {}, ex = new Set(s2.excluded || []);
+    const l = (Array.isArray(s2.love) ? s2.love : []).find((x) => x.career === wantCareer);
+    if (!l) return null;
+    const dom = l.domain || String(l.subfield || '').split('.')[0]; // subfield keys are "<DOMAIN>.<SUB>"
+    const off = dp[dom] === false || sp[l.subfield] === false || pp[l.career] === false || ex.has(l.career);
+    if (off || !(l.L >= CAREER_MIN)) return { tooLow: true };
+    return { area: dom, name: C(l.career), pct: Math.round(l.L), emoji: jobEmoji(l.career, dom) };
+  }
+
   /* ── data from the user's results ── */
   function pickResults(r) {
+    const one = oneCareer(r);
+    if (one && !one.tooLow) {
+      const s1 = r.stage_1 || {};
+      const loves = (s1.ranked || []).slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 3)
+        .map((x) => ({ area: x.area, name: C(areaOf(x.area).name || x.area), icon: areaOf(x.area).icon || '✨' }));
+      const deco = [...new Set([one.emoji, areaOf(one.area).icon || '✨', ...loves.map((l) => l.icon), ...SPARKS])].slice(0, 4);
+      return { loves, careers: [one], deco, hero: one.emoji, single: true };
+    }
+    return Object.assign(pickAll(r), { tooLow: !!(one && one.tooLow) });
+  }
+  function pickAll(r) {
     const s1 = r.stage_1 || {}, s3 = r.stage_3 || {}, s2 = r.stage_2 || {};
     const loves = (s1.ranked || []).slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 3)
       .map((x) => ({ area: x.area, name: C(areaOf(x.area).name || x.area), icon: areaOf(x.area).icon || '✨' }));
@@ -165,7 +194,7 @@
       d.loves.forEach((l, i) => { const y = t2 + 90 + i * 150; emoji(ctx, l.icon, 140, y - 22, 76, 0); ctx.font = font(700, 54); ctx.fillStyle = '#f1f5f9'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; wrap(ctx, l.name, 210, y, 770, 60, 2); });
     }, '#2a0f3d', d.loves.map((l) => l.icon).concat(d.careers.map((c) => c.emoji), SPARKS).filter((e, i, a) => a.indexOf(e) === i).slice(0, 4)));
     if (d.careers.length) out.push(slide((ctx) => {
-      kicker(ctx, T('tiktok.s3Kicker'), 1090); ctx.font = font(800, 84); const t3 = wrap(ctx, T('tiktok.s3Title') + ' 🎯', 100, 1200, 880, 96, 2);
+      kicker(ctx, T('tiktok.s3Kicker'), 1090); ctx.font = font(800, 84); const t3 = wrap(ctx, T(d.single ? 'tiktok.s3TitleOne' : 'tiktok.s3Title') + (d.single ? ' 💖' : ' 🎯'), 100, 1200, 880, 96, 2);
       d.careers.forEach((c, i) => {
         const y = t3 + 90 + i * 150; emoji(ctx, c.emoji, 140, y - 22, 76, 0);
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#f1f5f9'; ctx.font = font(700, 54); wrap(ctx, c.name, 210, y, 600, 60, 2);
@@ -183,10 +212,13 @@
     const top = d.careers[0];
     const loves = d.loves.map((l) => `${l.icon} ${l.name}`).join(' · ');
     const tags = [...new Set([...(top ? [TAGS[top.area]] : []), ...d.loves.map((l) => TAGS[l.area])].filter(Boolean))].slice(0, 2).join(' ');
-    const text = top
-      ? T('tiktok.captionDyn', { emoji: top.emoji, career: top.name, loves: loves || '🌀', tags })
-      : T('tiktok.captionDynNoCareer', { loves, tags });
-    const title = top ? T('tiktok.captionTitleDyn', { emoji: top.emoji, career: top.name }) : T('tiktok.captionTitle');
+    const text = d.single
+      ? T('tiktok.captionOne', { emoji: top.emoji, career: top.name, score: top.pct, loves: loves || '🌀', tags })
+      : top
+        ? T('tiktok.captionDyn', { emoji: top.emoji, career: top.name, loves: loves || '🌀', tags })
+        : T('tiktok.captionDynNoCareer', { loves, tags });
+    const title = d.single ? T('tiktok.captionTitleOne', { emoji: top.emoji, career: top.name })
+      : top ? T('tiktok.captionTitleDyn', { emoji: top.emoji, career: top.name }) : T('tiktok.captionTitle');
     return { text: text.replace(/\s+$/g, ''), title: title.slice(0, 90) };
   }
 
@@ -194,7 +226,7 @@
   function connectScreen() {
     app.innerHTML = `<h2>${esc(T('tiktok.connectTitle'))}</h2><p class="dl-help">${esc(T('tiktok.connectText'))}</p>
       <div class="dl-actions"><button class="oa-btn oa-tiktok ts-connect" id="tsConnect" type="button">${esc(T('tiktok.connectBtn'))}</button></div>`;
-    $('tsConnect').addEventListener('click', (e) => window.WikiAuth.start('tiktok', 'share', '/share/tiktok', e.currentTarget));
+    $('tsConnect').addEventListener('click', (e) => window.WikiAuth.start('tiktok', 'share', '/share/tiktok' + (wantCareer ? '?career=' + encodeURIComponent(wantCareer) : ''), e.currentTarget));
   }
   function noResults() {
     app.innerHTML = `<p class="dl-help">${esc(T('tiktok.noResults'))}</p><a class="dl-btn primary" style="display:inline-block;text-decoration:none" href="/survey">${esc(T('tiktok.noResultsBtn'))}</a>`;
@@ -327,7 +359,21 @@
     catch (err) { if (err.code === 'TIKTOK_REAUTH') return connectScreen(); app.innerHTML = `<p class="oa-msg err">${esc(errText(err))}</p>`; return; }
     slides = await buildSlides(d);
     postScreen(d);
+    if (d.tooLow) app.insertAdjacentHTML('afterbegin', `<p class="oa-msg">${esc(T('tiktok.careerTooLow', { min: CAREER_MIN }))}</p>`);
     window.WK?.track?.('share_click', { channel: 'tiktok' });
   }
-  boot();
+  /* v20261112c — the same carousel for other apps (e.g. Instagram via the phone's share sheet, from the share row in support.js):
+     WikiCarousel.build() → { files: [File ×4 JPEG], caption } or null when the user has no results yet. */
+  window.WikiCarousel = {
+    async build(prefix) {
+      await I.ready;
+      let res; try { res = await api('/api/user/results'); } catch { res = {}; }
+      const d = pickResults((res && res.results) || {});
+      if (!d.loves.length && !d.careers.length) return null;
+      const cv = await buildSlides(d);
+      const blobs = await Promise.all(cv.map((c) => new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.9))));
+      return { files: blobs.map((b, i) => new File([b], `${prefix || 'my-ikigai'}-${i + 1}.jpg`, { type: 'image/jpeg' })), caption: captionFor(d).text };
+    },
+  };
+  if (app) boot();
 })();

@@ -1,4 +1,5 @@
 /* Shared Wikigai chrome: top bar (#wkNav) + left menu for signed-in users.
+   v20261113: top menu "Wikigai · My path · Schools" in the bar (assets/topmenu.js; phones: second row of the bar).
    Left menu: My path · My learning · My profile (see MENU below).
    Desktop (>960px): fixed sidebar. Smaller screens: slide-in drawer from the ☰ button.
    v20261111: after each sign-in only "My path" is expanded; other groups show "+" to expand ("−" to collapse).
@@ -30,7 +31,7 @@
     { id: 'fav', icon: '⭐', label: 'side.favorites', href: '/favorites', items: [ // v20261101c: My favourites
       { href: '/favorites/plans', icon: '🗺️', label: 'side.favPlans', badge: 'premium' },
       { href: '/favorites/videos', icon: '🎬', label: 'side.favVideos' },
-      { href: '/favorites/courses', icon: '🎓', label: 'side.favCourses', badge: 'soon' },
+      { href: '/favorites/courses', icon: '🎓', label: 'side.favCourses' }, // v20261114: saved schools / courses (was "soon")
     ] },
     { id: 'profile', icon: '👤', label: 'side.myProfile', items: [
       { href: '/dashboard', icon: '🏠', label: 'side.dashboard' },
@@ -105,6 +106,7 @@
       ${withSide ? `<button type="button" class="wk-burger" id="wkBurger" aria-controls="wkSide" aria-expanded="false" aria-label="${esc(T('nav.openMenu'))}"><span></span><span></span><span></span></button>` : ''}
       <a class="wk-brand" href="${signedIn ? '/dashboard' : '/'}"><img src="/assets/brand/wikigai-logo.png" alt="Wikigai"></a>
     </div>
+    <div class="wk-links wk-top" data-wk-topmenu>${window.WKTopMenu ? window.WKTopMenu.html() : ''}</div>
     <div class="wk-right">
     <div data-wk-lang></div>
     ${signedIn ? `<div class="wk-user">
@@ -155,10 +157,11 @@
   // in-page navigation (Wikigai hub, My learning use history.pushState)
   ['pushState', 'replaceState'].forEach((fn) => {
     const orig = history[fn];
-    history[fn] = function () { const r = orig.apply(this, arguments); setTimeout(markActive, 0); return r; };
+    history[fn] = function () { const r = orig.apply(this, arguments); setTimeout(markActive, 0); setTimeout(() => window.WKTopMenu && window.WKTopMenu.refreshActive(), 0); return r; };
   });
   window.addEventListener('popstate', () => setTimeout(markActive, 0));
 
+  document.body.classList.add('wk-has-top'); // v20261113: phones get the top menu as a 2nd row (wk.css)
   render();
   if (I) { I.ready.then(render); I.onChange(render); }
   window.WikiNav = { render };

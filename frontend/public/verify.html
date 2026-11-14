@@ -78,7 +78,8 @@
       sessionStorage.removeItem('cps_pending_email');
       sessionStorage.removeItem('cps_dev_pin');
       window.WK?.track?.('verify_done');
-      window.location.href = '/dashboard';
+      let nx = '/dashboard'; try { nx = sessionStorage.getItem('cps_next') || nx; sessionStorage.removeItem('cps_next'); } catch (e) { /* ignore */ }
+      window.location.href = /^\/(?!\/)/.test(nx) ? nx : '/dashboard';
     } catch (err) {
       showAlert(alertEl, err.message, 'err');
       pin.clear();

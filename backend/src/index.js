@@ -160,6 +160,16 @@ app.use('/api/tiktok', tiktokRoutes);
 app.use('/api/oauth', oauthRoutes);                       // v20261112c
 app.get('/auth/:provider/callback', oauthRoutes.callback); // /auth/tiktok/callback (registered at TikTok), /auth/google/callback…
 app.get('/tt-media/:token/:n.jpg', tiktokRoutes.media);
+// TikTok URL-property verification (developer portal → "Verify URL properties"): the signature file TikTok gives you is served
+// at the URL prefix (/tt-media/<file>) and at the site root (/<file>). Set on the server, never in git:
+//   TIKTOK_VERIFY_FILES="tiktokAbC123.txt=tiktok-developers-site-verification=XyZ…"   (several: separate with a space)
+app.get(['/tt-media/:file', '/:file'], (req, res, next) => {
+  const f = req.params.file;
+  if (!/^tiktok[A-Za-z0-9_-]{4,80}\.txt$/.test(f)) return next();
+  const hit = String(process.env.TIKTOK_VERIFY_FILES || '').split(/\s+/).map((x) => [x.slice(0, x.indexOf('=')), x.slice(x.indexOf('=') + 1)]).find(([n]) => n === f);
+  if (!hit || !hit[1]) return next();
+  res.type('text/plain').set('Cache-Control', 'no-store').send(hit[1]);
+});
 app.use('/api/survey', surveyRoutes);
 app.use('/api/results', resultsRoutes);
 // first-party, cookieless analytics

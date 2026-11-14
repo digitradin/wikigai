@@ -33,7 +33,7 @@
 .sc-reset:hover{color:var(--text)}
 
 /* aggregate insights */
-.sc-insights{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;position:relative}
+.sc-insights{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;position:relative}
 .sc-insights .sc-blur{display:contents}
 .sc-ins{padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(196,77,255,.10),rgba(77,201,246,.05));border:1px solid rgba(196,77,255,.22);min-width:0}
 .sc-ins small{display:block;font-size:.7rem;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;font-family:var(--mono)}
@@ -72,6 +72,17 @@
 .sc-tag.lvl{background:rgba(77,201,246,.12);color:#8fe0ff}
 .sc-tag.dom{background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--text)}
 .sc-tag.demo{background:rgba(255,140,66,.14);color:#ffb36b}
+/* v20261114b: real data — programme no longer listed (kept in the shortlist), source line */
+.sc-tag.low{background:rgba(250,204,21,.12);color:#fde68a}
+.sc-tag.tr-official{background:rgba(34,197,94,.14);color:#86efac}
+.sc-tag.tr-public{background:rgba(77,201,246,.12);color:#8fe0ff}
+.sc-tag.tr-unverified{background:rgba(251,146,60,.14);color:#fdba74}
+.sc-trf{font-style:normal;font:600 .58rem var(--font);padding:1px 5px;border-radius:6px;margin-left:4px;vertical-align:middle}
+.sc-trf.tr-public{background:rgba(77,201,246,.12);color:#8fe0ff}.sc-trf.tr-unverified{background:rgba(251,146,60,.14);color:#fdba74}
+.sc-srck{font-style:normal;opacity:.75}
+.sc-tag.gone{background:rgba(148,163,184,.16);color:#cbd5e1}
+.sc-src{margin:10px 0 0;font-size:.74rem;color:var(--t2)}
+.sc-src a{color:inherit;text-decoration:underline}
 .sc-title{font-size:1.04rem;font-weight:800;line-height:1.3;margin:2px 0 0}
 .sc-inst{font-size:.82rem;color:var(--t2)}
 .sc-facts{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.78rem;color:var(--t2)}
@@ -163,3 +174,46 @@
   .sc-insights .sc-ins:nth-child(n+3){display:none}
   .sc-insights.sc-blur-wrap{min-height:150px}
 }
+
+/* v20261112d: one-tap sign-up with apps (buttons styled by oauth.js .oa-btn) */
+.sc-social{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.sc-social[hidden]{display:none}
+.sc-social-l{font-size:.8rem;color:var(--t2);font-weight:600}
+.sc-oa{display:flex;gap:8px;flex-wrap:wrap}
+.sc-oa .oa-btn{width:auto;padding:10px 14px;font-size:14px}
+.sc-oa.stack{flex-direction:column}
+.sc-oa.stack .oa-btn{width:100%}
+.sc-modal .oa-or{margin:14px 0}
+.sc-oa-icons{display:inline-flex;gap:6px;align-items:center}
+.oa-btn.sc-oa-ico{width:30px;height:30px;padding:0;border-radius:50%;flex:none}
+.oa-btn.sc-oa-ico svg{width:15px;height:15px}
+
+/* v20261113: simplified member panel — one area (radio chips) + the person's professions in it (labels, not filters) */
+.sc-simple .sc-row:first-child{margin-top:0}
+.sc-simple .sc-chip.sc-dom{font-size:.88rem;padding:8px 14px}
+.sc-apros{padding-top:12px;border-top:1px dashed var(--border-glass)}
+.sc-ptag{display:inline-flex;align-items:center;gap:5px;font:600 .8rem var(--font);color:var(--text);background:rgba(255,255,255,.03);border:1px solid var(--border-glass);border-radius:16px;padding:6px 12px}
+.sc-ptag.top{border-color:rgba(255,194,77,.55);background:rgba(255,194,77,.08)}
+.sc-apros-none{font-size:.84rem;padding-top:6px}
+@media (max-width:600px){.sc-simple .sc-row{grid-template-columns:1fr;gap:6px}.sc-simple .sc-label{padding-top:0}}
+
+/* v20261113 change set 2: "Where?" country row (members) */
+.sc-arearow{padding-top:12px;border-top:1px dashed var(--border-glass)}
+.sc-where-src{margin:8px 0 0;font-size:.8rem;color:var(--t3)}
+.sc-where-src a,.sc-ask a{color:var(--c2)}
+.sc-ask{margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:12px 14px;border-radius:12px;background:rgba(255,194,77,.08);border:1px solid rgba(255,194,77,.4);font-size:.86rem;color:var(--t2)}
+.sc-ask strong{color:var(--text);flex:0 0 100%}
+.sc-ask span{flex:1 1 260px}
+.sc-ask.ok{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.4);color:#6ee7b7}
+.sc-ask-err{color:#fca5a5;font-style:normal;flex:0 0 100%}
+
+/* v20261114: profession buttons filter (several allowed, with counters) + "similar areas" list under a thin line */
+.sc-pbtn{cursor:pointer;font:600 .8rem var(--font)}
+.sc-pbtn small{opacity:.7;font-weight:600;margin-left:2px}
+.sc-pbtn:hover{border-color:rgba(196,77,255,.55)}
+.sc-pbtn.on{border-color:rgba(196,77,255,.9);background:rgba(196,77,255,.18);box-shadow:0 0 0 1px rgba(196,77,255,.35) inset}
+.sc-pbtn.top.on{border-color:rgba(255,194,77,.9);background:rgba(255,194,77,.16)}
+.sc-rest{margin-top:28px;padding-top:16px;border-top:1px solid var(--border-glass)}
+.sc-rest-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.sc-rest-h h3{margin:0;font:700 1rem var(--font);color:var(--t2,inherit)}
+.sc-mf-wide{grid-column:1/-1} /* v20261114: locked professions take the full width of More filters */

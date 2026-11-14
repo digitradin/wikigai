@@ -1,0 +1,513 @@
+{
+ "schema": 1,
+ "market": "US",
+ "institutions": {
+  "us-austin-universi-x73qns": {
+   "key": "i1|us.ipeds:228778",
+   "xrefs": [
+    "us.ipeds:228778"
+   ],
+   "name": "The University of Texas at Austin",
+   "city": "Austin",
+   "first": "2026-11-14",
+   "kind": "university",
+   "control": "public",
+   "last": "2026-11-14",
+   "postcode": "78705",
+   "url": "https://www.utexas.edu/",
+   "country": "US",
+   "sources": [
+    "dir.bigfuture",
+    "us.scorecard"
+   ]
+  },
+  "us-boston-bostonun-sf43xd": {
+   "key": "i1|us.ipeds:164988",
+   "xrefs": [
+    "us.ipeds:164988"
+   ],
+   "name": "Boston University",
+   "city": "Boston",
+   "first": "2026-11-14",
+   "kind": "university",
+   "control": "private",
+   "last": "2026-11-14",
+   "postcode": "02215",
+   "url": "https://www.bu.edu/",
+   "country": "US",
+   "sources": [
+    "dir.bigfuture",
+    "dir.collegedata",
+    "us.scorecard"
+   ]
+  },
+  "us-edmond-universi-7rqrkq": {
+   "key": "i1|dir.educations-uni:university-of-central-oklahoma",
+   "xrefs": [
+    "dir.educations-uni:university-of-central-oklahoma"
+   ],
+   "name": "University of Central Oklahoma",
+   "city": "Edmond",
+   "country": "US",
+   "first": "2026-11-14",
+   "sources": [
+    "dir.educations"
+   ],
+   "last": "2026-11-14"
+  },
+  "us-losang-universi-b2g9bx": {
+   "key": "i1|us.ipeds:110662",
+   "xrefs": [
+    "us.ipeds:110662"
+   ],
+   "name": "University of California-Los Angeles",
+   "city": "Los Angeles",
+   "first": "2026-11-14",
+   "kind": "university",
+   "control": "public",
+   "last": "2026-11-14",
+   "postcode": "90095-1405",
+   "url": "https://www.ucla.edu/",
+   "country": "US",
+   "sources": [
+    "dir.bigfuture",
+    "dir.collegedata",
+    "us.scorecard"
+   ]
+  },
+  "us-newyor-newyorku-c64fh8": {
+   "key": "i1|us.ipeds:193900",
+   "xrefs": [
+    "us.ipeds:193900"
+   ],
+   "name": "New York University",
+   "city": "New York",
+   "first": "2026-11-14",
+   "kind": "university",
+   "control": "private",
+   "last": "2026-11-14",
+   "postcode": "10012-1091",
+   "url": "https://www.nyu.edu/",
+   "country": "US",
+   "sources": [
+    "dir.bigfuture",
+    "dir.collegedata",
+    "us.scorecard"
+   ]
+  },
+  "us-peacht-ashworth-qmts27": {
+   "key": "i1|dir.educations-uni:ashworth-college",
+   "xrefs": [
+    "dir.educations-uni:ashworth-college"
+   ],
+   "name": "Ashworth College",
+   "city": "Peachtree Corners",
+   "country": "US",
+   "first": "2026-11-14",
+   "sources": [
+    "dir.educations"
+   ],
+   "last": "2026-11-14"
+  },
+  "us-pittsb-pittsbur-kvgj55": {
+   "key": "i1|dir.studyportals-uni:16668",
+   "xrefs": [
+    "dir.studyportals-uni:16668"
+   ],
+   "name": "Pittsburg State University",
+   "city": "Pittsburg",
+   "country": "US",
+   "first": "2026-11-14",
+   "sources": [
+    "dir.studyportals"
+   ],
+   "last": "2026-11-14"
+  },
+  "us-spokan-gonzagau-hm8qky": {
+   "key": "i1|dir.studyportals-uni:15128",
+   "xrefs": [
+    "dir.studyportals-uni:15128",
+    "us.ipeds:235316"
+   ],
+   "name": "Gonzaga University",
+   "city": "Spokane",
+   "country": "US",
+   "first": "2026-11-14",
+   "sources": [
+    "dir.bigfuture",
+    "dir.studyportals"
+   ],
+   "control": "private",
+   "last": "2026-11-14",
+   "postcode": "99258",
+   "url": "https://www.gonzaga.edu"
+  }
+ },
+ "programmes": {
+  "us-austin-ba-bus-1td2jtwd7w": {
+   "key": "p1|us|us-austin-universi-x73qns|bachelor|bachelor s in finance and financial management services|austin|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:228778|5208|3"
+   ],
+   "loose": [],
+   "inst": "us-austin-universi-x73qns",
+   "title": "Bachelor's in Finance and Financial Management Services",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-austin-ba-bus-t53b0804ed": {
+   "key": "p1|us|us-austin-universi-x73qns|bachelor|bachelor s in public relations advertising and applied communication|austin|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:228778|0909|3"
+   ],
+   "loose": [],
+   "inst": "us-austin-universi-x73qns",
+   "title": "Bachelor's in Public Relations, Advertising, and Applied Communication",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-austin-ba-hea-jrxrznq64v": {
+   "key": "p1|us|us-austin-universi-x73qns|bachelor|bachelor s in psychology general|austin|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:228778|4201|3"
+   ],
+   "loose": [],
+   "inst": "us-austin-universi-x73qns",
+   "title": "Bachelor's in Psychology, General",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-austin-ba-sci-07nh19ae5j": {
+   "key": "p1|us|us-austin-universi-x73qns|bachelor|bachelor s in computer and information sciences general|austin|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:228778|1101|3"
+   ],
+   "loose": [],
+   "inst": "us-austin-universi-x73qns",
+   "title": "Bachelor's in Computer and Information Sciences, General",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-austin-ba-sci-fahwzj50hr": {
+   "key": "p1|us|us-austin-universi-x73qns|bachelor|bachelor s in biology general|austin|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:228778|2601|3"
+   ],
+   "loose": [],
+   "inst": "us-austin-universi-x73qns",
+   "title": "Bachelor's in Biology, General",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-boston-ba-bus-1xy1vetd4h": {
+   "key": "p1|us|us-boston-bostonun-sf43xd|bachelor|bachelor s in business administration management and operations|boston|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:164988|5202|3"
+   ],
+   "loose": [],
+   "inst": "us-boston-bostonun-sf43xd",
+   "title": "Bachelor's in Business Administration, Management and Operations",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-boston-ba-hea-83brbk1mz9": {
+   "key": "p1|us|us-boston-bostonun-sf43xd|bachelor|bachelor s in psychology general|boston|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:164988|4201|3"
+   ],
+   "loose": [],
+   "inst": "us-boston-bostonun-sf43xd",
+   "title": "Bachelor's in Psychology, General",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-boston-ba-sci-kjr6kq61ey": {
+   "key": "p1|us|us-boston-bostonun-sf43xd|bachelor|bachelor s in computer science|boston|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:164988|1107|3"
+   ],
+   "loose": [],
+   "inst": "us-boston-bostonun-sf43xd",
+   "title": "Bachelor's in Computer Science",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-boston-ma-bus-16gmy1gs43": {
+   "key": "p1|us|us-boston-bostonun-sf43xd|master|master s in business administration management and operations|boston|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:164988|5202|5"
+   ],
+   "loose": [],
+   "inst": "us-boston-bostonun-sf43xd",
+   "title": "Master's in Business Administration, Management and Operations",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-boston-ma-bus-ywpf3rx47z": {
+   "key": "p1|us|us-boston-bostonun-sf43xd|master|master s in management sciences and quantitative methods|boston|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:164988|5213|5"
+   ],
+   "loose": [],
+   "inst": "us-boston-bostonun-sf43xd",
+   "title": "Master's in Management Sciences and Quantitative Methods",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-edmond-ba-bus-44f58pynn8": {
+   "key": "p1|us|us-edmond-universi-7rqrkq|bachelor|bachelor s in fashion marketing|edmond|campus|",
+   "xrefs": [
+    "dir.educations:university-of-central-oklahoma/bachelors-in-fashion-marketing"
+   ],
+   "loose": [],
+   "inst": "us-edmond-universi-7rqrkq",
+   "title": "Bachelor's in Fashion Marketing",
+   "level": "bachelor",
+   "status": "active",
+   "sources": {
+    "dir.educations": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-losang-ba-bus-yjaysmfta8": {
+   "key": "p1|us|us-losang-universi-b2g9bx|bachelor|bachelor s in economics|los angeles|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:110662|4506|3"
+   ],
+   "loose": [],
+   "inst": "us-losang-universi-b2g9bx",
+   "title": "Bachelor's in Economics",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-losang-ba-hea-sg4ye8kd83": {
+   "key": "p1|us|us-losang-universi-b2g9bx|bachelor|bachelor s in psychology general|los angeles|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:110662|4201|3"
+   ],
+   "loose": [],
+   "inst": "us-losang-universi-b2g9bx",
+   "title": "Bachelor's in Psychology, General",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-losang-ba-law-3qdcfsj9ch": {
+   "key": "p1|us|us-losang-universi-b2g9bx|bachelor|bachelor s in political science and government|los angeles|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:110662|4510|3"
+   ],
+   "loose": [],
+   "inst": "us-losang-universi-b2g9bx",
+   "title": "Bachelor's in Political Science and Government",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-losang-ba-soc-jz5363h8f0": {
+   "key": "p1|us|us-losang-universi-b2g9bx|bachelor|bachelor s in sociology|los angeles|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:110662|4511|3"
+   ],
+   "loose": [],
+   "inst": "us-losang-universi-b2g9bx",
+   "title": "Bachelor's in Sociology",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-losang-ma-bus-yrtpy22d9v": {
+   "key": "p1|us|us-losang-universi-b2g9bx|master|master s in management sciences and quantitative methods|los angeles|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:110662|5213|5"
+   ],
+   "loose": [],
+   "inst": "us-losang-universi-b2g9bx",
+   "title": "Master's in Management Sciences and Quantitative Methods",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-newyor-ba-bus-s365wwtx2k": {
+   "key": "p1|us|us-newyor-newyorku-c64fh8|bachelor|bachelor s in management sciences and quantitative methods|new york|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:193900|5213|3"
+   ],
+   "loose": [],
+   "inst": "us-newyor-newyorku-c64fh8",
+   "title": "Bachelor's in Management Sciences and Quantitative Methods",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-newyor-ba-gen-6w73wh7ng4": {
+   "key": "p1|us|us-newyor-newyorku-c64fh8|bachelor|bachelor s in liberal arts and sciences general studies and humanities|new york|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:193900|2401|3"
+   ],
+   "loose": [],
+   "inst": "us-newyor-newyorku-c64fh8",
+   "title": "Bachelor's in Liberal Arts and Sciences, General Studies and Humanities",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-newyor-ba-sci-9fjnrmvv6g": {
+   "key": "p1|us|us-newyor-newyorku-c64fh8|bachelor|bachelor s in computer and information sciences general|new york|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:193900|1101|3"
+   ],
+   "loose": [],
+   "inst": "us-newyor-newyorku-c64fh8",
+   "title": "Bachelor's in Computer and Information Sciences, General",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-newyor-ma-bus-xwrdw522q2": {
+   "key": "p1|us|us-newyor-newyorku-c64fh8|master|master s in management sciences and quantitative methods|new york|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:193900|5213|5"
+   ],
+   "loose": [],
+   "inst": "us-newyor-newyorku-c64fh8",
+   "title": "Master's in Management Sciences and Quantitative Methods",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-newyor-ma-sci-drz79vhtvx": {
+   "key": "p1|us|us-newyor-newyorku-c64fh8|master|master s in computer information technology administration and management|new york|campus|en",
+   "xrefs": [
+    "us.ipeds-cip:193900|1110|5"
+   ],
+   "loose": [],
+   "inst": "us-newyor-newyorku-c64fh8",
+   "title": "Master's in Computer/Information Technology Administration and Management",
+   "status": "active",
+   "sources": {
+    "us.scorecard": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-online-ce-sci-nzxx4c3p22": {
+   "key": "p1|us|us-peacht-ashworth-qmts27|certificate|diploma in private investigation|peachtree corners|online|",
+   "xrefs": [
+    "dir.educations:ashworth-college/diploma-in-private-investigation"
+   ],
+   "loose": [],
+   "inst": "us-peacht-ashworth-qmts27",
+   "title": "Diploma in Private Investigation",
+   "level": "certificate",
+   "status": "active",
+   "sources": {
+    "dir.educations": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-online-ma-gen-cpvp4z5szb": {
+   "key": "p1|us|us-spokan-gonzagau-hm8qky|master|sport and athletic administration m a|spokane|online|",
+   "xrefs": [
+    "dir.studyportals:mastersportal.com:145881"
+   ],
+   "loose": [],
+   "inst": "us-spokan-gonzagau-hm8qky",
+   "title": "Sport and Athletic Administration (M.A.)",
+   "level": "master",
+   "status": "active",
+   "sources": {
+    "dir.studyportals": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  },
+  "us-online-ma-nat-9hm4fdgze4": {
+   "key": "p1|us|us-pittsb-pittsbur-kvgj55|master|teaching and leadership teaching environmental education m sc|pittsburg|online|",
+   "xrefs": [
+    "dir.studyportals:mastersportal.com:174437"
+   ],
+   "loose": [],
+   "inst": "us-pittsb-pittsbur-kvgj55",
+   "title": "Teaching and Leadership - Teaching (Environmental Education) (M.Sc.)",
+   "level": "master",
+   "status": "active",
+   "sources": {
+    "dir.studyportals": "sample-2026-11-14"
+   },
+   "first": "2026-11-14",
+   "last": "2026-11-14"
+  }
+ },
+ "updated": "2026-11-14T10:21:02.085Z"
+}

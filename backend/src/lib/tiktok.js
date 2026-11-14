@@ -16,7 +16,8 @@ const API = (process.env.TIKTOK_API_BASE || 'https://open.tiktokapis.com').repla
 const KEY = () => process.env.TIKTOK_CLIENT_KEY || '';
 const SECRET = () => process.env.TIKTOK_CLIENT_SECRET || '';
 const REDIRECT = () => process.env.TIKTOK_REDIRECT_URI || PUBLIC_URL + '/auth/tiktok/callback';
-const MEDIA_BASE = () => (process.env.TIKTOK_MEDIA_BASE_URL || PUBLIC_URL).replace(/\/+$/, '');
+// tolerant: "https://site" and "https://site/tt-media" both work (image URLs are always <base>/tt-media/<token>/<n>.jpg)
+const MEDIA_BASE = () => (process.env.TIKTOK_MEDIA_BASE_URL || PUBLIC_URL).replace(/\/+$/, '').replace(/\/tt-media$/i, '');
 
 const configured = () => !!(KEY() && SECRET());
 const flags = () => ({

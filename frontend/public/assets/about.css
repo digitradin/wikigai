@@ -1,0 +1,64 @@
+/* v20261113 — public pages of the top menu: /about (Wikigai) and /how-it-works (My path for visitors). */
+.ab-main{padding-top:96px}
+.ab-wrap{max-width:980px;margin:0 auto}
+.ab-hero{padding:18px 0 8px}
+.ab-hero h1{font-size:clamp(1.8rem,4.4vw,2.7rem);font-weight:800;line-height:1.12;margin:6px 0 14px;letter-spacing:-.8px}
+.ab-hero h1 .grad{background:var(--g1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ab-hero p{color:var(--t2);font-size:1.05rem;line-height:1.75;max-width:720px}
+.ab-acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+.ab-acts .btn-primary,.ab-acts .btn-ghost{text-decoration:none}
+.ab-sec{margin-top:22px}
+.ab-sec>h2,.ab-h2{font-size:1.35rem;font-weight:800;margin:0 0 12px}
+.ab-sec p{color:var(--t2);line-height:1.75}
+.ab-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.ab-grid.four{grid-template-columns:repeat(4,1fr)}
+.ab-tile{background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:16px;padding:18px}
+.ab-tile .ab-ico{font-size:1.6rem;display:block;margin-bottom:8px}
+.ab-tile strong{display:block;font-size:1rem;margin-bottom:4px}
+.ab-tile small{display:block;color:var(--t2);font-size:.88rem;line-height:1.6}
+.ab-num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--g1);color:#fff;font:800 .8rem var(--font);margin-right:8px;vertical-align:2px}
+@media (max-width:860px){.ab-grid.four{grid-template-columns:1fr 1fr}}
+@media (max-width:700px){.ab-grid{grid-template-columns:1fr}}
+@media (max-width:460px){.ab-grid.four{grid-template-columns:1fr}}
+
+/* four-circles diagram: SVG circles + HTML labels (they wrap and translate) */
+.ab-logic{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:26px;align-items:center}
+@media (max-width:820px){.ab-logic{grid-template-columns:1fr}}
+.ab-venn{position:relative;width:100%;max-width:520px;margin:0 auto;aspect-ratio:560/480;container-type:inline-size}
+.ab-venn svg{position:absolute;inset:0;width:100%;height:100%}
+.ab-venn circle{stroke-width:2}
+.ab-vl{position:absolute;transform:translate(-50%,-50%);text-align:center;line-height:1.2;font-weight:700;font-size:clamp(.62rem,2.9cqw,.86rem);color:var(--text)}
+.ab-vl.side{width:21%}
+.ab-vl.top,.ab-vl.bottom{width:44%}
+.ab-vl.ov{font-size:clamp(.56rem,2.4cqw,.74rem);color:#fff;font-weight:800;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.ab-vl.center{font-size:clamp(.7rem,3.2cqw,1rem);font-weight:900;color:#fff;background:var(--g1);padding:3px 9px;border-radius:12px;box-shadow:0 4px 16px rgba(196,77,255,.5)}
+.ab-vl .e{display:block;font-size:1.25em;margin-bottom:2px}
+.ab-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ab-list li{color:var(--t2);line-height:1.6;padding-left:22px;position:relative}
+.ab-list li::before{content:'';position:absolute;left:4px;top:.62em;width:8px;height:8px;border-radius:50%;background:var(--g1)}
+.ab-list li b{color:var(--text)}
+.ab-subh{font-size:1rem;font-weight:800;margin:18px 0 8px}
+.ab-use{margin-top:18px;padding:16px 18px;border-radius:14px;background:rgba(196,77,255,.08);border:1px solid rgba(196,77,255,.25)}
+.ab-use h3{font-size:1rem;margin:0 0 6px}
+.ab-use p{margin:0}
+
+/* history timeline */
+.ab-time{list-style:none;margin:6px 0 0;padding:0 0 0 18px;border-left:2px solid rgba(196,77,255,.35);display:flex;flex-direction:column;gap:16px}
+.ab-time li{position:relative}
+.ab-time li::before{content:'';position:absolute;left:-25px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--g1);box-shadow:0 0 0 4px rgba(196,77,255,.15)}
+.ab-time .y{display:block;font:700 .78rem var(--mono);color:var(--c2);letter-spacing:.4px;text-transform:uppercase;margin-bottom:2px}
+.ab-time p{margin:0;color:var(--t2);line-height:1.7}
+.ab-time b,.ab-time i{color:var(--text)}
+.ab-note{font-size:.84rem;color:var(--t3);margin-top:12px}
+
+/* closing call to action */
+.ab-cta{margin:26px 0 10px;text-align:center;padding:30px 20px;border-radius:20px;background:linear-gradient(135deg,rgba(196,77,255,.14),rgba(77,201,246,.10));border:1px solid rgba(196,77,255,.25)}
+.ab-cta h2{font-size:1.35rem;font-weight:800;margin:0 0 6px}
+.ab-cta p{color:var(--t2);margin:0 0 16px}
+.ab-cta .ab-acts{justify-content:center;margin-top:0}
+.ab-more{display:inline-block;margin-top:14px;color:var(--c2);font-weight:600;text-decoration:none}
+.ab-more:hover{text-decoration:underline}
+
+/* /how-it-works: kid-friendly chips */
+.hw-get{display:flex;flex-wrap:wrap;gap:10px}
+.hw-get span{padding:10px 16px;border-radius:24px;background:var(--bg-glass);border:1px solid var(--border-glass);font-weight:600}

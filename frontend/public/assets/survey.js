@@ -736,10 +736,46 @@
   let noteKey = null;
   function setNote(key) { noteKey = key; const n = $('saveNote'); if (n) n.textContent = key ? T(key) : ''; }
 
+  /* v20261114b — visitor (not signed in): keep the results on this device and, once a stage is finished, offer a one-tap
+     sign-up (the sign-in apps switched on: Google, TikTok…) or email; after sign-in app.js moves them to the account and the
+     visitor lands back on these results ("&saved=1"). */
+  function guestKeep(st, body) {
+    window.CPS?.guest?.put(st, body);
+    if (body && body.partial === true) { setNote(''); return; }
+    setNote('');
+    guestBox(st);
+  }
+  let guestStage = 0;
+  async function guestBox(st) {
+    const slot = $('guestSave');
+    if (!slot) return;
+    guestStage = st;
+    const back = `/survey?stage=${st}&review=1&saved=1`;
+    const enc = encodeURIComponent(back);
+    let ids = [];
+    try { const c = window.WikiAuth ? await window.WikiAuth.cfg() : {}; const list = (c.auth && c.auth.providers) || []; ids = ['tiktok', 'google', 'instagram', 'facebook'].filter((id) => list.some((p) => p.id === id)); } catch { /* email only */ }
+    const A = (window.WikiAuth && window.WikiAuth.APPS) || {};
+    const btns = ids.map((id) => `<button type="button" class="oa-btn ${(A[id] || {}).cls || ''}" data-gs="${id}">${(A[id] || {}).icon || ''}<span>${esc(T('oauth.continue', { provider: (A[id] || {}).label || id }))}</span></button>`).join('');
+    slot.innerHTML = `<div class="gs-box"><strong class="gs-t">${esc(T('survey.guestTitle'))}</strong><p class="gs-p">${esc(T('survey.guestText'))}</p>
+      ${btns ? `<div class="oa-btns gs-btns">${btns}</div>` : ''}
+      <a class="btn-ghost gs-mail" href="/signup?next=${enc}">✉️ ${esc(T('survey.guestEmail'))}</a>
+      <p class="gs-in">${esc(T('survey.guestHave'))} <a href="/login?next=${enc}">${esc(T('survey.guestSignin'))}</a></p></div>`;
+    slot.hidden = false;
+    // the stage-1 text says "saved to your account" and the dashboard needs an account: say the truth to visitors
+    if (st === 1 && $('ctaText')) $('ctaText').textContent = T('survey.ctaTextGuest');
+    if ($('goDashBtn')) $('goDashBtn').style.display = 'none';
+    slot.querySelectorAll('[data-gs]').forEach((b) => b.addEventListener('click', (e) => {
+      window.WK?.track?.('auth_method_click', { method: b.dataset.gs, page: 'survey_stage' + st });
+      window.WikiAuth.start(b.dataset.gs, 'login', back, e.currentTarget);
+    }));
+    slot.querySelector('.gs-mail').addEventListener('click', () => window.WK?.track?.('auth_method_click', { method: 'email', page: 'survey_stage' + st }));
+    window.WK?.track?.('guest_save_shown', { stage: st, apps: ids.length });
+  }
+
   function persist2(body) {
     setNote('common.savingResults');
     const token = window.CPS?.Store?.token;
-    if (!token || !window.CPS?.api) { setNote('common.signInToSave'); return; }
+    if (!token || !window.CPS?.api) { guestKeep(2, body); return; }
     window.CPS.api('/api/user/results', { method: 'POST', body: { stage: 2, results: body } })
       .then(() => setNote('common.saved'))
       .catch(() => setNote('common.saveFailedLater'));
@@ -760,7 +796,7 @@
     };
     if (stage === 1) summary.domainPrefs = domainPrefs;
     if (!token || !window.CPS?.api) {
-      setNote('common.signInToSave');
+      guestKeep(stage, summary);
       return;
     }
     window.CPS.api('/api/user/results', { method: 'POST', body: { stage, results: summary } })
@@ -771,7 +807,7 @@
   function persistDomainPrefs() {
     if (stage !== 1 || !domainPrefs) return;
     const token = window.CPS?.Store?.token;
-    if (!token || !window.CPS?.api) return;
+    if (!token || !window.CPS?.api) { window.CPS?.guest?.put(1, { domainPrefs }); return; }
     window.CPS.api('/api/user/results', { method: 'POST', body: { stage: 1, results: { domainPrefs } } }).catch(() => {});
   }
 
@@ -841,6 +877,7 @@
     if (id === 'survey') paintQ(active[currentQ]);
     if (id === 'results' && view) view();
     if (noteKey) setNote(noteKey);
+    if (guestStage && $('guestSave') && !$('guestSave').hidden) guestBox(guestStage);
   }
 
   /* ── boot ── */
@@ -859,8 +896,11 @@
       try {
         const token = window.CPS?.Store?.token;
         if (token && window.CPS?.api) {
+          await window.CPS.flushGuest?.(); // v20261114b: results taken before signing in go to the account first
           const r = await window.CPS.api('/api/user/results');
           allResults = r.results || {};
+        } else {
+          allResults = window.CPS?.guest?.get()?.stages || {}; // visitor: stage 1 kept on this device feeds stage 2
         }
       } catch { /* ignore */ }
       const s1 = allResults.stage_1;
@@ -888,6 +928,12 @@
       const saved = allResults[`stage_${stage}`];
       if (saved && (saved.ranked || saved.love)) {
         window.openReview(stage, saved);
+        if (params.get('saved') === '1' && window.CPS?.Store?.token) { // v20261114b: just signed in from the results
+          setNote('common.saved');
+          s2phase = 'done';
+          if (stage < 3) { $('nextBtn').style.display = 'inline-flex'; $('nextBtn').textContent = stage === 2 ? T('survey.toSkills') : T('survey.continueTo', { n: stage + 1 }); }
+          try { history.replaceState(null, '', `/survey?stage=${stage}&review=1`); } catch { /* ignore */ }
+        }
       }
     }
   }

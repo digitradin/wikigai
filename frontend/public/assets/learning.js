@@ -110,7 +110,7 @@
         (1-2 → 30 days, 3-5 → 3 months, 6-10 → 1 year) → study plan (saved; HTML / print / PDF).
         Hidden filters (never shown): age band (server, from the birthday), country, language. ── */
   /* v20261101b: Plans is in BETA; saving as HTML and printing / PDF are frozen as upcoming paid extras.
-     Set EXPORT_LOCKED = false to switch them back on; EXPORT_PRICE is the price shown on the buttons. */
+     Set EXPORT_LOCKED = false to switch them back on. v20261114: no price shown on the locked buttons (EXPORT_PRICE unused). */
   const EXPORT_LOCKED = true;
   const EXPORT_PRICE = '1 €';
   const DUR = ['30d', '3m', '1y'];
@@ -300,15 +300,17 @@
     const row = pl.plan, p = row.plan || {}, o = row.outlook || {};
     return `<div class="pl-head"><button type="button" class="ac-btn" data-act="plback">← ${T('plan.otherPro')}</button>
         <div class="pl-actions">${EXPORT_LOCKED
-          ? `<button type="button" class="ac-btn pl-locked" data-act="pllocked" aria-disabled="true" title="${esc(T('plan.paidSoon', { price: EXPORT_PRICE }))}">🔒 ${T('plan.saveHtml')} <span class="pl-price">${esc(EXPORT_PRICE)}</span></button>
-        <button type="button" class="ac-btn pl-locked" data-act="pllocked" aria-disabled="true" title="${esc(T('plan.paidSoon', { price: EXPORT_PRICE }))}">🔒 ${T('plan.printPdf')} <span class="pl-price">${esc(EXPORT_PRICE)}</span></button>`
+          ? `<button type="button" class="ac-btn pl-locked" data-act="pllocked" aria-disabled="true" title="${esc(T('plan.paidSoon'))}">🔒 ${T('plan.saveHtml')}</button>
+        <button type="button" class="ac-btn pl-locked" data-act="pllocked" aria-disabled="true" title="${esc(T('plan.paidSoon'))}">🔒 ${T('plan.printPdf')}</button>`
           : `<button type="button" class="ac-btn primary" data-act="plhtml">⬇ ${T('plan.saveHtml')}</button>
         <button type="button" class="ac-btn" data-act="plprint">🖨 ${T('plan.printPdf')}</button>`}
         <button type="button" class="ac-btn" data-act="pledit">✎ ${T('plan.change')}</button></div></div>
       <div class="pl-savebar${row.saved ? ' on' : ''}">${row.saved
         ? `<span>★ ${T('plan.savedFav')}</span><a href="/favorites/plans">${T('plan.openFav')} →</a><button type="button" class="pl-unsave" data-act="plunsave">${T('plan.unsave')}</button>`
         : `<span>${T('plan.saveHint')}</span><button type="button" class="btn-primary" data-act="plsave">⭐ ${T('plan.saveFav')}</button>`}</div>
-      ${EXPORT_LOCKED && pl.lockMsg ? `<p class="pl-lockmsg" role="status">🔒 ${T('plan.paidSoon', { price: esc(EXPORT_PRICE) })}</p>` : ''}
+      ${EXPORT_LOCKED && pl.lockMsg ? `<p class="pl-lockmsg" role="status">🔒 ${T('plan.paidSoon')}</p>` : ''}
+      <div class="pl-uni" role="note"><span class="pl-uni-ico">🎓</span><p>${T('plan.uniNote')}</p>
+        <button type="button" class="btn-primary sm" data-act="plschools">⭐ ${T(row.saved ? 'plan.uniGo' : 'plan.uniSave')}</button></div>
       <div class="lr-result" id="lrResult">
       <div class="lr-result-h"><h2>${esc(p.title || C(row.profession))}</h2><span class="ik-dim">${esc(C(row.profession))} · ${esc(durLabel(row.duration))}${p.weeklyHours ? ' · ⏱ ' + esc(p.weeklyHours) : ''} · ${esc(I.fmt.date(row.created_at, { day: 'numeric', month: 'long', year: 'numeric' }))}</span></div>
       ${planBody(row)}
@@ -711,14 +713,14 @@ ${overview}
         ${sectionCards(s.id)}`;
   }
 
-  /* ── Schools (v20261112d): full directory from assets/schools.js (window.WKSchools), member mode ── */
+  /* ── Schools (v20261112d): full directory from assets/schools.js (window.WKSchools), member mode.
+        v20261113: simplified — no "path at a glance" box; one filter (top area) with its professions below. ── */
   function pageSchools() {
     const noPath = path && !path.s1;
     return `<header class="ik-head"><div class="ik-kicker">${T('learn.kicker')} · ${T('side.schools')}</div>
         <h1>${T('learn.schoolsTitle')} <span class="lr-badge lr-badge-new">🎓 ${T('side.new')}</span></h1>
-        <p>${T('sch.memberLead')}</p></header>
-      ${pathBox()}
-      ${noPath ? `<p class="lr-warn">${T('sch.noPath')}</p>` : ''}
+        <p>${T('sch.leadSimple')}</p></header>
+      ${noPath ? `<p class="lr-warn sc-nopath">${T('sch.noPath')} <a class="btn-primary sm" href="/survey">${T('sch.takeTest')} →</a></p>` : ''}
       <div id="schApp" class="sc-wrap">${path === null ? `<div class="lr-loading"><div class="lr-spinner" aria-hidden="true"></div><div><strong>${T('common.loading')}</strong></div></div>` : ''}</div>`;
   }
 
@@ -745,14 +747,14 @@ ${overview}
   function favSection(id, icon, badge, body) {
     const n = id === 'plans' ? (pl.saved || []).length : id === 'videos' ? (wv.saved || []).length : null;
     return `<section class="ik-card fv-sec" id="fv-${id}"><div class="fv-h"><h2>${icon} ${T('fav.' + id)}${n ? ` <span class="fv-n">${n}</span>` : ''}${badge || ''}</h2>
-      ${id === 'plans' ? `<a href="/learning/plans">+ ${T('fav.newPlan')}</a>` : id === 'videos' ? `<a href="/learning/videos">+ ${T('fav.moreVideos')}</a>` : ''}</div>${body}</section>`;
+      ${id === 'plans' ? `<a href="/learning/plans">+ ${T('fav.newPlan')}</a>` : id === 'videos' ? `<a href="/learning/videos">+ ${T('fav.moreVideos')}</a>` : id === 'courses' ? `<a href="/learning/schools">+ ${T('fav.findSchools')}</a>` : ''}</div>${body}</section>`;
   }
   function pageFavorites(sub) {
     const premium = `<span class="wk-badge premium fv-badge">💎 ${T('side.premium')}</span>`;
     const secs = {
       plans: () => favSection('plans', '🗺️', premium, favPlans(sub ? 0 : 4)),
       videos: () => favSection('videos', '🎬', '', favVideos(sub ? 0 : 6)),
-      courses: () => favSection('courses', '🎓', '', `<div class="fv-soon-grid">${favSoon('courses', '🎓')}</div>`),
+      courses: () => favSection('courses', '🎓', '', `<div id="fvSchools" class="sc-wrap fv-schools"></div>`), // v20261114: saved schools / courses
       more: () => favSection('more', '➕', '', `<div class="fv-soon-grid"><a class="fv-soon fv-link" href="/learning/schools"><span class="fv-soon-ico">🏛️</span><div><strong>${T('fav.schoolsTitle')} <span class="lr-new">${T('side.new')}</span></strong><small>${T('sch.favLead')}</small></div></a>${favSoon('tools', '🔧')}${favSoon('jobs', '💼')}</div>`),
     };
     const body = sub ? secs[sub]() : secs.plans() + secs.videos() + secs.courses() + secs.more();
@@ -768,6 +770,7 @@ ${overview}
     if (s && s.id === 'favorites') {
       document.title = `${T('side.favorites')} — Wikigai`;
       view.innerHTML = pageFavorites(s.sub);
+      if ((!s.sub || s.sub === 'courses') && $('fvSchools') && window.WKSchools) window.WKSchools.mount($('fvSchools'), { mode: 'member', savedOnly: true, limit: s.sub ? 0 : 4 }); // v20261114
       if (pl.saved === null) { pl.saved = undefined; api('/api/plans').then((r) => { pl.saved = r.items || []; configured = r.configured !== false; render(); }).catch(() => { pl.saved = []; render(); }); }
       if (wv.saved === null) { wv.saved = undefined; wvLoadSaved().then(() => render()); }
       return;
@@ -875,6 +878,10 @@ ${overview}
     if (act && act.dataset.act === 'plnext' && pl.outlook) { pl.step = 'skills'; pl.err = ''; render(); window.scrollTo(0, 0); return; }
     if (act && act.dataset.act === 'plcreate') { plCreate(); return; }
     if (act && act.dataset.act === 'plsave' && pl.plan) { plSetSaved(pl.plan.id, true); return; }
+    if (act && act.dataset.act === 'plschools' && pl.plan) { // v20261114: save the plan to My favourites, then open the school search
+      (async () => { if (!pl.plan.saved) await plSetSaved(pl.plan.id, true); window.WK?.track?.('plan_to_schools', {}); history_push('/learning/schools'); })();
+      return;
+    }
     if (act && act.dataset.act === 'plunsave' && pl.plan) { plSetSaved(pl.plan.id, false); return; }
     const unf = e.target.closest && e.target.closest('[data-plunfav]');
     if (unf) { plSetSaved(unf.dataset.plunfav, false); return; }

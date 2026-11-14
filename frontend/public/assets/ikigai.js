@@ -2,7 +2,7 @@
    Wikigai — "Your Wikigai" hub (ikigai.html)
    Menu pages:
      /ikigai          My Wikigai — match = Love × Good at, C/D as info
-     /ikigai/love     ❤️ What I love      (key)  Stage 1 + Stage 2
+     /ikigai/love     ❤️ What I love      (key)  Stage 1 + Stage 2  (v20261112d: ♪ Share to TikTok per profession, passion ≥ 50)
      /ikigai/skills   💪 What I'm good at (key)  last year's grades
      /ikigai/needs    🌍 What the world needs (info) 2025–35 outlook
      /ikigai/pay      💰 What pays (info)        official pay bands
@@ -74,6 +74,16 @@
   let results = {};
   let st = { region: { mode: 'blend', countries: [] }, grades: { system: 'ES', worst: 0, best: 10, values: {} }, gradesSkipped: false, refresh: { optIn: false } };
   let ui = { domain: 'ALL', sort: 'match', exploreDomain: 'MINE', trendFilter: 'ALL' };
+  /* v20261112d: "Share to TikTok" per profession on Passions — only when the server has TikTok sharing on,
+     only for professions still switched on, and only with a passion score of TT_MIN or more. */
+  const TT_MIN = 50;
+  let ttShare = false;
+  const TT_ICON = '<svg viewBox="0 0 48 48" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M34.1 6c.6 4.6 3.2 7.6 7.9 7.9v5.3c-2.7.3-5.1-.6-7.9-2.3v10.4c0 13.2-14.4 17.3-20.2 7.9-3.7-6.1-1.4-16.8 10.6-17.2v5.6c-.9.1-1.9.4-2.7.7-2.5.8-3.9 2.4-3.5 5.2.8 5.4 10.7 7 9.9-3.6V6.1h5.9z"/></svg>';
+  function ttBtn(l, on) {
+    if (!ttShare || !on || !(l.L >= TT_MIN)) return '';
+    const label = T('hub.ttShare', { career: C(l.career) });
+    return `<a class="ik-tt" href="/share/tiktok?career=${encodeURIComponent(l.career)}" title="${esc(label)}" aria-label="${esc(label)}" data-tt-career>${TT_ICON}</a>`;
+  }
   const params = new URLSearchParams(location.search);
   const flow = params.get('flow') === '1';
 
@@ -374,12 +384,12 @@
     const all = allLove();
     const nOn = all.filter(isActive).length;
     const love = ui.loveAll ? all : all.slice(0, 20);
-    h += `<div class="ik-card"><h2>${T('hub.shortTitle')}</h2><p class="ik-sub">${T('hub.shortSub')} ${T('hub.shortTgl', { n: nOn, total: all.length })}</p>
+    h += `<div class="ik-card"><h2>${T('hub.shortTitle')}</h2><p class="ik-sub">${T('hub.shortSub')} ${T('hub.shortTgl', { n: nOn, total: all.length })}</p>${ttShare && all.some((l) => isActive(l) && l.L >= TT_MIN) ? `<p class="ik-ttnote">${TT_ICON} ${T('hub.ttShareNote', { min: TT_MIN })}</p>` : ''}
       <div class="ik-table lovetab tg"><div class="ik-tr ik-th"><span>#</span><span>${T('hub.colProfession')}</span><span>${T('hub.colDomainSub')}</span><span>${T('hub.colLove')}</span><span></span></div>
       ${love.map((l, i) => { const m = area(loveDom(l)); const sf = SUBS[l.subfield]; const parentOn = domOn(loveDom(l)) && subOn(l.subfield); const on = parentOn && proOn(l.career);
         return `<div class="ik-tr ${on ? '' : 'off'}"><span>${i + 1}</span><span><strong>${esc(C(l.career))}</strong></span>
         <span class="ik-ds"><b>${m.icon} ${esc(areaName(loveDom(l)))}</b><small>${esc(C(m.desc || ''))}</small>${sf ? `<b class="ik-ds-sub">↳ ${esc(subName(l.subfield))}</b><small>${esc(C(sf.desc || ''))}</small>` : ''}</span>
-        <span class="ik-num love">${l.L}</span><span>${parentOn ? tglBtn('pro:' + l.career, proOn(l.career)) : `<span class="ik-dim ik-tglnote">${T(domOn(loveDom(l)) ? 'hub.subOff' : 'hub.areaOff')}</span>`}</span></div>`; }).join('')}
+        <span class="ik-num love ik-lovecell"><span>${l.L}</span>${ttBtn(l, on)}</span><span>${parentOn ? tglBtn('pro:' + l.career, proOn(l.career)) : `<span class="ik-dim ik-tglnote">${T(domOn(loveDom(l)) ? 'hub.subOff' : 'hub.areaOff')}</span>`}</span></div>`; }).join('')}
       </div>${!ui.loveAll && all.length > 20 ? `<div class="ik-more"><button type="button" class="btn-ghost sm" data-act="love-all">${T('hub.showAllPros', { count: all.length - 20 })}</button></div>` : ''}</div>`;
     return h + nextLink('/ikigai/skills', T('hub.nextSkills'));
   }
@@ -682,6 +692,8 @@
     }
     render(false);
     I.onChange(() => { readGradeInputs(); render(false); });
+    // v20261112d: per-profession TikTok sharing (only if the server has it on)
+    api('/api/config', { auth: false }).then((c) => { ttShare = !!(c && c.tiktok && c.tiktok.share); if (ttShare && current() === 'love') render(false); }).catch(() => {});
   }
   boot();
 

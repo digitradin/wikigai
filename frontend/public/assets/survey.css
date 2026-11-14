@@ -17,7 +17,10 @@
 .survey-body{
   font-family:var(--font);background:var(--bg);color:var(--text);
   min-height:100vh;overflow-x:hidden;line-height:1.6;display:flex;flex-direction:column;
+  height:auto; /* v20261114b: app.css sets html,body{height:100%}; with a fixed-height flex body the
+                  active .screen shrank to one viewport and the legal footer landed mid-results */
 }
+.survey-body>*{flex-shrink:0} /* screens + footer keep their content height (footer stays at the bottom) */
 .survey-body::before{
   content:'';position:fixed;inset:0;
   background-image:
@@ -255,3 +258,13 @@
 .kbd-hint kbd{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 6px;font:700 .85rem var(--font,inherit);color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.22);border-bottom-width:3px;border-radius:8px}
 .kbd-txt{font-size:.85rem;color:var(--muted,#a7a3b8);font-weight:600}
 @media (max-width:640px){.intro-cta{justify-content:center}.intro-cta-l{justify-content:center}.kbd-hint{display:none!important}}
+
+/* v20261114b — visitors: save the results with a sign-in app or email, right under the results */
+.guest-save{margin:18px auto 0;max-width:420px;text-align:center}
+.gs-box{background:rgba(255,255,255,.04);border:1px solid rgba(196,77,255,.3);border-radius:14px;padding:18px 16px}
+.gs-t{display:block;font-size:1rem;margin-bottom:4px}
+.gs-p{color:var(--t2);font-size:.85rem;margin:0 0 14px!important}
+.gs-btns{margin-bottom:10px}
+.gs-mail{display:flex!important;width:100%;justify-content:center;box-sizing:border-box}
+.gs-in{font-size:.8rem;color:var(--t3);margin:12px 0 0!important}
+.gs-in a{color:#d68cff}
