@@ -1,0 +1,14 @@
+generated_utc=2026-11-14T12:51:40Z
+kind=pre-deploy snapshot before v20261114b (manual, in addition to the 03:17 cron)
+source=wikigai-prod-db/wikigai_db
+deploying=v20261114b (from v20261112c)
+latest=wikigai-prod_N.dump.age
+latest_bytes=68221
+latest_sha256=9cedf67967452c8d016c75bc7675d8dd2f12be23abd00e0adfaf859cc9b23c90
+plaintext_bytes=68005
+tables=16
+users=8
+previous=wikigai-prod_N-1.dump.age
+previous_bytes=68221
+previous_sha256=1f5ce0579e6957a832fab851252815d60b65edef091522a0f8c55d17659e37e2
+encryption=age (x25519)
