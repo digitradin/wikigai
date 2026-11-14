@@ -42,7 +42,7 @@ body::before {
   pointer-events: none;
 }
 a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a:hover { text-decoration: none; } /* v20261114c: no underline on hover anywhere */
 
 /* ── Layout ─────────────────────────────────────────────── */
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }

@@ -50,7 +50,7 @@
 .sc-lock-acts{display:inline-flex;gap:10px;align-items:center}
 .sc-lock .btn-primary.sm{padding:7px 14px;font-size:.78rem;text-decoration:none}
 .sc-signin{font-size:.78rem;font-weight:600;color:#d98bff;text-decoration:none}
-.sc-signin:hover{text-decoration:underline}
+.sc-signin:hover{text-decoration:none}
 
 /* bar */
 .sc-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 10px}
@@ -193,7 +193,7 @@
 .sc-simple .sc-chip.sc-dom{font-size:.88rem;padding:8px 14px}
 .sc-apros{padding-top:12px;border-top:1px dashed var(--border-glass)}
 .sc-ptag{display:inline-flex;align-items:center;gap:5px;font:600 .8rem var(--font);color:var(--text);background:rgba(255,255,255,.03);border:1px solid var(--border-glass);border-radius:16px;padding:6px 12px}
-.sc-ptag.top{border-color:rgba(255,194,77,.55);background:rgba(255,194,77,.08)}
+/* v20261114c: the 1st profession has no yellow frame; selected = same purple as any selected profession */
 .sc-apros-none{font-size:.84rem;padding-top:6px}
 @media (max-width:600px){.sc-simple .sc-row{grid-template-columns:1fr;gap:6px}.sc-simple .sc-label{padding-top:0}}
 
@@ -212,8 +212,12 @@
 .sc-pbtn small{opacity:.7;font-weight:600;margin-left:2px}
 .sc-pbtn:hover{border-color:rgba(196,77,255,.55)}
 .sc-pbtn.on{border-color:rgba(196,77,255,.9);background:rgba(196,77,255,.18);box-shadow:0 0 0 1px rgba(196,77,255,.35) inset}
-.sc-pbtn.top.on{border-color:rgba(255,194,77,.9);background:rgba(255,194,77,.16)}
 .sc-rest{margin-top:28px;padding-top:16px;border-top:1px solid var(--border-glass)}
 .sc-rest-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .sc-rest-h h3{margin:0;font:700 1rem var(--font);color:var(--t2,inherit)}
 .sc-mf-wide{grid-column:1/-1} /* v20261114: locked professions take the full width of More filters */
+
+/* v20261114c: "Unverified" and "Limited data" are plain text — no pill, no colour, no bold (also the small per-figure "Unverified") */
+.sc-tag.tr-unverified,.sc-tag.low{background:none;color:var(--t2);font:400 .76rem var(--font);letter-spacing:0;padding:3px 0;border-radius:0}
+.sc-tag.tr-unverified+.sc-tag.low::before,.sc-tag.tr-unverified+.sc-tag.demo+.sc-tag.low::before{content:"· "}
+.sc-trf.tr-unverified{background:none;color:inherit;font:400 .64rem var(--font);padding:0;border-radius:0}

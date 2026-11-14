@@ -28,7 +28,7 @@
     instagram: { label: 'Instagram', cls: 'oa-instagram',
       icon: '<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M24 4.3c6.4 0 7.2 0 9.7.1 6.5.3 9.6 3.4 9.9 9.9.1 2.5.1 3.3.1 9.7s0 7.2-.1 9.7c-.3 6.5-3.4 9.6-9.9 9.9-2.5.1-3.3.1-9.7.1s-7.2 0-9.7-.1c-6.6-.3-9.6-3.4-9.9-9.9-.1-2.5-.1-3.3-.1-9.7s0-7.2.1-9.7c.3-6.6 3.4-9.6 9.9-9.9 2.5-.1 3.3-.1 9.7-.1zM24 0c-6.5 0-7.3 0-9.9.1C5.4.5.5 5.3.1 14.1 0 16.7 0 17.5 0 24s0 7.3.1 9.9c.4 8.7 5.2 13.6 14 14 2.6.1 3.4.1 9.9.1s7.3 0 9.9-.1c8.7-.4 13.6-5.2 14-14 .1-2.6.1-3.4.1-9.9s0-7.3-.1-9.9C47.5 5.4 42.7.5 33.9.1 31.3 0 30.5 0 24 0zm0 11.7a12.3 12.3 0 100 24.6 12.3 12.3 0 000-24.6zM24 32a8 8 0 110-16 8 8 0 010 16zm12.8-23.7a2.9 2.9 0 100 5.8 2.9 2.9 0 000-5.8z"/></svg>' },
   };
-  const ORDER = ['tiktok', 'google', 'instagram', 'facebook'];
+  const ORDER = ['google', 'tiktok', 'instagram', 'facebook']; // v20261114c: Google first (gives a verified email)
   const appOf = (id) => APPS[id] || { label: id, cls: '', icon: '' };
 
   const CSS = `.oa-btns{display:flex;flex-direction:column;gap:10px}

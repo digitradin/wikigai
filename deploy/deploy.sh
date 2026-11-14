@@ -8,6 +8,18 @@ VPS_KEY="${VPS_KEY:-$HOME/.ssh/digitradin-dashboard}"
 REMOTE_DIR="${REMOTE_DIR:-/opt/cps}"
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# v20261114b: courses live in <project>/schools-db (independent of the website). Bundle the published release
+# into the image (backend/src/data/schools/catalog) — the loader's last fallback. New releases later: re-deploy, or
+# point SCHOOLS_CATALOG_DIR at a folder that schools-db/bin/publish.sh rsyncs to (SCHOOLS_REMOTE) — hot-reloaded.
+SCHOOLS_REL="$SRC_DIR/../../schools-db/releases/current/catalog"
+if [ -d "$SCHOOLS_REL" ]; then
+  mkdir -p "$SRC_DIR/backend/src/data/schools/catalog"
+  rsync -aL --delete "$SCHOOLS_REL/" "$SRC_DIR/backend/src/data/schools/catalog/"
+  echo "▶ Schools catalogue bundled from schools-db release $(readlink "$SRC_DIR/../../schools-db/releases/current")"
+else
+  echo "⚠ No schools-db release found — the site will list no courses (run schools-db/bin/publish.sh first)"
+fi
+
 echo "▶ Syncing $SRC_DIR → $VPS_HOST:$REMOTE_DIR"
 ssh -i "$VPS_KEY" "$VPS_HOST" "mkdir -p $REMOTE_DIR"
 rsync -az --delete \

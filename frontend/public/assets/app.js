@@ -284,7 +284,7 @@
   const CSS = `.wk-legal-foot{position:relative;z-index:1;margin:48px auto 0;padding:22px 16px 72px;max-width:1100px;text-align:center;font:500 12.5px/1.6 Inter,system-ui,sans-serif;color:rgba(238,242,249,.55)}
   .wk-legal-foot nav{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;margin-bottom:6px}
   .wk-legal-foot a{color:rgba(238,242,249,.72);text-decoration:none;padding:6px 2px}
-  .wk-legal-foot a:hover,.wk-legal-foot a:focus-visible{color:#fff;text-decoration:underline;text-underline-offset:3px}
+  .wk-legal-foot a:hover,.wk-legal-foot a:focus-visible{color:#fff;text-decoration:none}
   .wk-legal-foot .wk-lf-copy{opacity:.8}
   .wk-legal-foot::before{content:"";display:block;height:1px;max-width:520px;margin:0 auto 18px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}`;
   function prefix() {

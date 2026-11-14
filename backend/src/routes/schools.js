@@ -22,9 +22,6 @@ const { requireUser } = require('./auth');
 const catalog = require('../lib/schoolsCatalog');
 
 const router = express.Router();
-const CAT = catalog.load();
-const ITEMS = CAT.ITEMS;
-const BY_ID = CAT.BY_ID;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 const list = (v, max = 40) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean).slice(0, max);
@@ -36,7 +33,10 @@ const toEur = (p, v) => (known(v) ? Math.round(v * fx(p)) : null);
 const tuitionEur = (p) => (known(p.tuitionEur) ? p.tuitionEur : toEur(p, p.tuition));
 const costEur = (p) => (known(p.costYearEur) ? p.costYearEur : tuitionEur(p));      // cost known so far
 // search text per programme (all languages of the field + institution + city + careers)
-ITEMS.forEach((p) => { const f = p.field || {}; p._txt = norm([p.title, f.en, f.es, f.fr, p.fieldNative, p.institution && p.institution.name, p.city, ...(p.careers || [])].join(' | ')); });
+// the catalogue comes from schools-db (independent folder); it is re-read when a new release lands (no restart)
+const CAT = catalog.live({
+  prepare: (c) => c.ITEMS.forEach((p) => { const f = p.field || {}; p._txt = norm([p.title, f.en, f.es, f.fr, p.fieldNative, p.institution && p.institution.name, p.city, ...(p.careers || [])].join(' | ')); }),
+});
 
 /* signed-in? (signature check only: the directory holds no personal data) */
 function member(req) {
@@ -113,7 +113,7 @@ router.get('/', (req, res) => {
 
   const words = q ? q.split(/\s+/).filter((w) => w.length > 1) : [];
   const selCareers = new Set(careers), selDomains = new Set(domains);
-  const domWithCareer = new Set(ITEMS.filter((p) => (p.careers || []).some((c) => selCareers.has(c))).map((p) => p.domain));
+  const domWithCareer = new Set(CAT.ITEMS.filter((p) => (p.careers || []).some((c) => selCareers.has(c))).map((p) => p.domain));
   const lvl = (p) => (p.level === 'mba' ? 'master' : p.level);
 
   // an active filter on a value we don't know excludes the programme (we can't promise it matches)
@@ -136,7 +136,7 @@ router.get('/', (req, res) => {
     }
     return true;
   };
-  let rows = ITEMS.filter((p) => {
+  let rows = CAT.ITEMS.filter((p) => {
     if (!baseOk(p)) return false;
     if (notCareers.size && (p.careers || []).some((c) => notCareers.has(c))) return false;
     if (within) {
@@ -157,7 +157,7 @@ router.get('/', (req, res) => {
   if (within && mine.length) {
     facets.career = {}; facets.area = 0;
     const want = new Set(mine);
-    ITEMS.forEach((p) => {
+    CAT.ITEMS.forEach((p) => {
       if (!baseOk(p) || (selDomains.size && !selDomains.has(p.domain))) return;
       facets.area += 1;
       (p.careers || []).forEach((c) => { if (want.has(c)) facets.career[c] = (facets.career[c] || 0) + 1; });
@@ -166,7 +166,7 @@ router.get('/', (req, res) => {
 
   const ctx = isMember ? { careers, domains, mine } : null;
   let views = rows.map((p) => (isMember ? memberView(p, ctx) : publicView(p)));
-  const rel = (v) => { const p = BY_ID.get(v.id); return (words.length && norm(p.title).includes(words[0]) ? 2 : 0) + ((p.careers || []).some((c) => qCareers.has(c)) ? 1 : 0) + (p.demo ? 0 : 0.5); };
+  const rel = (v) => { const p = CAT.BY_ID.get(v.id); return (words.length && norm(p.title).includes(words[0]) ? 2 : 0) + ((p.careers || []).some((c) => qCareers.has(c)) ? 1 : 0) + (p.demo ? 0 : 0.5); };
   const desc = (k) => (a, b) => (known(b[k]) ? b[k] : -Infinity) - (known(a[k]) ? a[k] : -Infinity);   // unknown last
   const asc = (f) => (a, b) => { const x = f(a), y = f(b); return (known(x) ? x : Infinity) - (known(y) ? y : Infinity); };
   const sorters = {

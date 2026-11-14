@@ -31,6 +31,9 @@
 
   const COUNTRIES = ['ES', 'FR', 'UK', 'IE', 'US', 'MX', 'DE'];   // v20261114b: + Germany (DAAD)
   const FLAG = { ES: '🇪🇸', FR: '🇫🇷', UK: '🇬🇧', IE: '🇮🇪', US: '🇺🇸', MX: '🇲🇽', DE: '🇩🇪' };
+  // a country added in schools-db (config/markets.json) appears by itself: flag + name derived from its code
+  const flagOf = (c) => FLAG[c] || String.fromCodePoint(...[...(c === 'UK' ? 'GB' : c)].map((ch) => 0x1F1E6 + ch.charCodeAt(0) - 65));
+  const addMarkets = (ms) => (ms || []).forEach((c) => { if (/^[A-Z]{2}$/.test(c) && !COUNTRIES.includes(c)) COUNTRIES.push(c); });
   const CUR = { EUR: '€', GBP: '£', USD: '$', MXN: 'MX$' };
   const LEVELS = ['bachelor', 'master'];
   const MODES = ['campus', 'online', 'hybrid'];
@@ -107,7 +110,7 @@
         ${st.countries.size ? `<button type="button" class="btn-primary sm" data-scact="saveWhere">💾 ${T('sch.whereSave')}</button>` : ''}
         ${st.whereMsg ? `<em class="sc-ask-err" role="alert">${esc(st.whereMsg)}</em>` : ''}</div>`;
     return `<div class="sc-row sc-whererow"><span class="sc-label">📍 ${T('sch.fWhere')}</span><div>
-      <div class="sc-chips" role="group" aria-label="${esc(T('sch.fWhere'))}">${COUNTRIES.map((c) => chip('sccty', c, st.countries.has(c), `${FLAG[c]} ${esc(countryLabel(c))}`)).join('')}</div>
+      <div class="sc-chips" role="group" aria-label="${esc(T('sch.fWhere'))}">${COUNTRIES.map((c) => chip('sccty', c, st.countries.has(c), `${flagOf(c)} ${esc(countryLabel(c))}`)).join('')}</div>
       ${!st.countries.size ? `<p class="sc-where-src">${T('sch.whereAll')}</p>` : src}${box}</div></div>`;
   }
 
@@ -147,7 +150,10 @@
   };
   const kindLabel = (k) => T('sch.kind_' + k);
   const levelLabel = (l) => T('sch.level_' + (l === 'mba' ? 'mba' : l));
-  const countryLabel = (c) => T('sch.c_' + c);
+  const countryLabel = (c) => {
+    const v = T('sch.c_' + c); if (v && v !== 'sch.c_' + c) return v;
+    try { return new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'region' }).of(c === 'UK' ? 'GB' : c) || c; } catch { return c; }
+  };
   const bandLabel = (b) => '€'.repeat(b);
 
   /* path (member): areas + professions from My path */
@@ -216,7 +222,7 @@
       const r = await api('/api/schools?' + p.toString(), member() ? {} : { auth: false });
       if (seq !== st.seq) return;
       st.items = more ? (st.items || []).concat(r.items) : r.items;
-      st.offset = r.offset; st.total = r.total; st.facets = r.facets; st.insights = r.insights; st.demo = r.demo; st.markets = r.markets || st.markets;
+      st.offset = r.offset; st.total = r.total; st.facets = r.facets; st.insights = r.insights; st.demo = r.demo; st.markets = r.markets || st.markets; addMarkets(r.markets);
     } catch (e) { if (seq === st.seq) st.err = T('sch.loadErr'); }
     if (seq !== st.seq) return;
     st.busy = false;
@@ -329,7 +335,7 @@
       </form>${datalist}
       ${member() ? rowAreas() + rowPros() : ''}
       <div class="sc-row"><span class="sc-label">${T('sch.fCountry')}</span><div><div class="sc-chips">
-        ${COUNTRIES.map((c) => chip('sccty', c, st.countries.has(c), `${FLAG[c]} ${esc(countryLabel(c))}${fc[c] != null && !st.countries.size ? ` <small>${fc[c]}</small>` : ''}`)).join('')}
+        ${COUNTRIES.map((c) => chip('sccty', c, st.countries.has(c), `${flagOf(c)} ${esc(countryLabel(c))}${fc[c] != null && !st.countries.size ? ` <small>${fc[c]}</small>` : ''}`)).join('')}
       </div>${st.langDef && sameSet(st.countries, st.langDef) ? `<p class="sc-where-src">${T('sch.whereFromLang')}</p>` : ''}</div></div>
       ${publicAreas()}
       <div class="sc-row"><span class="sc-label">${T('sch.fLevel')}</span><div class="sc-chips">
@@ -390,7 +396,7 @@
     </section>`;
   }
   /* v20261112d: one-tap sign-up / sign-in with the apps switched on (oauth.js); always comes back to My learning › Schools */
-  const OA_ORDER = ['tiktok', 'google', 'instagram', 'facebook'];
+  const OA_ORDER = ['google', 'tiktok', 'instagram', 'facebook']; // v20261114c: Google first, same as oauth.js
   const oaApp = (id) => ((window.WikiAuth && window.WikiAuth.APPS) || {})[id] || { label: id, cls: '', icon: '' };
   function oaButtons(kind, from) {
     if (member() || !st.oa.length) return '';

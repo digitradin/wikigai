@@ -753,7 +753,7 @@
     const back = `/survey?stage=${st}&review=1&saved=1`;
     const enc = encodeURIComponent(back);
     let ids = [];
-    try { const c = window.WikiAuth ? await window.WikiAuth.cfg() : {}; const list = (c.auth && c.auth.providers) || []; ids = ['tiktok', 'google', 'instagram', 'facebook'].filter((id) => list.some((p) => p.id === id)); } catch { /* email only */ }
+    try { const c = window.WikiAuth ? await window.WikiAuth.cfg() : {}; const list = (c.auth && c.auth.providers) || []; ids = ['google', 'tiktok', 'instagram', 'facebook'].filter((id) => list.some((p) => p.id === id)); } catch { /* email only */ }
     const A = (window.WikiAuth && window.WikiAuth.APPS) || {};
     const btns = ids.map((id) => `<button type="button" class="oa-btn ${(A[id] || {}).cls || ''}" data-gs="${id}">${(A[id] || {}).icon || ''}<span>${esc(T('oauth.continue', { provider: (A[id] || {}).label || id }))}</span></button>`).join('');
     slot.innerHTML = `<div class="gs-box"><strong class="gs-t">${esc(T('survey.guestTitle'))}</strong><p class="gs-p">${esc(T('survey.guestText'))}</p>

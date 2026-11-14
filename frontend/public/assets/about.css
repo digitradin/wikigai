@@ -57,7 +57,7 @@
 .ab-cta p{color:var(--t2);margin:0 0 16px}
 .ab-cta .ab-acts{justify-content:center;margin-top:0}
 .ab-more{display:inline-block;margin-top:14px;color:var(--c2);font-weight:600;text-decoration:none}
-.ab-more:hover{text-decoration:underline}
+.ab-more:hover{text-decoration:none}
 
 /* /how-it-works: kid-friendly chips */
 .hw-get{display:flex;flex-wrap:wrap;gap:10px}

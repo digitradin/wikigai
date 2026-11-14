@@ -48,7 +48,7 @@
 .lr-dom{padding:4px 11px;border-radius:14px;font-size:.82rem;font-weight:600;background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
 .lr-dom b,.lr-pro b{margin-left:4px;font-weight:800;opacity:.9}
 .lr-pro{padding:4px 11px;border-radius:14px;font-size:.82rem;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--border-glass)}
-.lr-pro.top{border-color:rgba(255,140,66,.5);background:rgba(255,140,66,.1)}
+/* v20261114c: the 1st profession has no orange frame (same as the others) */
 .lr-pro b{color:#d98bff}
 .lr-path-empty{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--t2);font-size:.88rem}
 @media (max-width:640px){.lr-path-row{grid-template-columns:1fr;gap:4px}}
@@ -193,7 +193,6 @@ button.wv-fill.lr-dom:hover, button.wv-fill.lr-pro:hover, button.wv-fill.lr-chip
 .pl-pros{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:14px}
 .pl-pro{display:flex;align-items:center;gap:10px;text-align:left;font:600 .92rem var(--font);color:var(--text);background:rgba(255,255,255,.04);border:1px solid var(--border-glass);border-radius:14px;padding:14px;cursor:pointer;transition:border-color .15s,transform .15s,background .15s}
 .pl-pro:hover,.pl-pro:focus-visible{border-color:rgba(196,77,255,.6);background:rgba(196,77,255,.08);transform:translateY(-2px);outline:none}
-.pl-pro.top{border-color:rgba(255,140,66,.5);background:rgba(255,140,66,.08)}
 .pl-pro>span:nth-child(2){flex:1;min-width:0}
 .pl-pro-ico{font-size:1.15rem}
 .pl-go{color:#d98bff;font-weight:800}
